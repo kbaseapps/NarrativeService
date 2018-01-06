@@ -421,6 +421,10 @@ class NarrativeServiceTest(unittest.TestCase):
             self.assertEqual(ws_meta['is_temporary'], 'true')
             self.assertEqual(ws_meta['narrative'], str(ret['narrativeInfo']['id']))
             self.assertNotIn('narrative_nice_name', ws_meta)
+
+            self.assertIn('narrativeInfo', ret)
+            info = ret['narrativeInfo']
+            self.assertEqual(info['metadata']['is_temporary'], 'true')
         finally:
             new_ws_id = ret['workspaceInfo']['id']
             ws.delete_workspace({'id': new_ws_id})
@@ -433,7 +437,7 @@ class NarrativeServiceTest(unittest.TestCase):
             title: title
         })
         try:
-            self.assertTrue('workspaceInfo' in ret)
+            self.assertIn('workspaceInfo', ret)
             info = ret['workspaceInfo']
             self.assertIn('id', info)
             self.assertIn('name', info)
@@ -449,6 +453,10 @@ class NarrativeServiceTest(unittest.TestCase):
             self.assertEqual(ws_meta['is_temporary'], 'false')
             self.assertEqual(ws_meta['narrative'], str(ret['narrativeInfo']['id']))
             self.assertEqual(ws_meta['narrative_nice_name'], title)
+
+            self.assertIn('narrativeInfo', ret)
+            info = ret['narrativeInfo']
+            self.assertEqual(info['metadata']['is_temporary'], 'false')
         finally:
             new_ws_id = ret['workspaceInfo']['id']
             ws.delete_workspace({'id': new_ws_id})

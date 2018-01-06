@@ -207,6 +207,10 @@ class NarrativeManager:
             newNarMetadata['ws_name'] = newWsName
             newNarMetadata['job_info'] = json.dumps({'queue_time': 0, 'running': 0,
                                                      'completed': 0, 'run_time': 0, 'error': 0})
+            is_temporary = 'false'
+            if newNarMetadata['name'] == 'Untitled' or newNarMetadata['name'] is None:
+                is_temporary = 'true'
+            newNarMetadata['is_temporary'] = is_temporary
 
             currentNarrative['data']['metadata']['name'] = newName
             currentNarrative['data']['metadata']['ws_name'] = newWsName
@@ -283,6 +287,11 @@ class NarrativeManager:
         [narrativeObject, metadataExternal] = self._fetchNarrativeObjects(
             workspaceName, cells, parameters, includeIntroCell, title
         )
+        is_temporary = 'true'
+        if title is not None and title != 'Untitled':
+            is_temporary = 'false'
+
+        metadataExternal['is_temporary'] = is_temporary
         objectInfo = ws.save_objects({'workspace': workspaceName,
                                       'objects': [{'type': 'KBaseNarrative.Narrative',
                                                    'data': narrativeObject,
@@ -293,9 +302,6 @@ class NarrativeManager:
                                                                    'Workspace/Narrative bundle.'}],
                                                    'hidden': 0}]})[0]
         objectInfo = ServiceUtils.objectInfoToObject(objectInfo)
-        is_temporary = 'true'
-        if title is not None and title != 'Untitled':
-            is_temporary = 'false'
         ws_info = self._completeNewNarrative(ws_info[0], objectInfo['id'],
                                              importData, is_temporary, title)
         return {
