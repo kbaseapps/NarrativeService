@@ -207,10 +207,11 @@ class NarrativeManager:
             newNarMetadata['ws_name'] = newWsName
             newNarMetadata['job_info'] = json.dumps({'queue_time': 0, 'running': 0,
                                                      'completed': 0, 'run_time': 0, 'error': 0})
-            is_temporary = 'false'
-            if newNarMetadata['name'] == 'Untitled' or newNarMetadata['name'] is None:
-                is_temporary = 'true'
-            newNarMetadata['is_temporary'] = is_temporary
+            if 'is_temporary' not in newNarMetadata:
+                is_temporary = 'false'
+                if newNarMetadata['name'] == 'Untitled' or newNarMetadata['name'] is None:
+                    is_temporary = 'true'
+                newNarMetadata['is_temporary'] = is_temporary
 
             currentNarrative['data']['metadata']['name'] = newName
             currentNarrative['data']['metadata']['ws_name'] = newWsName
