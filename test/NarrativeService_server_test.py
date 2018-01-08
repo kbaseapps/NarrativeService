@@ -40,6 +40,7 @@ class NarrativeServiceTest(unittest.TestCase):
         token = environ.get('KB_AUTH_TOKEN', None)
         os.environ['USE_DP'] = "1"
         config_file = environ.get('KB_DEPLOYMENT_CONFIG', None)
+        cls.NARRATIVE_TYPE = "KBaseNarrative.Narrative-4.0"
         cls.cfg = {}
         config = ConfigParser()
         config.read(config_file)
@@ -228,7 +229,6 @@ class NarrativeServiceTest(unittest.TestCase):
         nar_obj_data['metadata']['kbase']['creator'] = user_id
         nar_obj_data['metadata']['kbase']['ws_name'] = ws_name
         nar_obj_name = "Narrative." + str(int(round(time.time() * 1000)))
-        nar_obj_type = "KBaseNarrative.Narrative-4.0"
         job_info = json.dumps({"queue_time": 0, "running": 0, "completed": 0,
                                "run_time": 0, "error": 0})
         nar_obj_meta = {"description": "",
@@ -241,7 +241,7 @@ class NarrativeServiceTest(unittest.TestCase):
                         "type": "KBaseNarrative.Narrative",
                         "name": "NarrativeCopyTest"}
         ws.save_objects({'workspace': ws_name, 'objects':
-                         [{'type': nar_obj_type,
+                         [{'type': self.NARRATIVE_TYPE,
                            'data': nar_obj_data,
                            'name': nar_obj_name,
                            'meta': nar_obj_meta}]})
@@ -316,6 +316,91 @@ class NarrativeServiceTest(unittest.TestCase):
             # Cleaning up new created workspace
             ws.delete_workspace({'id': copy_ws_id})
 
+    def test_copy_temp_narrative(self):
+        """
+        Now copy a Narrative flagged as temporary. E.g. create a new narrative, then make
+        a copy right away. Test that it contains the right 'is_temporary' key in metadata.
+
+        Also, for kicks, copy one that's NOT temporary and make sure the 'false' propagates.
+        """
+        ws = self.getWsClient()
+
+        source_nar_info = self.getImpl().create_new_narrative(self.getContext(), {})[0]
+        source_ws_id = source_nar_info['workspaceInfo']['id']
+        source_nar_id = source_nar_info['narrativeInfo']['id']
+
+        # first, make a copy from the source as-is and make sure it has the temp tag.
+        copied_nar_info = self.getImpl().copy_narrative(self.getContext(), {
+            'workspaceRef': '{}/{}'.format(source_ws_id, source_nar_id),
+            'newName': 'Untitled'
+        })[0]
+        copied_nar = ws.get_objects2({
+            'objects': [{
+                'ref': '{}/{}'.format(copied_nar_info['newWsId'], copied_nar_info['newNarId'])
+            }]
+        })
+        copied_ws_info = ws.get_workspace_info({'id': copied_nar_info['newWsId']})
+
+        # second, tweak the source to remove its 'is_temporary' field all together. then
+        # copy and test it.
+        source_nar = ws.get_objects2({
+            'objects': [{
+                'ref': '{}/{}'.format(source_ws_id, source_nar_id)
+            }]
+        })['data'][0]
+        if 'is_temporary' in source_nar['info'][10]:
+            del source_nar['info'][10]['is_temporary']
+        ws.save_objects({'workspace': source_nar_info['workspaceInfo']['name'], 'objects':
+                         [{'type': self.NARRATIVE_TYPE,
+                           'data': source_nar['data'],
+                           'name': source_nar['info'][1],
+                           'meta': source_nar['info'][10]}]})
+        copied_nar_info2 = self.getImpl().copy_narrative(self.getContext(), {
+            'workspaceRef': '{}/{}'.format(source_ws_id, source_nar_id),
+            'newName': 'Untitled'
+        })[0]
+        copied_nar2 = ws.get_objects2({
+            'objects': [{
+                'ref': '{}/{}'.format(copied_nar_info2['newWsId'], copied_nar_info2['newNarId'])
+            }]
+        })
+        copied_ws_info2 = ws.get_workspace_info({'id': copied_nar_info2['newWsId']})
+
+        # Finally, create a new non-temporary narrative, copy it, and ensure everything has
+        # 'is_temporary': 'false' in the right metadata places.
+        source_nar_info2 = self.getImpl().create_new_narrative(self.getContext(), {
+            'title': 'Not Temporary'
+        })[0]
+        source_ws_id2 = source_nar_info2['workspaceInfo']['id']
+        source_nar_id2 = source_nar_info2['narrativeInfo']['id']
+        copied_nar_info3 = self.getImpl().copy_narrative(self.getContext(), {
+            'workspaceRef': '{}/{}'.format(source_ws_id2, source_nar_id2),
+            'newName': 'Still Not Temporary'
+        })[0]
+        copied_nar3 = ws.get_objects2({
+            'objects': [{
+                'ref': '{}/{}'.format(copied_nar_info3['newWsId'], copied_nar_info3['newNarId'])
+            }]
+        })
+        copied_ws_info3 = ws.get_workspace_info({'id': copied_nar_info3['newWsId']})
+
+        try:
+            self.assertEquals(source_nar_info['workspaceInfo']['metadata']['is_temporary'], 'true')
+            self.assertEquals(source_nar_info['narrativeInfo']['metadata']['is_temporary'], 'true')
+            self.assertEquals(copied_nar['data'][0]['info'][10]['is_temporary'], 'true')
+            self.assertEquals(copied_ws_info[8]['is_temporary'], 'true')
+            self.assertEquals(copied_nar2['data'][0]['info'][10]['is_temporary'], 'true')
+            self.assertEquals(copied_ws_info2[8]['is_temporary'], 'true')
+            self.assertEquals(source_nar_info2['workspaceInfo']['metadata']['is_temporary'], 'false')
+            self.assertEquals(source_nar_info2['narrativeInfo']['metadata']['is_temporary'], 'false')
+            self.assertEquals(copied_nar3['data'][0]['info'][10]['is_temporary'], 'false')
+            self.assertEquals(copied_ws_info3[8]['is_temporary'], 'false')
+        finally:
+            self.getWsClient().delete_workspace({'id': source_ws_id})
+            self.getWsClient().delete_workspace({'id': source_ws_id2})
+            self.getWsClient().delete_workspace({'id': copied_nar_info['newWsId']})
+            self.getWsClient().delete_workspace({'id': copied_nar_info2['newWsId']})
+            self.getWsClient().delete_workspace({'id': copied_nar_info3['newWsId']})
 
     def test_copy_narrative_two_users(self):
         # Create workspace with Reads object for user1
@@ -342,7 +427,6 @@ class NarrativeServiceTest(unittest.TestCase):
         nar_obj_data['metadata']['kbase']['creator'] = user_id
         nar_obj_data['metadata']['kbase']['ws_name'] = ws_name2
         nar_obj_name = "Narrative." + str(int(round(time.time() * 1000)))
-        nar_obj_type = "KBaseNarrative.Narrative-4.0"
         job_info = json.dumps({"queue_time": 0, "running": 0, "completed": 0,
                                "run_time": 0, "error": 0})
         nar_obj_meta = {"description": "",
@@ -355,7 +439,7 @@ class NarrativeServiceTest(unittest.TestCase):
                         "type": "KBaseNarrative.Narrative",
                         "name": "NarrativeCopyTest"}
         ws2.save_objects({'workspace': ws_name2, 'objects':
-                         [{'type': nar_obj_type,
+                         [{'type': self.NARRATIVE_TYPE,
                            'data': nar_obj_data,
                            'name': nar_obj_name,
                            'meta': nar_obj_meta}]})
@@ -421,6 +505,10 @@ class NarrativeServiceTest(unittest.TestCase):
             self.assertEqual(ws_meta['is_temporary'], 'true')
             self.assertEqual(ws_meta['narrative'], str(ret['narrativeInfo']['id']))
             self.assertNotIn('narrative_nice_name', ws_meta)
+
+            self.assertIn('narrativeInfo', ret)
+            info = ret['narrativeInfo']
+            self.assertEqual(info['metadata']['is_temporary'], 'true')
         finally:
             new_ws_id = ret['workspaceInfo']['id']
             ws.delete_workspace({'id': new_ws_id})
@@ -433,7 +521,7 @@ class NarrativeServiceTest(unittest.TestCase):
             title: title
         })
         try:
-            self.assertTrue('workspaceInfo' in ret)
+            self.assertIn('workspaceInfo', ret)
             info = ret['workspaceInfo']
             self.assertIn('id', info)
             self.assertIn('name', info)
@@ -449,6 +537,10 @@ class NarrativeServiceTest(unittest.TestCase):
             self.assertEqual(ws_meta['is_temporary'], 'false')
             self.assertEqual(ws_meta['narrative'], str(ret['narrativeInfo']['id']))
             self.assertEqual(ws_meta['narrative_nice_name'], title)
+
+            self.assertIn('narrativeInfo', ret)
+            info = ret['narrativeInfo']
+            self.assertEqual(info['metadata']['is_temporary'], 'false')
         finally:
             new_ws_id = ret['workspaceInfo']['id']
             ws.delete_workspace({'id': new_ws_id})

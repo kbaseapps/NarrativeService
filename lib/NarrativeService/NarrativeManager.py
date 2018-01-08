@@ -158,7 +158,7 @@ class NarrativeManager:
         time_ms = int(round(time.time() * 1000))
         newWsName = self.user_id + ':narrative_' + str(time_ms)
         # add the 'narrative' field to newWsMeta later.
-        newWsMeta = {"is_temporary": "false", "narrative_nice_name": newName}
+        newWsMeta = {"narrative_nice_name": newName}
 
         # start with getting the existing narrative object.
         currentNarrative = self.ws.get_objects([{'ref': workspaceRef}])[0]
@@ -208,6 +208,12 @@ class NarrativeManager:
             newNarMetadata['job_info'] = json.dumps({'queue_time': 0, 'running': 0,
                                                      'completed': 0, 'run_time': 0, 'error': 0})
 
+            is_temporary = newNarMetadata.get('is_temporary', 'false')
+            if 'is_temporary' not in newNarMetadata:
+                if newNarMetadata['name'] == 'Untitled' or newNarMetadata['name'] is None:
+                    is_temporary = 'true'
+                newNarMetadata['is_temporary'] = is_temporary
+
             currentNarrative['data']['metadata']['name'] = newName
             currentNarrative['data']['metadata']['ws_name'] = newWsName
             currentNarrative['data']['metadata']['job_ids'] = {'apps': [], 'methods': [],
@@ -223,8 +229,15 @@ class NarrativeManager:
             # now, just update the workspace metadata to point
             # to the new narrative object
             newNarId = newNarInfo[0][0]
-            self.ws.alter_workspace_metadata({'wsi': {'id': newWsId},
-                                              'new': {'narrative': str(newNarId)}})
+            self.ws.alter_workspace_metadata({
+                'wsi': {
+                    'id': newWsId
+                },
+                'new': {
+                    'narrative': str(newNarId),
+                    'is_temporary': is_temporary
+                }
+            })
             return {'newWsId': newWsId, 'newNarId': newNarId}
         except:
             # let's delete copy of workspace so it's out of the way - it's broken
@@ -283,6 +296,11 @@ class NarrativeManager:
         [narrativeObject, metadataExternal] = self._fetchNarrativeObjects(
             workspaceName, cells, parameters, includeIntroCell, title
         )
+        is_temporary = 'true'
+        if title is not None and title != 'Untitled':
+            is_temporary = 'false'
+
+        metadataExternal['is_temporary'] = is_temporary
         objectInfo = ws.save_objects({'workspace': workspaceName,
                                       'objects': [{'type': 'KBaseNarrative.Narrative',
                                                    'data': narrativeObject,
@@ -293,9 +311,6 @@ class NarrativeManager:
                                                                    'Workspace/Narrative bundle.'}],
                                                    'hidden': 0}]})[0]
         objectInfo = ServiceUtils.objectInfoToObject(objectInfo)
-        is_temporary = 'true'
-        if title is not None and title != 'Untitled':
-            is_temporary = 'false'
         ws_info = self._completeNewNarrative(ws_info[0], objectInfo['id'],
                                              importData, is_temporary, title)
         return {
