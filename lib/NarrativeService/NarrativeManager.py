@@ -158,7 +158,7 @@ class NarrativeManager:
         time_ms = int(round(time.time() * 1000))
         newWsName = self.user_id + ':narrative_' + str(time_ms)
         # add the 'narrative' field to newWsMeta later.
-        newWsMeta = {"is_temporary": "false", "narrative_nice_name": newName}
+        newWsMeta = {"narrative_nice_name": newName}
 
         # start with getting the existing narrative object.
         currentNarrative = self.ws.get_objects([{'ref': workspaceRef}])[0]
@@ -207,8 +207,9 @@ class NarrativeManager:
             newNarMetadata['ws_name'] = newWsName
             newNarMetadata['job_info'] = json.dumps({'queue_time': 0, 'running': 0,
                                                      'completed': 0, 'run_time': 0, 'error': 0})
+
+            is_temporary = newNarMetadata.get('is_temporary', 'false')
             if 'is_temporary' not in newNarMetadata:
-                is_temporary = 'false'
                 if newNarMetadata['name'] == 'Untitled' or newNarMetadata['name'] is None:
                     is_temporary = 'true'
                 newNarMetadata['is_temporary'] = is_temporary
@@ -228,8 +229,15 @@ class NarrativeManager:
             # now, just update the workspace metadata to point
             # to the new narrative object
             newNarId = newNarInfo[0][0]
-            self.ws.alter_workspace_metadata({'wsi': {'id': newWsId},
-                                              'new': {'narrative': str(newNarId)}})
+            self.ws.alter_workspace_metadata({
+                'wsi': {
+                    'id': newWsId
+                },
+                'new': {
+                    'narrative': str(newNarId),
+                    'is_temporary': is_temporary
+                }
+            })
             return {'newWsId': newWsId, 'newNarId': newNarId}
         except:
             # let's delete copy of workspace so it's out of the way - it's broken
