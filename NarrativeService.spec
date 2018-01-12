@@ -215,11 +215,11 @@ module NarrativeService {
     /*
         app - name of app (optional, either app or method may be defined)
         method - name of method (optional, either app or method may be defined)
-        appparam - paramters of app/method packed into string in format:
+        appparam - parameters of app/method packed into string in format:
             "step_pos,param_name,param_value(;...)*" (alternative to appData)
         appData - parameters of app/method in unpacked form (alternative to appparam)
         markdown - markdown text for cell of 'markdown' type (optional)
-        copydata - packed inport data in format "import(;...)*" (alternative to importData)
+        copydata - packed import data in format "import(;...)*" (alternative to importData)
         importData - import data in unpacked form (alternative to copydata)
         includeIntroCell - if 1, adds an introductory markdown cell at the top (optional, default 0)
         title - name of the new narrative (optional, if a string besides 'Untitled', this will
@@ -362,5 +362,49 @@ module NarrativeService {
     funcdef remove_narratorial(RemoveNarratorialParams params)
         returns (RemoveNarratorialResult) authentication required;
 
+
+    /*
+        Log message context.
+        username - the KBase username
+        narr_ref - the Narrative reference (of the form wsid/objid - leaving version off should make lookup/aggregation easier)
+        narr_version - the current version of the narrative (if a save_narrative message, the new version)
+        log_time - timestamp of event in ISO-8601 format
+        level - should be one of INFO, ERROR, WARN (default INFO if not present)
+    */
+    typedef structure {
+        string username;
+        string narr_ref;
+        timestamp log_time;
+        string level;
+    } LogContext;
+
+    /*
+        Log event string. Should be one of:
+        save_narrative
+        start_job
+        create_narrative
+        copy_narrative
+        open_narrative
+    */
+    typedef string log_event;
+
+    /*
+        Event for the event logger.
+        event - a string describing the event to be logged
+        context - the logger context object - username, narrative, etc.
+        metadata - other useful things to add to the statement that might be agnostic. E.g. if there's an error, the code, or
+        if we're starting a job, the app id and version
+    */
+    typedef structure {
+        log_event event;
+        LogContext context;
+        UnspecifiedObject metadata;
+    } EventLogParams;
+
+    typedef structure {
+        boolean success;
+    } EventLogResult;
+
+    funcdef log_event(EventLogParams params) returns (EventLogResult);
 
 };
