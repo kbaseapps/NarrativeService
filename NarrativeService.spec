@@ -405,6 +405,6 @@ module NarrativeService {
         boolean success;
     } EventLogResult;
 
-    funcdef log_event(EventLogParams params) returns (EventLogResult);
+    funcdef log_event(EventLogParams params) returns (EventLogResult) authentication required;
 
 };
