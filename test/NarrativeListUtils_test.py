@@ -58,7 +58,7 @@ class NarrativeListUtilsTest(unittest.TestCase):
         pass
 
     def getWsClient(self):
-        return self.__class__.wsClients[0]
+        return self.__class__.wsClient
 
     def getImpl(self):
         return self.__class__.serviceImpl

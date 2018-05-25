@@ -369,6 +369,18 @@ class Application(object):
                              name='NarrativeService.remove_narratorial',
                              types=[dict])
         self.method_authentication['NarrativeService.remove_narratorial'] = 'required'  # noqa
+        self.rpc_service.add(impl_NarrativeService.log_open_narrative,
+                             name='NarrativeService.log_open_narrative',
+                             types=[dict])
+        self.method_authentication['NarrativeService.log_open_narrative'] = 'required'  # noqa
+        self.rpc_service.add(impl_NarrativeService.log_save_narrative,
+                             name='NarrativeService.log_save_narrative',
+                             types=[dict])
+        self.method_authentication['NarrativeService.log_save_narrative'] = 'required'  # noqa
+        self.rpc_service.add(impl_NarrativeService.find_object_report,
+                             name='NarrativeService.find_object_report',
+                             types=[dict])
+        self.method_authentication['NarrativeService.find_object_report'] = 'required'  # noqa
         self.rpc_service.add(impl_NarrativeService.status,
                              name='NarrativeService.status',
                              types=[dict])

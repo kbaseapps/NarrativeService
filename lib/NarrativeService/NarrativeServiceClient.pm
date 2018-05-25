@@ -1220,6 +1220,309 @@ RemoveNarratorialResult is a reference to a hash where the following keys are de
     }
 }
  
+
+
+=head2 log_open_narrative
+
+  $log_result = $obj->log_open_narrative($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a NarrativeService.LogOpenParams
+$log_result is a NarrativeService.boolean
+LogOpenParams is a reference to a hash where the following keys are defined:
+	context has a value which is a NarrativeService.LogContext
+LogContext is a reference to a hash where the following keys are defined:
+	narr_ref has a value which is a string
+	narr_version has a value which is an int
+	log_time has a value which is a NarrativeService.timestamp
+	level has a value which is a string
+timestamp is a string
+boolean is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a NarrativeService.LogOpenParams
+$log_result is a NarrativeService.boolean
+LogOpenParams is a reference to a hash where the following keys are defined:
+	context has a value which is a NarrativeService.LogContext
+LogContext is a reference to a hash where the following keys are defined:
+	narr_ref has a value which is a string
+	narr_version has a value which is an int
+	log_time has a value which is a NarrativeService.timestamp
+	level has a value which is a string
+timestamp is a string
+boolean is an int
+
+
+=end text
+
+=item Description
+
+
+
+=back
+
+=cut
+
+ sub log_open_narrative
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function log_open_narrative (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to log_open_narrative:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'log_open_narrative');
+	}
+    }
+
+    my $url = $self->{url};
+    my $result = $self->{client}->call($url, $self->{headers}, {
+	    method => "NarrativeService.log_open_narrative",
+	    params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'log_open_narrative',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method log_open_narrative",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'log_open_narrative',
+				       );
+    }
+}
+ 
+
+
+=head2 log_save_narrative
+
+  $log_result = $obj->log_save_narrative($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a NarrativeService.LogSaveParams
+$log_result is a NarrativeService.boolean
+LogSaveParams is a reference to a hash where the following keys are defined:
+	context has a value which is a NarrativeService.LogContext
+LogContext is a reference to a hash where the following keys are defined:
+	narr_ref has a value which is a string
+	narr_version has a value which is an int
+	log_time has a value which is a NarrativeService.timestamp
+	level has a value which is a string
+timestamp is a string
+boolean is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a NarrativeService.LogSaveParams
+$log_result is a NarrativeService.boolean
+LogSaveParams is a reference to a hash where the following keys are defined:
+	context has a value which is a NarrativeService.LogContext
+LogContext is a reference to a hash where the following keys are defined:
+	narr_ref has a value which is a string
+	narr_version has a value which is an int
+	log_time has a value which is a NarrativeService.timestamp
+	level has a value which is a string
+timestamp is a string
+boolean is an int
+
+
+=end text
+
+=item Description
+
+
+
+=back
+
+=cut
+
+ sub log_save_narrative
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function log_save_narrative (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to log_save_narrative:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'log_save_narrative');
+	}
+    }
+
+    my $url = $self->{url};
+    my $result = $self->{client}->call($url, $self->{headers}, {
+	    method => "NarrativeService.log_save_narrative",
+	    params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'log_save_narrative',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method log_save_narrative",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'log_save_narrative',
+				       );
+    }
+}
+ 
+
+
+=head2 find_object_report
+
+  $return = $obj->find_object_report($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a NarrativeService.FindObjectReportParams
+$return is a NarrativeService.FindObjectReportOutput
+FindObjectReportParams is a reference to a hash where the following keys are defined:
+	upa has a value which is a string
+FindObjectReportOutput is a reference to a hash where the following keys are defined:
+	report_upas has a value which is a reference to a list where each element is a string
+	object_upa has a value which is a string
+	copy_inaccessible has a value which is a NarrativeService.boolean
+	error has a value which is a string
+boolean is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a NarrativeService.FindObjectReportParams
+$return is a NarrativeService.FindObjectReportOutput
+FindObjectReportParams is a reference to a hash where the following keys are defined:
+	upa has a value which is a string
+FindObjectReportOutput is a reference to a hash where the following keys are defined:
+	report_upas has a value which is a reference to a list where each element is a string
+	object_upa has a value which is a string
+	copy_inaccessible has a value which is a NarrativeService.boolean
+	error has a value which is a string
+boolean is an int
+
+
+=end text
+
+=item Description
+
+find_object_report searches for a referencing report. All reports (if made properly) reference the objects
+that were created at the same time. To find that report, we search back up the reference chain.
+
+If the object in question was a copy, then there is no referencing report. We might still want to see it,
+though! If the original object is accessible, we'll continue the search from that object, and mark the
+associated object UPA in the return value.
+
+=back
+
+=cut
+
+ sub find_object_report
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function find_object_report (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to find_object_report:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'find_object_report');
+	}
+    }
+
+    my $url = $self->{url};
+    my $result = $self->{client}->call($url, $self->{headers}, {
+	    method => "NarrativeService.find_object_report",
+	    params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'find_object_report',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method find_object_report",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'find_object_report',
+				       );
+    }
+}
+ 
   
 sub status
 {
@@ -1263,16 +1566,16 @@ sub version {
             Bio::KBase::Exceptions::JSONRPC->throw(
                 error => $result->error_message,
                 code => $result->content->{code},
-                method_name => 'remove_narratorial',
+                method_name => 'find_object_report',
             );
         } else {
             return wantarray ? @{$result->result} : $result->result->[0];
         }
     } else {
         Bio::KBase::Exceptions::HTTP->throw(
-            error => "Error invoking method remove_narratorial",
+            error => "Error invoking method find_object_report",
             status_line => $self->{client}->status_line,
-            method_name => 'remove_narratorial',
+            method_name => 'find_object_report',
         );
     }
 }
@@ -2039,11 +2342,11 @@ a reference to a list containing 3 items:
 
 app - name of app (optional, either app or method may be defined)
 method - name of method (optional, either app or method may be defined)
-appparam - paramters of app/method packed into string in format:
+appparam - parameters of app/method packed into string in format:
     "step_pos,param_name,param_value(;...)*" (alternative to appData)
 appData - parameters of app/method in unpacked form (alternative to appparam)
 markdown - markdown text for cell of 'markdown' type (optional)
-copydata - packed inport data in format "import(;...)*" (alternative to importData)
+copydata - packed import data in format "import(;...)*" (alternative to importData)
 importData - import data in unpacked form (alternative to copydata)
 includeIntroCell - if 1, adds an introductory markdown cell at the top (optional, default 0)
 title - name of the new narrative (optional, if a string besides 'Untitled', this will
@@ -2581,6 +2884,193 @@ a reference to a hash where the following keys are defined
 =begin text
 
 a reference to a hash where the following keys are defined
+
+=end text
+
+=back
+
+
+
+=head2 LogContext
+
+=over 4
+
+
+
+=item Description
+
+Log message context.
+narr_ref - the Narrative reference (of the form wsid/objid - leaving version off should make lookup/aggregation easier)
+narr_version - the current version of the narrative (if a save_narrative message, the new version)
+log_time - timestamp of event in ISO-8601 format
+level - should be one of INFO, ERROR, WARN (default INFO if not present)
+(the username is inferred from the auth token)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+narr_ref has a value which is a string
+narr_version has a value which is an int
+log_time has a value which is a NarrativeService.timestamp
+level has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+narr_ref has a value which is a string
+narr_version has a value which is an int
+log_time has a value which is a NarrativeService.timestamp
+level has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 LogOpenParams
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+context has a value which is a NarrativeService.LogContext
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+context has a value which is a NarrativeService.LogContext
+
+
+=end text
+
+=back
+
+
+
+=head2 LogSaveParams
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+context has a value which is a NarrativeService.LogContext
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+context has a value which is a NarrativeService.LogContext
+
+
+=end text
+
+=back
+
+
+
+=head2 FindObjectReportParams
+
+=over 4
+
+
+
+=item Description
+
+This first version only takes a single UPA as input and attempts to find the report that made it.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+upa has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+upa has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 FindObjectReportOutput
+
+=over 4
+
+
+
+=item Description
+
+report_upas: the UPAs for the report object. If empty list, then no report is available. But there might be more than one...
+object_upa: the UPA for the object that this report references. If the originally passed object
+            was copied, then this will be the source of that copy that has a referencing report.
+copy_inaccessible: 1 if this object was copied, and the user can't see the source, so no report's available.
+error: if an error occurred while looking up (found an unavailable copy, or the report is not accessible),
+       this will have a sensible string. More or less.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+report_upas has a value which is a reference to a list where each element is a string
+object_upa has a value which is a string
+copy_inaccessible has a value which is a NarrativeService.boolean
+error has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+report_upas has a value which is a reference to a list where each element is a string
+object_upa has a value which is a string
+copy_inaccessible has a value which is a NarrativeService.boolean
+error has a value which is a string
+
 
 =end text
 

@@ -320,6 +320,62 @@ public class NarrativeServiceClient {
         return res.get(0);
     }
 
+    /**
+     * <p>Original spec-file function name: log_open_narrative</p>
+     * <pre>
+     * </pre>
+     * @param   params   instance of type {@link us.kbase.narrativeservice.LogOpenParams LogOpenParams}
+     * @return   parameter "log_result" of original type "boolean" (@range [0,1])
+     * @throws IOException if an IO exception occurs
+     * @throws JsonClientException if a JSON RPC exception occurs
+     */
+    public Long logOpenNarrative(LogOpenParams params, RpcContext... jsonRpcContext) throws IOException, JsonClientException {
+        List<Object> args = new ArrayList<Object>();
+        args.add(params);
+        TypeReference<List<Long>> retType = new TypeReference<List<Long>>() {};
+        List<Long> res = caller.jsonrpcCall("NarrativeService.log_open_narrative", args, retType, true, true, jsonRpcContext, this.serviceVersion);
+        return res.get(0);
+    }
+
+    /**
+     * <p>Original spec-file function name: log_save_narrative</p>
+     * <pre>
+     * </pre>
+     * @param   params   instance of type {@link us.kbase.narrativeservice.LogSaveParams LogSaveParams}
+     * @return   parameter "log_result" of original type "boolean" (@range [0,1])
+     * @throws IOException if an IO exception occurs
+     * @throws JsonClientException if a JSON RPC exception occurs
+     */
+    public Long logSaveNarrative(LogSaveParams params, RpcContext... jsonRpcContext) throws IOException, JsonClientException {
+        List<Object> args = new ArrayList<Object>();
+        args.add(params);
+        TypeReference<List<Long>> retType = new TypeReference<List<Long>>() {};
+        List<Long> res = caller.jsonrpcCall("NarrativeService.log_save_narrative", args, retType, true, true, jsonRpcContext, this.serviceVersion);
+        return res.get(0);
+    }
+
+    /**
+     * <p>Original spec-file function name: find_object_report</p>
+     * <pre>
+     * find_object_report searches for a referencing report. All reports (if made properly) reference the objects
+     * that were created at the same time. To find that report, we search back up the reference chain.
+     * If the object in question was a copy, then there is no referencing report. We might still want to see it,
+     * though! If the original object is accessible, we'll continue the search from that object, and mark the
+     * associated object UPA in the return value.
+     * </pre>
+     * @param   params   instance of type {@link us.kbase.narrativeservice.FindObjectReportParams FindObjectReportParams}
+     * @return   instance of type {@link us.kbase.narrativeservice.FindObjectReportOutput FindObjectReportOutput}
+     * @throws IOException if an IO exception occurs
+     * @throws JsonClientException if a JSON RPC exception occurs
+     */
+    public FindObjectReportOutput findObjectReport(FindObjectReportParams params, RpcContext... jsonRpcContext) throws IOException, JsonClientException {
+        List<Object> args = new ArrayList<Object>();
+        args.add(params);
+        TypeReference<List<FindObjectReportOutput>> retType = new TypeReference<List<FindObjectReportOutput>>() {};
+        List<FindObjectReportOutput> res = caller.jsonrpcCall("NarrativeService.find_object_report", args, retType, true, true, jsonRpcContext, this.serviceVersion);
+        return res.get(0);
+    }
+
     public Map<String, Object> status(RpcContext... jsonRpcContext) throws IOException, JsonClientException {
         List<Object> args = new ArrayList<Object>();
         TypeReference<List<Map<String, Object>>> retType = new TypeReference<List<Map<String, Object>>>() {};

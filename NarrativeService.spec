@@ -390,4 +390,34 @@ module NarrativeService {
 
     funcdef log_save_narrative(LogSaveParams params) returns (boolean log_result) authentication required;
 
+    /*
+        This first version only takes a single UPA as input and attempts to find the report that made it.
+    */
+    typedef structure {
+        string upa;
+    } FindObjectReportParams;
+
+    /*
+        report_upas: the UPAs for the report object. If empty list, then no report is available. But there might be more than one...
+        object_upa: the UPA for the object that this report references. If the originally passed object
+                    was copied, then this will be the source of that copy that has a referencing report.
+        copy_inaccessible: 1 if this object was copied, and the user can't see the source, so no report's available.
+        error: if an error occurred while looking up (found an unavailable copy, or the report is not accessible),
+               this will have a sensible string. More or less. Optional.
+    */
+    typedef structure {
+        list<string> report_upas;
+        string object_upa;
+        boolean copy_inaccessible;
+        string error;
+    } FindObjectReportOutput;
+    /*
+        find_object_report searches for a referencing report. All reports (if made properly) reference the objects
+        that were created at the same time. To find that report, we search back up the reference chain.
+
+        If the object in question was a copy, then there is no referencing report. We might still want to see it,
+        though! If the original object is accessible, we'll continue the search from that object, and mark the
+        associated object UPA in the return value.
+    */
+    funcdef find_object_report(FindObjectReportParams params) returns (FindObjectReportOutput) authentication required;
 };

@@ -4,6 +4,7 @@ from Workspace.WorkspaceClient import Workspace
 from NarrativeService.NarrativeManager import NarrativeManager
 from NarrativeService.DynamicServiceCache import DynamicServiceCache
 from NarrativeService.NarrativeListUtils import NarrativeListUtils, NarratorialUtils
+from NarrativeService.ReportFetcher import ReportFetcher
 #END_HEADER
 
 
@@ -22,9 +23,9 @@ class NarrativeService:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.0.7"
+    VERSION = "0.0.8"
     GIT_URL = "https://github.com/briehl/NarrativeService"
-    GIT_COMMIT_HASH = "0489b972a84475ee9c89f42263abb5ca0de4c67c"
+    GIT_COMMIT_HASH = "c1c5a71e540b47d631dbb10427ab0e8379f72930"
 
     #BEGIN_CLASS_HEADER
     def _nm(self, ctx):
@@ -171,11 +172,11 @@ class NarrativeService:
         :param params: instance of type "CreateNewNarrativeParams" (app -
            name of app (optional, either app or method may be defined) method
            - name of method (optional, either app or method may be defined)
-           appparam - paramters of app/method packed into string in format:
+           appparam - parameters of app/method packed into string in format:
            "step_pos,param_name,param_value(;...)*" (alternative to appData)
            appData - parameters of app/method in unpacked form (alternative
            to appparam) markdown - markdown text for cell of 'markdown' type
-           (optional) copydata - packed inport data in format "import(;...)*"
+           (optional) copydata - packed import data in format "import(;...)*"
            (alternative to importData) importData - import data in unpacked
            form (alternative to copydata) includeIntroCell - if 1, adds an
            introductory markdown cell at the top (optional, default 0) title
@@ -516,6 +517,106 @@ class NarrativeService:
         # At some point might do deeper type checking...
         if not isinstance(returnVal, dict):
             raise ValueError('Method remove_narratorial return value ' +
+                             'returnVal is not type dict as required.')
+        # return the results
+        return [returnVal]
+
+    def log_open_narrative(self, ctx, params):
+        """
+        :param params: instance of type "LogOpenParams" -> structure:
+           parameter "context" of type "LogContext" (Log message context.
+           narr_ref - the Narrative reference (of the form wsid/objid -
+           leaving version off should make lookup/aggregation easier)
+           narr_version - the current version of the narrative (if a
+           save_narrative message, the new version) log_time - timestamp of
+           event in ISO-8601 format level - should be one of INFO, ERROR,
+           WARN (default INFO if not present) (the username is inferred from
+           the auth token)) -> structure: parameter "narr_ref" of String,
+           parameter "narr_version" of Long, parameter "log_time" of type
+           "timestamp" (A time in the format YYYY-MM-DDThh:mm:ssZ, where Z is
+           either the character Z (representing the UTC timezone) or the
+           difference in time to UTC in the format +/-HHMM, eg:
+           2012-12-17T23:24:06-0500 (EST time) 2013-04-03T08:56:32+0000 (UTC
+           time) 2013-04-03T08:56:32Z (UTC time)), parameter "level" of String
+        :returns: instance of type "boolean" (@range [0,1])
+        """
+        # ctx is the context object
+        # return variables are: log_result
+        #BEGIN log_open_narrative
+        #END log_open_narrative
+
+        # At some point might do deeper type checking...
+        if not isinstance(log_result, int):
+            raise ValueError('Method log_open_narrative return value ' +
+                             'log_result is not type int as required.')
+        # return the results
+        return [log_result]
+
+    def log_save_narrative(self, ctx, params):
+        """
+        :param params: instance of type "LogSaveParams" -> structure:
+           parameter "context" of type "LogContext" (Log message context.
+           narr_ref - the Narrative reference (of the form wsid/objid -
+           leaving version off should make lookup/aggregation easier)
+           narr_version - the current version of the narrative (if a
+           save_narrative message, the new version) log_time - timestamp of
+           event in ISO-8601 format level - should be one of INFO, ERROR,
+           WARN (default INFO if not present) (the username is inferred from
+           the auth token)) -> structure: parameter "narr_ref" of String,
+           parameter "narr_version" of Long, parameter "log_time" of type
+           "timestamp" (A time in the format YYYY-MM-DDThh:mm:ssZ, where Z is
+           either the character Z (representing the UTC timezone) or the
+           difference in time to UTC in the format +/-HHMM, eg:
+           2012-12-17T23:24:06-0500 (EST time) 2013-04-03T08:56:32+0000 (UTC
+           time) 2013-04-03T08:56:32Z (UTC time)), parameter "level" of String
+        :returns: instance of type "boolean" (@range [0,1])
+        """
+        # ctx is the context object
+        # return variables are: log_result
+        #BEGIN log_save_narrative
+        #END log_save_narrative
+
+        # At some point might do deeper type checking...
+        if not isinstance(log_result, int):
+            raise ValueError('Method log_save_narrative return value ' +
+                             'log_result is not type int as required.')
+        # return the results
+        return [log_result]
+
+    def find_object_report(self, ctx, params):
+        """
+        find_object_report searches for a referencing report. All reports (if made properly) reference the objects
+        that were created at the same time. To find that report, we search back up the reference chain.
+        If the object in question was a copy, then there is no referencing report. We might still want to see it,
+        though! If the original object is accessible, we'll continue the search from that object, and mark the
+        associated object UPA in the return value.
+        :param params: instance of type "FindObjectReportParams" (This first
+           version only takes a single UPA as input and attempts to find the
+           report that made it.) -> structure: parameter "upa" of String
+        :returns: instance of type "FindObjectReportOutput" (report_upas: the
+           UPAs for the report object. If empty list, then no report is
+           available. But there might be more than one... object_upa: the UPA
+           for the object that this report references. If the originally
+           passed object was copied, then this will be the source of that
+           copy that has a referencing report. copy_inaccessible: 1 if this
+           object was copied, and the user can't see the source, so no
+           report's available. error: if an error occurred while looking up
+           (found an unavailable copy, or the report is not accessible), this
+           will have a sensible string. More or less.) -> structure:
+           parameter "report_upas" of list of String, parameter "object_upa"
+           of String, parameter "copy_inaccessible" of type "boolean" (@range
+           [0,1]), parameter "error" of String
+        """
+        # ctx is the context object
+        # return variables are: returnVal
+        #BEGIN find_object_report
+        report_fetcher = ReportFetcher(self.workspaceURL)
+        returnVal = report_fetcher.find_report_from_object(params['upa'])
+        #END find_object_report
+
+        # At some point might do deeper type checking...
+        if not isinstance(returnVal, dict):
+            raise ValueError('Method find_object_report return value ' +
                              'returnVal is not type dict as required.')
         # return the results
         return [returnVal]
