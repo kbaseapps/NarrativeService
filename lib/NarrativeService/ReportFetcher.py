@@ -32,18 +32,16 @@ class ReportFetcher(object):
         If it's not, return an error state, or just an empty list for the upas.
         """
         obj_data = self.ws_client.get_objects2({'objects': [{'ref': upa}]})['data'][0]
-        if 'copied' in obj_data:
-            if obj_data.get('copy_source_inaccessible', 1) == 0:
-                return self.find_report_from_object(obj_data['copied'])
-            else:
-                err = "No report found. This object is a copy, and its source is inaccessible."
-                return self.build_output(upa, [], inaccessible=1, error=err)
-        else:
-            return self.build_output(upa, [])
+        if obj_data.get('copy_source_inaccessible', 0) == 1:
+            err = "No report found. This object is a copy, and its source is inaccessible."
+            return self.build_output(upa, [], inaccessible=1, error=err)
+        elif 'copied' in obj_data:
+            return self.find_report_from_object(obj_data['copied'])
+        return self.build_output(upa, [])
 
     def build_output(self, upa, report_upas=[], inaccessible=0, error=None):
         retVal = {
-            "report_upa": report_upas,
+            "report_upas": report_upas,
             "object_upa": upa
         }
         if inaccessible != 0:
