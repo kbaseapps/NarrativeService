@@ -367,52 +367,6 @@ class NarrativeService(object):
             'NarrativeService.remove_narratorial',
             [params], self._service_ver, context)
 
-    def log_open_narrative(self, params, context=None):
-        """
-        :param params: instance of type "LogOpenParams" -> structure:
-           parameter "context" of type "LogContext" (Log message context.
-           narr_ref - the Narrative reference (of the form wsid/objid -
-           leaving version off should make lookup/aggregation easier)
-           narr_version - the current version of the narrative (if a
-           save_narrative message, the new version) log_time - timestamp of
-           event in ISO-8601 format level - should be one of INFO, ERROR,
-           WARN (default INFO if not present) (the username is inferred from
-           the auth token)) -> structure: parameter "narr_ref" of String,
-           parameter "narr_version" of Long, parameter "log_time" of type
-           "timestamp" (A time in the format YYYY-MM-DDThh:mm:ssZ, where Z is
-           either the character Z (representing the UTC timezone) or the
-           difference in time to UTC in the format +/-HHMM, eg:
-           2012-12-17T23:24:06-0500 (EST time) 2013-04-03T08:56:32+0000 (UTC
-           time) 2013-04-03T08:56:32Z (UTC time)), parameter "level" of String
-        :returns: instance of type "boolean" (@range [0,1])
-        """
-        return self._client.call_method(
-            'NarrativeService.log_open_narrative',
-            [params], self._service_ver, context)
-
-    def log_save_narrative(self, params, context=None):
-        """
-        :param params: instance of type "LogSaveParams" -> structure:
-           parameter "context" of type "LogContext" (Log message context.
-           narr_ref - the Narrative reference (of the form wsid/objid -
-           leaving version off should make lookup/aggregation easier)
-           narr_version - the current version of the narrative (if a
-           save_narrative message, the new version) log_time - timestamp of
-           event in ISO-8601 format level - should be one of INFO, ERROR,
-           WARN (default INFO if not present) (the username is inferred from
-           the auth token)) -> structure: parameter "narr_ref" of String,
-           parameter "narr_version" of Long, parameter "log_time" of type
-           "timestamp" (A time in the format YYYY-MM-DDThh:mm:ssZ, where Z is
-           either the character Z (representing the UTC timezone) or the
-           difference in time to UTC in the format +/-HHMM, eg:
-           2012-12-17T23:24:06-0500 (EST time) 2013-04-03T08:56:32+0000 (UTC
-           time) 2013-04-03T08:56:32Z (UTC time)), parameter "level" of String
-        :returns: instance of type "boolean" (@range [0,1])
-        """
-        return self._client.call_method(
-            'NarrativeService.log_save_narrative',
-            [params], self._service_ver, context)
-
     def find_object_report(self, params, context=None):
         """
         find_object_report searches for a referencing report. All reports (if made properly) reference the objects
@@ -432,10 +386,10 @@ class NarrativeService(object):
            object was copied, and the user can't see the source, so no
            report's available. error: if an error occurred while looking up
            (found an unavailable copy, or the report is not accessible), this
-           will have a sensible string. More or less.) -> structure:
-           parameter "report_upas" of list of String, parameter "object_upa"
-           of String, parameter "copy_inaccessible" of type "boolean" (@range
-           [0,1]), parameter "error" of String
+           will have a sensible string, more or less. Optional.) ->
+           structure: parameter "report_upas" of list of String, parameter
+           "object_upa" of String, parameter "copy_inaccessible" of type
+           "boolean" (@range [0,1]), parameter "error" of String
         """
         return self._client.call_method(
             'NarrativeService.find_object_report',

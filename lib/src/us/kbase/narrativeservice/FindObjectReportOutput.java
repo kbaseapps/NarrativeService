@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  *             was copied, then this will be the source of that copy that has a referencing report.
  * copy_inaccessible: 1 if this object was copied, and the user can't see the source, so no report's available.
  * error: if an error occurred while looking up (found an unavailable copy, or the report is not accessible),
- *        this will have a sensible string. More or less.
+ *        this will have a sensible string, more or less. Optional.
  * </pre>
  * 
  */

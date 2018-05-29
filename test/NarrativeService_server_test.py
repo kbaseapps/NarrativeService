@@ -24,7 +24,6 @@ from DataPaletteService.DataPaletteServiceClient import DataPaletteService
 from DataPaletteService.authclient import KBaseAuth as _KBaseAuth
 
 
-
 def in_list(wsid, nar_list):
     ''' Helper function to determine if ws with ID is returned from the Narrative listing functions '''
     for nt in nar_list:
@@ -32,9 +31,8 @@ def in_list(wsid, nar_list):
             return True
     return False
 
-@unittest.skip("skipping class")
-class NarrativeServiceTest(unittest.TestCase):
 
+class NarrativeServiceTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         token = environ.get('KB_AUTH_TOKEN', None)

@@ -25,7 +25,7 @@ class NarrativeService:
     ######################################### noqa
     VERSION = "0.0.8"
     GIT_URL = "https://github.com/briehl/NarrativeService"
-    GIT_COMMIT_HASH = "c1c5a71e540b47d631dbb10427ab0e8379f72930"
+    GIT_COMMIT_HASH = "54bdae6c8eb4219b4af1a711c0749ada96d36c1d"
 
     #BEGIN_CLASS_HEADER
     def _nm(self, ctx):
@@ -521,68 +521,6 @@ class NarrativeService:
         # return the results
         return [returnVal]
 
-    def log_open_narrative(self, ctx, params):
-        """
-        :param params: instance of type "LogOpenParams" -> structure:
-           parameter "context" of type "LogContext" (Log message context.
-           narr_ref - the Narrative reference (of the form wsid/objid -
-           leaving version off should make lookup/aggregation easier)
-           narr_version - the current version of the narrative (if a
-           save_narrative message, the new version) log_time - timestamp of
-           event in ISO-8601 format level - should be one of INFO, ERROR,
-           WARN (default INFO if not present) (the username is inferred from
-           the auth token)) -> structure: parameter "narr_ref" of String,
-           parameter "narr_version" of Long, parameter "log_time" of type
-           "timestamp" (A time in the format YYYY-MM-DDThh:mm:ssZ, where Z is
-           either the character Z (representing the UTC timezone) or the
-           difference in time to UTC in the format +/-HHMM, eg:
-           2012-12-17T23:24:06-0500 (EST time) 2013-04-03T08:56:32+0000 (UTC
-           time) 2013-04-03T08:56:32Z (UTC time)), parameter "level" of String
-        :returns: instance of type "boolean" (@range [0,1])
-        """
-        # ctx is the context object
-        # return variables are: log_result
-        #BEGIN log_open_narrative
-        #END log_open_narrative
-
-        # At some point might do deeper type checking...
-        if not isinstance(log_result, int):
-            raise ValueError('Method log_open_narrative return value ' +
-                             'log_result is not type int as required.')
-        # return the results
-        return [log_result]
-
-    def log_save_narrative(self, ctx, params):
-        """
-        :param params: instance of type "LogSaveParams" -> structure:
-           parameter "context" of type "LogContext" (Log message context.
-           narr_ref - the Narrative reference (of the form wsid/objid -
-           leaving version off should make lookup/aggregation easier)
-           narr_version - the current version of the narrative (if a
-           save_narrative message, the new version) log_time - timestamp of
-           event in ISO-8601 format level - should be one of INFO, ERROR,
-           WARN (default INFO if not present) (the username is inferred from
-           the auth token)) -> structure: parameter "narr_ref" of String,
-           parameter "narr_version" of Long, parameter "log_time" of type
-           "timestamp" (A time in the format YYYY-MM-DDThh:mm:ssZ, where Z is
-           either the character Z (representing the UTC timezone) or the
-           difference in time to UTC in the format +/-HHMM, eg:
-           2012-12-17T23:24:06-0500 (EST time) 2013-04-03T08:56:32+0000 (UTC
-           time) 2013-04-03T08:56:32Z (UTC time)), parameter "level" of String
-        :returns: instance of type "boolean" (@range [0,1])
-        """
-        # ctx is the context object
-        # return variables are: log_result
-        #BEGIN log_save_narrative
-        #END log_save_narrative
-
-        # At some point might do deeper type checking...
-        if not isinstance(log_result, int):
-            raise ValueError('Method log_save_narrative return value ' +
-                             'log_result is not type int as required.')
-        # return the results
-        return [log_result]
-
     def find_object_report(self, ctx, params):
         """
         find_object_report searches for a referencing report. All reports (if made properly) reference the objects
@@ -602,10 +540,10 @@ class NarrativeService:
            object was copied, and the user can't see the source, so no
            report's available. error: if an error occurred while looking up
            (found an unavailable copy, or the report is not accessible), this
-           will have a sensible string. More or less.) -> structure:
-           parameter "report_upas" of list of String, parameter "object_upa"
-           of String, parameter "copy_inaccessible" of type "boolean" (@range
-           [0,1]), parameter "error" of String
+           will have a sensible string, more or less. Optional.) ->
+           structure: parameter "report_upas" of list of String, parameter
+           "object_upa" of String, parameter "copy_inaccessible" of type
+           "boolean" (@range [0,1]), parameter "error" of String
         """
         # ctx is the context object
         # return variables are: returnVal
