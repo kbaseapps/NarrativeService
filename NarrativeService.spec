@@ -215,11 +215,11 @@ module NarrativeService {
     /*
         app - name of app (optional, either app or method may be defined)
         method - name of method (optional, either app or method may be defined)
-        appparam - paramters of app/method packed into string in format:
+        appparam - parameters of app/method packed into string in format:
             "step_pos,param_name,param_value(;...)*" (alternative to appData)
         appData - parameters of app/method in unpacked form (alternative to appparam)
         markdown - markdown text for cell of 'markdown' type (optional)
-        copydata - packed inport data in format "import(;...)*" (alternative to importData)
+        copydata - packed import data in format "import(;...)*" (alternative to importData)
         importData - import data in unpacked form (alternative to copydata)
         includeIntroCell - if 1, adds an introductory markdown cell at the top (optional, default 0)
         title - name of the new narrative (optional, if a string besides 'Untitled', this will
@@ -362,5 +362,32 @@ module NarrativeService {
     funcdef remove_narratorial(RemoveNarratorialParams params)
         returns (RemoveNarratorialResult) authentication required;
 
+
+    /*
+        Log message context.
+        narr_ref - the Narrative reference (of the form wsid/objid - leaving version off should make lookup/aggregation easier)
+        narr_version - the current version of the narrative (if a save_narrative message, the new version)
+        log_time - timestamp of event in ISO-8601 format
+        level - should be one of INFO, ERROR, WARN (default INFO if not present)
+        (the username is inferred from the auth token)
+    */
+    typedef structure {
+        string narr_ref;
+        int narr_version;
+        timestamp log_time;
+        string level;
+    } LogContext;
+
+    typedef structure {
+        LogContext context;
+    } LogOpenParams;
+
+    funcdef log_open_narrative(LogOpenParams params) returns (boolean log_result) authentication required;
+
+    typedef structure {
+        LogContext context;
+    } LogSaveParams;
+
+    funcdef log_save_narrative(LogSaveParams params) returns (boolean log_result) authentication required;
 
 };
