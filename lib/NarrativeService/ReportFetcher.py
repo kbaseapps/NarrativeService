@@ -2,8 +2,8 @@ from Workspace.WorkspaceClient import Workspace
 from NarrativeService.ServiceUtils import ServiceUtils
 
 class ReportFetcher(object):
-    def __init__(self, ws_url):
-        self.ws_client = Workspace(url=ws_url)
+    def __init__(self, ws_client):
+        self.ws_client = ws_client
 
     def find_report_from_object(self, upa):
         #TODO:

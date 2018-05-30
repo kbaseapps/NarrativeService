@@ -548,7 +548,7 @@ class NarrativeService:
         # ctx is the context object
         # return variables are: returnVal
         #BEGIN find_object_report
-        report_fetcher = ReportFetcher(self.workspaceURL)
+        report_fetcher = ReportFetcher(Workspace(self.workspaceURL, token=ctx["token"]))
         returnVal = report_fetcher.find_report_from_object(params['upa'])
         #END find_object_report
 
