@@ -4,6 +4,7 @@ from Workspace.WorkspaceClient import Workspace
 from NarrativeService.NarrativeManager import NarrativeManager
 from NarrativeService.DynamicServiceCache import DynamicServiceCache
 from NarrativeService.NarrativeListUtils import NarrativeListUtils, NarratorialUtils
+from NarrativeService.ReportFetcher import ReportFetcher
 #END_HEADER
 
 
@@ -22,9 +23,9 @@ class NarrativeService:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.0.7"
+    VERSION = "0.0.8"
     GIT_URL = "https://github.com/briehl/NarrativeService"
-    GIT_COMMIT_HASH = "0489b972a84475ee9c89f42263abb5ca0de4c67c"
+    GIT_COMMIT_HASH = "54bdae6c8eb4219b4af1a711c0749ada96d36c1d"
 
     #BEGIN_CLASS_HEADER
     def _nm(self, ctx):
@@ -171,11 +172,11 @@ class NarrativeService:
         :param params: instance of type "CreateNewNarrativeParams" (app -
            name of app (optional, either app or method may be defined) method
            - name of method (optional, either app or method may be defined)
-           appparam - paramters of app/method packed into string in format:
+           appparam - parameters of app/method packed into string in format:
            "step_pos,param_name,param_value(;...)*" (alternative to appData)
            appData - parameters of app/method in unpacked form (alternative
            to appparam) markdown - markdown text for cell of 'markdown' type
-           (optional) copydata - packed inport data in format "import(;...)*"
+           (optional) copydata - packed import data in format "import(;...)*"
            (alternative to importData) importData - import data in unpacked
            form (alternative to copydata) includeIntroCell - if 1, adds an
            introductory markdown cell at the top (optional, default 0) title
@@ -516,6 +517,44 @@ class NarrativeService:
         # At some point might do deeper type checking...
         if not isinstance(returnVal, dict):
             raise ValueError('Method remove_narratorial return value ' +
+                             'returnVal is not type dict as required.')
+        # return the results
+        return [returnVal]
+
+    def find_object_report(self, ctx, params):
+        """
+        find_object_report searches for a referencing report. All reports (if made properly) reference the objects
+        that were created at the same time. To find that report, we search back up the reference chain.
+        If the object in question was a copy, then there is no referencing report. We might still want to see it,
+        though! If the original object is accessible, we'll continue the search from that object, and mark the
+        associated object UPA in the return value.
+        :param params: instance of type "FindObjectReportParams" (This first
+           version only takes a single UPA as input and attempts to find the
+           report that made it.) -> structure: parameter "upa" of String
+        :returns: instance of type "FindObjectReportOutput" (report_upas: the
+           UPAs for the report object. If empty list, then no report is
+           available. But there might be more than one... object_upa: the UPA
+           for the object that this report references. If the originally
+           passed object was copied, then this will be the source of that
+           copy that has a referencing report. copy_inaccessible: 1 if this
+           object was copied, and the user can't see the source, so no
+           report's available. error: if an error occurred while looking up
+           (found an unavailable copy, or the report is not accessible), this
+           will have a sensible string, more or less. Optional.) ->
+           structure: parameter "report_upas" of list of String, parameter
+           "object_upa" of String, parameter "copy_inaccessible" of type
+           "boolean" (@range [0,1]), parameter "error" of String
+        """
+        # ctx is the context object
+        # return variables are: returnVal
+        #BEGIN find_object_report
+        report_fetcher = ReportFetcher(self.workspaceURL)
+        returnVal = report_fetcher.find_report_from_object(params['upa'])
+        #END find_object_report
+
+        # At some point might do deeper type checking...
+        if not isinstance(returnVal, dict):
+            raise ValueError('Method find_object_report return value ' +
                              'returnVal is not type dict as required.')
         # return the results
         return [returnVal]

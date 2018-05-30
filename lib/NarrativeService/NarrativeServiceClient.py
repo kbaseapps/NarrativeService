@@ -125,11 +125,11 @@ class NarrativeService(object):
         :param params: instance of type "CreateNewNarrativeParams" (app -
            name of app (optional, either app or method may be defined) method
            - name of method (optional, either app or method may be defined)
-           appparam - paramters of app/method packed into string in format:
+           appparam - parameters of app/method packed into string in format:
            "step_pos,param_name,param_value(;...)*" (alternative to appData)
            appData - parameters of app/method in unpacked form (alternative
            to appparam) markdown - markdown text for cell of 'markdown' type
-           (optional) copydata - packed inport data in format "import(;...)*"
+           (optional) copydata - packed import data in format "import(;...)*"
            (alternative to importData) importData - import data in unpacked
            form (alternative to copydata) includeIntroCell - if 1, adds an
            introductory markdown cell at the top (optional, default 0) title
@@ -365,6 +365,34 @@ class NarrativeService(object):
         """
         return self._client.call_method(
             'NarrativeService.remove_narratorial',
+            [params], self._service_ver, context)
+
+    def find_object_report(self, params, context=None):
+        """
+        find_object_report searches for a referencing report. All reports (if made properly) reference the objects
+        that were created at the same time. To find that report, we search back up the reference chain.
+        If the object in question was a copy, then there is no referencing report. We might still want to see it,
+        though! If the original object is accessible, we'll continue the search from that object, and mark the
+        associated object UPA in the return value.
+        :param params: instance of type "FindObjectReportParams" (This first
+           version only takes a single UPA as input and attempts to find the
+           report that made it.) -> structure: parameter "upa" of String
+        :returns: instance of type "FindObjectReportOutput" (report_upas: the
+           UPAs for the report object. If empty list, then no report is
+           available. But there might be more than one... object_upa: the UPA
+           for the object that this report references. If the originally
+           passed object was copied, then this will be the source of that
+           copy that has a referencing report. copy_inaccessible: 1 if this
+           object was copied, and the user can't see the source, so no
+           report's available. error: if an error occurred while looking up
+           (found an unavailable copy, or the report is not accessible), this
+           will have a sensible string, more or less. Optional.) ->
+           structure: parameter "report_upas" of list of String, parameter
+           "object_upa" of String, parameter "copy_inaccessible" of type
+           "boolean" (@range [0,1]), parameter "error" of String
+        """
+        return self._client.call_method(
+            'NarrativeService.find_object_report',
             [params], self._service_ver, context)
 
     def status(self, context=None):

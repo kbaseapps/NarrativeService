@@ -18,11 +18,11 @@ import us.kbase.common.service.Tuple3;
  * <pre>
  * app - name of app (optional, either app or method may be defined)
  * method - name of method (optional, either app or method may be defined)
- * appparam - paramters of app/method packed into string in format:
+ * appparam - parameters of app/method packed into string in format:
  *     "step_pos,param_name,param_value(;...)*" (alternative to appData)
  * appData - parameters of app/method in unpacked form (alternative to appparam)
  * markdown - markdown text for cell of 'markdown' type (optional)
- * copydata - packed inport data in format "import(;...)*" (alternative to importData)
+ * copydata - packed import data in format "import(;...)*" (alternative to importData)
  * importData - import data in unpacked form (alternative to copydata)
  * includeIntroCell - if 1, adds an introductory markdown cell at the top (optional, default 0)
  * title - name of the new narrative (optional, if a string besides 'Untitled', this will
