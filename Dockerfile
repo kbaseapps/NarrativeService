@@ -1,4 +1,4 @@
-FROM kbase/kbase:sdkbase.latest
+FROM kbase/kbase:sdkbase2.latest
 MAINTAINER KBase Developer
 # -----------------------------------------
 
@@ -6,14 +6,6 @@ MAINTAINER KBase Developer
 # any required dependencies for your module.
 
 RUN pip install coverage
-
-# update security libraries in the base image
-RUN pip install cffi --upgrade \
-    && pip install pyopenssl --upgrade \
-    && pip install ndg-httpsclient --upgrade \
-    && pip install pyasn1 --upgrade \
-    && pip install requests --upgrade \
-    && pip install 'requests[security]' --upgrade
 
 # -----------------------------------------
 
