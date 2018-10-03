@@ -257,8 +257,15 @@ class NarrativeServiceTest(unittest.TestCase):
         copy_nar_id = ret['newNarId']
         try:
             copy_nar = ws.get_objects([{'ref': str(copy_ws_id) + '/' + str(copy_nar_id)}])[0]
+            copy_ws_info = ws.get_workspace_info({'id': copy_ws_id})
             #print("Copy object: " + json.dumps(copy_nar, indent=4, sort_keys=True))
             copy_nar_data = copy_nar['data']
+
+            self.assertEqual(copy_ws_info[8]['searchtags'], 'narrative')
+            self.assertEqual(copy_ws_info[8]['cell_count'], str(len(copy_nar_data['cells'])))
+            self.assertEqual(copy_ws_info[8]['narrative'], str(copy_nar['info'][0]))
+            self.assertEqual(copy_ws_info[8]['narrative_nice_name'], copy_nar_data['metadata']['name'])
+
             # This is weird, so ws_name is the same as for old narrative:
             self.assertEqual(ws_name, copy_nar_data['metadata']['kbase']['ws_name'])
             # And here is proper new ws_name:
@@ -535,6 +542,8 @@ class NarrativeServiceTest(unittest.TestCase):
             self.assertEqual(ws_meta['is_temporary'], 'false')
             self.assertEqual(ws_meta['narrative'], str(ret['narrativeInfo']['id']))
             self.assertEqual(ws_meta['narrative_nice_name'], title)
+            self.assertEqual(ws_meta['searchtags'], 'narrative')
+            self.assertEqual(ws_meta['cell_count'], '1')
 
             self.assertIn('narrativeInfo', ret)
             info = ret['narrativeInfo']
@@ -555,6 +564,10 @@ class NarrativeServiceTest(unittest.TestCase):
             cells = narr_obj['data']['cells']
             self.assertTrue(len(cells) > 0)
             self.assertEqual(str(cells[0]['source']), str(intro_text))
+            ws_info = ws.get_workspace_info({'id': narr_obj['info'][6]})
+            self.assertEqual(ws_info[8]['searchtags'], 'narrative')
+            self.assertEqual(ws_info[8]['narrative'], str(narr_obj['info'][0]))
+            self.assertEqual(ws_info[8]['cell_count'], str(len(cells)))
         finally:
             new_ws_id = narr_info['workspaceInfo']['id']
             ws.delete_workspace({'id': new_ws_id})
