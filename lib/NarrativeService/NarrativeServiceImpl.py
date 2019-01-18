@@ -5,6 +5,7 @@ from NarrativeService.NarrativeManager import NarrativeManager
 from NarrativeService.DynamicServiceCache import DynamicServiceCache
 from NarrativeService.NarrativeListUtils import NarrativeListUtils, NarratorialUtils
 from NarrativeService.ReportFetcher import ReportFetcher
+from NarrativeService.sharing.sharemanager import ShareRequester
 #END_HEADER
 
 
@@ -23,9 +24,9 @@ class NarrativeService:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.0.8"
+    VERSION = "0.0.9"
     GIT_URL = "https://github.com/briehl/NarrativeService"
-    GIT_COMMIT_HASH = "54bdae6c8eb4219b4af1a711c0749ada96d36c1d"
+    GIT_COMMIT_HASH = "4a703588c98d2f013d483efca81b10194bfb0a8e"
 
     #BEGIN_CLASS_HEADER
     def _nm(self, ctx):
@@ -555,6 +556,37 @@ class NarrativeService:
         # At some point might do deeper type checking...
         if not isinstance(returnVal, dict):
             raise ValueError('Method find_object_report return value ' +
+                             'returnVal is not type dict as required.')
+        # return the results
+        return [returnVal]
+
+    def request_narrative_share(self, ctx, params):
+        """
+        This sends a notification to the admins of a workspace (or anyone with share privileges) that a
+        user would like access to it.
+        If a request has already been made, this will fail and return with the string "a request has already been made"
+        :param params: instance of type "RequestNarrativeShareInput" (ws_id:
+           The workspace id containing the narrative to share share_level:
+           The level of sharing requested - one of "r" (read), "w" (write),
+           "a" (admin) user: The user to be shared with) -> structure:
+           parameter "ws_id" of Long, parameter "share_level" of String,
+           parameter "user" of String
+        :returns: instance of type "RequestNarrativeShareOutput" (ok: 0 if
+           the request failed, 1 if the request succeeded. error (optional):
+           if a failure happened during the request, this has a reason why.
+           Not present if it succeeded.) -> structure: parameter "ok" of type
+           "boolean" (@range [0,1]), parameter "error" of String
+        """
+        # ctx is the context object
+        # return variables are: returnVal
+        #BEGIN request_narrative_share
+        sm = ShareRequester(params)
+        returnVal = sm.request_share()
+        #END request_narrative_share
+
+        # At some point might do deeper type checking...
+        if not isinstance(returnVal, dict):
+            raise ValueError('Method request_narrative_share return value ' +
                              'returnVal is not type dict as required.')
         # return the results
         return [returnVal]

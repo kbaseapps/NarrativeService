@@ -373,6 +373,10 @@ class Application(object):
                              name='NarrativeService.find_object_report',
                              types=[dict])
         self.method_authentication['NarrativeService.find_object_report'] = 'required'  # noqa
+        self.rpc_service.add(impl_NarrativeService.request_narrative_share,
+                             name='NarrativeService.request_narrative_share',
+                             types=[dict])
+        self.method_authentication['NarrativeService.request_narrative_share'] = 'required'  # noqa
         self.rpc_service.add(impl_NarrativeService.status,
                              name='NarrativeService.status',
                              types=[dict])

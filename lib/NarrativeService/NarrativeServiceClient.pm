@@ -1323,6 +1323,107 @@ associated object UPA in the return value.
     }
 }
  
+
+
+=head2 request_narrative_share
+
+  $return = $obj->request_narrative_share($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a NarrativeService.RequestNarrativeShareInput
+$return is a NarrativeService.RequestNarrativeShareOutput
+RequestNarrativeShareInput is a reference to a hash where the following keys are defined:
+	ws_id has a value which is an int
+	share_level has a value which is a string
+	user has a value which is a string
+RequestNarrativeShareOutput is a reference to a hash where the following keys are defined:
+	ok has a value which is a NarrativeService.boolean
+	error has a value which is a string
+boolean is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a NarrativeService.RequestNarrativeShareInput
+$return is a NarrativeService.RequestNarrativeShareOutput
+RequestNarrativeShareInput is a reference to a hash where the following keys are defined:
+	ws_id has a value which is an int
+	share_level has a value which is a string
+	user has a value which is a string
+RequestNarrativeShareOutput is a reference to a hash where the following keys are defined:
+	ok has a value which is a NarrativeService.boolean
+	error has a value which is a string
+boolean is an int
+
+
+=end text
+
+=item Description
+
+This sends a notification to the admins of a workspace (or anyone with share privileges) that a
+user would like access to it.
+
+If a request has already been made, this will fail and return with the string "a request has already been made"
+
+=back
+
+=cut
+
+ sub request_narrative_share
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function request_narrative_share (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to request_narrative_share:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'request_narrative_share');
+	}
+    }
+
+    my $url = $self->{url};
+    my $result = $self->{client}->call($url, $self->{headers}, {
+	    method => "NarrativeService.request_narrative_share",
+	    params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'request_narrative_share',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method request_narrative_share",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'request_narrative_share',
+				       );
+    }
+}
+ 
   
 sub status
 {
@@ -1366,16 +1467,16 @@ sub version {
             Bio::KBase::Exceptions::JSONRPC->throw(
                 error => $result->error_message,
                 code => $result->content->{code},
-                method_name => 'find_object_report',
+                method_name => 'request_narrative_share',
             );
         } else {
             return wantarray ? @{$result->result} : $result->result->[0];
         }
     } else {
         Bio::KBase::Exceptions::HTTP->throw(
-            error => "Error invoking method find_object_report",
+            error => "Error invoking method request_narrative_share",
             status_line => $self->{client}->status_line,
-            method_name => 'find_object_report',
+            method_name => 'request_narrative_share',
         );
     }
 }
@@ -2763,6 +2864,85 @@ a reference to a hash where the following keys are defined:
 report_upas has a value which is a reference to a list where each element is a string
 object_upa has a value which is a string
 copy_inaccessible has a value which is a NarrativeService.boolean
+error has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 RequestNarrativeShareInput
+
+=over 4
+
+
+
+=item Description
+
+ws_id: The workspace id containing the narrative to share
+share_level: The level of sharing requested - one of "r" (read), "w" (write), "a" (admin)
+user: The user to be shared with
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+ws_id has a value which is an int
+share_level has a value which is a string
+user has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+ws_id has a value which is an int
+share_level has a value which is a string
+user has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 RequestNarrativeShareOutput
+
+=over 4
+
+
+
+=item Description
+
+ok: 0 if the request failed, 1 if the request succeeded.
+error (optional): if a failure happened during the request, this has a reason why. Not present if it succeeded.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+ok has a value which is a NarrativeService.boolean
+error has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+ok has a value which is a NarrativeService.boolean
 error has a value which is a string
 
 

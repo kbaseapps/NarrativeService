@@ -395,6 +395,27 @@ class NarrativeService(object):
             'NarrativeService.find_object_report',
             [params], self._service_ver, context)
 
+    def request_narrative_share(self, params, context=None):
+        """
+        This sends a notification to the admins of a workspace (or anyone with share privileges) that a
+        user would like access to it.
+        If a request has already been made, this will fail and return with the string "a request has already been made"
+        :param params: instance of type "RequestNarrativeShareInput" (ws_id:
+           The workspace id containing the narrative to share share_level:
+           The level of sharing requested - one of "r" (read), "w" (write),
+           "a" (admin) user: The user to be shared with) -> structure:
+           parameter "ws_id" of Long, parameter "share_level" of String,
+           parameter "user" of String
+        :returns: instance of type "RequestNarrativeShareOutput" (ok: 0 if
+           the request failed, 1 if the request succeeded. error (optional):
+           if a failure happened during the request, this has a reason why.
+           Not present if it succeeded.) -> structure: parameter "ok" of type
+           "boolean" (@range [0,1]), parameter "error" of String
+        """
+        return self._client.call_method(
+            'NarrativeService.request_narrative_share',
+            [params], self._service_ver, context)
+
     def status(self, context=None):
         return self._client.call_method('NarrativeService.status',
                                         [], self._service_ver, context)

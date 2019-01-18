@@ -342,6 +342,26 @@ public class NarrativeServiceClient {
         return res.get(0);
     }
 
+    /**
+     * <p>Original spec-file function name: request_narrative_share</p>
+     * <pre>
+     * This sends a notification to the admins of a workspace (or anyone with share privileges) that a
+     * user would like access to it.
+     * If a request has already been made, this will fail and return with the string "a request has already been made"
+     * </pre>
+     * @param   params   instance of type {@link us.kbase.narrativeservice.RequestNarrativeShareInput RequestNarrativeShareInput}
+     * @return   instance of type {@link us.kbase.narrativeservice.RequestNarrativeShareOutput RequestNarrativeShareOutput}
+     * @throws IOException if an IO exception occurs
+     * @throws JsonClientException if a JSON RPC exception occurs
+     */
+    public RequestNarrativeShareOutput requestNarrativeShare(RequestNarrativeShareInput params, RpcContext... jsonRpcContext) throws IOException, JsonClientException {
+        List<Object> args = new ArrayList<Object>();
+        args.add(params);
+        TypeReference<List<RequestNarrativeShareOutput>> retType = new TypeReference<List<RequestNarrativeShareOutput>>() {};
+        List<RequestNarrativeShareOutput> res = caller.jsonrpcCall("NarrativeService.request_narrative_share", args, retType, true, true, jsonRpcContext, this.serviceVersion);
+        return res.get(0);
+    }
+
     public Map<String, Object> status(RpcContext... jsonRpcContext) throws IOException, JsonClientException {
         List<Object> args = new ArrayList<Object>();
         TypeReference<List<Map<String, Object>>> retType = new TypeReference<List<Map<String, Object>>>() {};
