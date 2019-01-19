@@ -1,8 +1,12 @@
 import requests
 
+
+SERVICE_NAME = "narrativeservice"
+
 def make_notification(note, feeds_url, auth_token):
     # calls the feeds service
     try:
+        note["source"] = SERVICE_NAME
         headers = {"Authorization": auth_token}
         r = requests.post("feeds_url" + "/api/V1/notification", json=note, headers=headers)
         r.raise_for_status()

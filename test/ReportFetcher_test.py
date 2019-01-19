@@ -13,6 +13,7 @@ from KBaseReport.KBaseReportClient import KBaseReport
 from FakeObjectsForTests.FakeObjectsForTestsClient import FakeObjectsForTests
 
 
+@unittest.skip('skip')
 class ReportFetcherTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

@@ -22,7 +22,7 @@ from DataPaletteService.authclient import KBaseAuth as _KBaseAuth
 
 from NarrativeService.NarrativeListUtils import NarrativeInfoCache, NarratorialUtils, NarrativeListUtils
 
-
+@unittest.skip('skip')
 class NarrativeListUtilsTest(unittest.TestCase):
 
     @classmethod

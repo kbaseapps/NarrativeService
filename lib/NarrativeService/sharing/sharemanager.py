@@ -1,11 +1,13 @@
-from feeds import make_notification
-from util.workspace import get_ws_admins
+import NarrativeService.feeds as feeds
+import NarrativeService.util.workspace as ws
 from uuid import uuid4
-from storage.mongo import (
-    save_share_request,
-    find_existing_share_request
-)
-
+# from storage.mongo import (
+#     save_share_request,
+#     find_existing_share_request
+# )
+import os
+SERVICE_TOKEN_KEY = "service-token"
+WS_TOKEN = "ws-admin-token"
 
 class ShareRequester(object):
     def __init__(self, params, config):
@@ -22,17 +24,28 @@ class ShareRequester(object):
         share_level - the requested sharing level
         user - the user to be shared with (not necessarily the user requesting the share)
         """
-        ret_value = {"ok": True}
-        # Check if request has been made
-        existing = find_existing_share_request(self.ws_id, self.user, self.level)
-        if existing is not None:
-            ret_value = {
-                "ok": False,
-                "error": "A request has already been made"
+        service_token = self.config.get(SERVICE_TOKEN_KEY)
+        if service_token is None:
+            return {
+                "ok": 0,
+                "error": "Unable to request share - NarrativeService is missing authorization."
             }
-            return ret_value
+
+        ret_value = {
+            "ok": 1
+        }
+        # Check if request has been made
+
+        # existing = find_existing_share_request(self.ws_id, self.user, self.level)
+        # if existing is not None:
+        #     ret_value = {
+        #         "ok": 0,
+        #         "error": "A request has already been made"
+        #     }
+        #     return ret_value
+
         # Make the request by firing a notification
-        requestees = get_ws_admins(self.ws_id, self.config['workspace-url'])
+        requestees = ws.get_ws_admins(self.ws_id, self.config['workspace-url'], self.config[WS_TOKEN])
         note = {
             "actor": {
                 "type": "user",
@@ -48,13 +61,18 @@ class ShareRequester(object):
             },
             "users": [{"id": u, "type": "user"} for u in requestees + [self.user]]
         }
-        note_id = make_notification(note, self.config['feeds-url'], self.config['auth-token'])
+
+        note_id = feeds.make_notification(note, self.config['feeds-url'], service_token)
 
         # Store that we made the request, uh, somewhere
-        save_share_request(self.ws_id, self.user, self.level, note_id)
+        # save_share_request(self.ws_id, self.user, self.level, note_id)
+        return ret_value
 
     def validate_request_params(self, params):
         reqd = ['ws_id', 'share_level', 'user']
         for r in reqd:
-            if r not in params or params[r] is not None:
+            if r not in params or params[r] is None:
                 raise ValueError('Missing required parameter "{}"'.format(r))
+        level = params["share_level"]
+        if level not in ["a", "w", "r"]:
+            raise ValueError("Invalid share level: {}. Should be one of a, n, r.".format(level))
