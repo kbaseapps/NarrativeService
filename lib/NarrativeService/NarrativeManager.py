@@ -36,7 +36,6 @@ class NarrativeManager:
         # We switch DPs on only for internal Continuous Integration environment for now:
         if config['kbase-endpoint'].startswith("https://ci.kbase.us/") or \
            'USE_DP' in os.environ:
-                print "Using Data Palletes"
                 self.DATA_PALETTES_TYPES = DataPaletteTypes(True)
 
     def list_objects_with_sets(self, ws_id=None, ws_name=None, workspaces=None,
@@ -158,7 +157,10 @@ class NarrativeManager:
         time_ms = int(round(time.time() * 1000))
         newWsName = self.user_id + ':narrative_' + str(time_ms)
         # add the 'narrative' field to newWsMeta later.
-        newWsMeta = {"narrative_nice_name": newName}
+        newWsMeta = {
+            "narrative_nice_name": newName,
+            "searchtags": "narrative"
+        }
 
         # start with getting the existing narrative object.
         currentNarrative = self.ws.get_objects([{'ref': workspaceRef}])[0]
@@ -186,8 +188,12 @@ class NarrativeManager:
                                                 '/' + str(info[4])})
                 excluded_list.append({'objid': info[0]})
         # clone the workspace EXCEPT for currentNarrative object + obejcts of DataPalette types:
-        newWsId = self.ws.clone_workspace({'wsi': {'id': workspaceId}, 'workspace': newWsName,
-                                           'meta': newWsMeta, 'exclude': excluded_list})[0]
+        newWsId = self.ws.clone_workspace({
+            'wsi': {'id': workspaceId},
+            'workspace': newWsName,
+            'meta': newWsMeta,
+            'exclude': excluded_list
+        })[0]
         try:
             if dp_detected:
                 self.dps_cache.call_method("copy_palette", [{'from_workspace': str(workspaceId),
@@ -228,6 +234,11 @@ class NarrativeManager:
                                                  'meta': newNarMetadata}]})
             # now, just update the workspace metadata to point
             # to the new narrative object
+
+            if 'worksheets' in currentNarrative['data']:  # handle legacy.
+                num_cells = len(currentNarrative['data']['worksheets'][0]['cells'])
+            else:
+                num_cells = len(currentNarrative['data']['cells'])
             newNarId = newNarInfo[0][0]
             self.ws.alter_workspace_metadata({
                 'wsi': {
@@ -235,7 +246,8 @@ class NarrativeManager:
                 },
                 'new': {
                     'narrative': str(newNarId),
-                    'is_temporary': is_temporary
+                    'is_temporary': is_temporary,
+                    'cell_count': str(num_cells)
                 }
             })
             return {'newWsId': newWsId, 'newNarId': newNarId}
@@ -312,7 +324,8 @@ class NarrativeManager:
                                                    'hidden': 0}]})[0]
         objectInfo = ServiceUtils.objectInfoToObject(objectInfo)
         ws_info = self._completeNewNarrative(ws_info[0], objectInfo['id'],
-                                             importData, is_temporary, title)
+                                             importData, is_temporary, title,
+                                             len(narrativeObject['cells']))
         return {
             'workspaceInfo': ServiceUtils.workspaceInfoToObject(ws_info),
             'narrativeInfo': objectInfo
@@ -444,14 +457,16 @@ class NarrativeManager:
         cell['metadata'][self.KB_CELL] = cellInfo;
         return cell
 
-    def _completeNewNarrative(self, workspaceId, objectId, importData, is_temporary, title):
+    def _completeNewNarrative(self, workspaceId, objectId, importData, is_temporary, title, num_cells):
         """
         'Completes' the new narrative by updating workspace metadata with the required fields and
         copying in data from the importData list of references.
         """
         new_meta = {
             'narrative': str(objectId),
-            'is_temporary': is_temporary
+            'is_temporary': is_temporary,
+            'searchtags': 'narrative',
+            'cell_count': str(num_cells)
         }
         if is_temporary == 'false' and title is not None:
             new_meta['narrative_nice_name'] = title

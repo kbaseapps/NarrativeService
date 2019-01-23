@@ -392,4 +392,32 @@ module NarrativeService {
         associated object UPA in the return value.
     */
     funcdef find_object_report(FindObjectReportParams params) returns (FindObjectReportOutput) authentication required;
+
+    /*
+        ws_id: The workspace id containing the narrative to share
+        share_level: The level of sharing requested - one of "r" (read), "w" (write), "a" (admin)
+        user: The user to be shared with
+    */
+    typedef structure {
+        int ws_id;
+        string share_level;
+        string user;
+    } RequestNarrativeShareInput;
+
+    /*
+        ok: 0 if the request failed, 1 if the request succeeded.
+        error (optional): if a failure happened during the request, this has a reason why. Not present if it succeeded.
+    */
+    typedef structure {
+        boolean ok;
+        string error;
+    } RequestNarrativeShareOutput;
+
+    /*
+        This sends a notification to the admins of a workspace (or anyone with share privileges) that a
+        user would like access to it.
+
+        If a request has already been made, this will fail and return with the string "a request has already been made"
+    */
+    funcdef request_narrative_share(RequestNarrativeShareInput params) returns (RequestNarrativeShareOutput) authentication required;
 };
