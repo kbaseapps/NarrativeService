@@ -36,7 +36,6 @@ class NarrativeManager:
         # We switch DPs on only for internal Continuous Integration environment for now:
         if config['kbase-endpoint'].startswith("https://ci.kbase.us/") or \
            'USE_DP' in os.environ:
-                print "Using Data Palletes"
                 self.DATA_PALETTES_TYPES = DataPaletteTypes(True)
 
     def list_objects_with_sets(self, ws_id=None, ws_name=None, workspaces=None,

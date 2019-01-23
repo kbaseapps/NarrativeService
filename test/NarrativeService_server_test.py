@@ -31,7 +31,6 @@ def in_list(wsid, nar_list):
             return True
     return False
 
-@unittest.skip('skip')
 class NarrativeServiceTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -580,6 +579,7 @@ class NarrativeServiceTest(unittest.TestCase):
         ret = self.getImpl().copy_object(self.getContext(), {'ref': import_ref,
                                                              'target_ws_name': ws_name})
         self.assertEqual(example_ws, ret[0]['info']['ws'])
+        target_name = ret[0]['info']['name']
         # Let's check that we see reads copy in list_objects_with_sets
         ret = self.getImpl().list_objects_with_sets(self.getContext(),
                                                     {"ws_name": ws_name})[0]["data"]
@@ -592,10 +592,12 @@ class NarrativeServiceTest(unittest.TestCase):
         self.assertTrue(found)
         # Genome
         import_ref = self.__class__.example_reads_ref
-        target_name = "MyReads.1"
+        # target_name = "MyReads.1"
+        # ret = self.getImpl().copy_object(self.getContext(), {'ref': import_ref,
+        #                                                      'target_ws_name': ws_name,
+        #                                                      'target_name': target_name})
         ret = self.getImpl().copy_object(self.getContext(), {'ref': import_ref,
-                                                             'target_ws_name': ws_name,
-                                                             'target_name': target_name})
+                                                             'target_ws_name': ws_name})
         self.assertEqual(target_name, ret[0]['info']['name'])
 
 
@@ -660,10 +662,10 @@ class NarrativeServiceTest(unittest.TestCase):
         # Create original workspace with reads object + ReadsSet object
         ws_name1 = self.createWs()
         foft = FakeObjectsForTests(os.environ['SDK_CALLBACK_URL'])
-        reads_obj_name = "test.reads.1"
+        reads_obj_name = "testreads1"
         foft.create_fake_reads({'ws_name': ws_name1, 'obj_names': [reads_obj_name]})
         reads_obj_ref = ws_name1 + '/' + reads_obj_name
-        set_obj_name = "test.reads_set.1"
+        set_obj_name = "testreads_set1"
         sapi = SetAPI(self.__class__.serviceWizardURL, token=self.getContext()['token'],
                       service_ver=self.__class__.SetAPI_version)
         sapi.save_reads_set_v1({'workspace': ws_name1, 'output_object_name': set_obj_name,
@@ -731,7 +733,6 @@ class NarrativeServiceTest(unittest.TestCase):
         # User2 is still able to access reads object
         info = self.getWsClient2().get_object_info_new({'objects': [{'ref': reads_ref_path}]})[0]
         self.assertEqual(item['object_info'][1], info[1])
-        self.getWsClient().undelete_workspace({'workspace': ws_name1})
 
 
     def test_two_users_dp_inside_set(self):

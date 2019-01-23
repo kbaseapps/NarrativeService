@@ -11,7 +11,6 @@ def get_ws_admins(ws_id, ws_url, admin_token):
     })
 
     admins = list()
-    print("PERMISSIONS FROM ADMINISTER: {}".format(perms))
     for u in perms:
         if perms[u] == "a":
             admins.append(u)

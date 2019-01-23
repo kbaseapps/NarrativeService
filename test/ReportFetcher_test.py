@@ -13,7 +13,6 @@ from KBaseReport.KBaseReportClient import KBaseReport
 from FakeObjectsForTests.FakeObjectsForTestsClient import FakeObjectsForTests
 
 
-@unittest.skip('skip')
 class ReportFetcherTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -80,7 +79,7 @@ class ReportFetcherTestCase(unittest.TestCase):
             "message": "dummy report for testing",
             "objects_created": [{
                 "ref": ref_obj,
-                "descriptions": "dummy reads lib"
+                "description": "dummy reads lib"
             }],
             "direct_html_link_index": 0,
             "report_object_name": "NarrativeServiceTest_report_" + str(int(time.time() * 1000)),

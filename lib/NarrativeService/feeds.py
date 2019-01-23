@@ -5,11 +5,9 @@ SERVICE_NAME = "narrativeservice"
 
 def make_notification(note, feeds_url, auth_token):
     # calls the feeds service
-    try:
-        note["source"] = SERVICE_NAME
-        headers = {"Authorization": auth_token}
-        r = requests.post("feeds_url" + "/api/V1/notification", json=note, headers=headers)
-        r.raise_for_status()
-        return r.json()["id"]
-    except requests.HTTPError as e:
-        raise RuntimeError("Unable to create notification: {}".format(str(e)))
+    note["source"] = SERVICE_NAME
+    headers = {"Authorization": auth_token}
+    r = requests.post("feeds_url" + "/api/V1/notification", json=note, headers=headers)
+    if r.status_code != requests.codes.ok:
+        raise RuntimeError("Unable to create notification: {}".format(r.text))
+    return r.json()["id"]
