@@ -580,7 +580,7 @@ class NarrativeService:
         # ctx is the context object
         # return variables are: returnVal
         #BEGIN request_narrative_share
-        sm = ShareRequester(params, self.config)
+        sm = ShareRequester(params)
         returnVal = sm.request_share()
         #END request_narrative_share
 
