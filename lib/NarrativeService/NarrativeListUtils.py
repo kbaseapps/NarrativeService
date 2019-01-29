@@ -56,7 +56,7 @@ class NarrativeInfoCache(object):
     def _search_cache(self, ws_lookup_table):
         items = []  # =[{'ws': [...], 'nar': [...]}, ...]
         missed = []  # =[ws_info1, ws_info2, ... ]
-        for ws_info in ws_lookup_table.itervalues():
+        for ws_info in ws_lookup_table.values():
             key = self._get_cache_key(ws_info)
             if key in self.cache:
                 items.append({'ws': ws_info, 'nar': self.cache[key]})

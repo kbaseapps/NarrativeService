@@ -1,16 +1,14 @@
-import unittest
 import os
 import time
-try:
-    from ConfigParser import ConfigParser  # py2
-except:
-    from configparser import ConfigParser  # py3
-from DataPaletteService.authclient import KBaseAuth as _KBaseAuth
-from NarrativeService.NarrativeServiceServer import MethodContext
-from Workspace.WorkspaceClient import Workspace
+import unittest
+from configparser import ConfigParser
+
 from NarrativeService.NarrativeServiceImpl import NarrativeService
-from KBaseReport.KBaseReportClient import KBaseReport
-from FakeObjectsForTests.FakeObjectsForTestsClient import FakeObjectsForTests
+from NarrativeService.NarrativeServiceServer import MethodContext
+from installed_clients.FakeObjectsForTestsClient import FakeObjectsForTests
+from installed_clients.KBaseReportClient import KBaseReport
+from installed_clients.WorkspaceClient import Workspace
+from installed_clients.authclient import KBaseAuth as _KBaseAuth
 
 
 class ReportFetcherTestCase(unittest.TestCase):

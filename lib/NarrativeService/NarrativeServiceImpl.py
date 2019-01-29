@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #BEGIN_HEADER
-from Workspace.WorkspaceClient import Workspace
-from NarrativeService.NarrativeManager import NarrativeManager
 from NarrativeService.DynamicServiceCache import DynamicServiceCache
 from NarrativeService.NarrativeListUtils import NarrativeListUtils, NarratorialUtils
+from NarrativeService.NarrativeManager import NarrativeManager
 from NarrativeService.ReportFetcher import ReportFetcher
 from NarrativeService.sharing.sharemanager import ShareRequester
+from installed_clients.WorkspaceClient import Workspace
 #END_HEADER
 
 
@@ -24,9 +24,9 @@ class NarrativeService:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.0.9"
-    GIT_URL = "https://github.com/briehl/NarrativeService"
-    GIT_COMMIT_HASH = "4a703588c98d2f013d483efca81b10194bfb0a8e"
+    VERSION = "0.0.11"
+    GIT_URL = "https://github.com/kbaseapps/NarrativeService.git"
+    GIT_COMMIT_HASH = "d0b26f7feeb707326e395b2377ce6e29c4c369d8"
 
     #BEGIN_CLASS_HEADER
     def _nm(self, ctx):

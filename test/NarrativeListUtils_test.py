@@ -1,26 +1,17 @@
 # -*- coding: utf-8 -*-
-import unittest
-import os  # noqa: F401
-import json  # noqa: F401
 import time
-import requests
-import StringIO
-
+import unittest
+from configparser import ConfigParser
 from os import environ
-from NarrativeService.NarrativeManager import NarrativeManager
-try:
-    from ConfigParser import ConfigParser  # py2
-except:
-    from configparser import ConfigParser  # py3
+from pprint import pprint
 
-from pprint import pprint  # noqa: F401
-
-from Workspace.WorkspaceClient import Workspace
+from NarrativeService.NarrativeListUtils import NarrativeInfoCache, NarratorialUtils, \
+    NarrativeListUtils
 from NarrativeService.NarrativeServiceImpl import NarrativeService
 from NarrativeService.NarrativeServiceServer import MethodContext
-from DataPaletteService.authclient import KBaseAuth as _KBaseAuth
+from installed_clients.WorkspaceClient import Workspace
+from installed_clients.authclient import KBaseAuth as _KBaseAuth
 
-from NarrativeService.NarrativeListUtils import NarrativeInfoCache, NarratorialUtils, NarrativeListUtils
 
 class NarrativeListUtilsTest(unittest.TestCase):
 
@@ -75,7 +66,7 @@ class NarrativeListUtilsTest(unittest.TestCase):
                 ws_lookup_table[ws_info[0]] = ws_info
 
         nic = NarrativeInfoCache(5000)
-        self.assertEquals(nic.check_cache_size(), 0)
+        self.assertEqual(nic.check_cache_size(), 0)
         t1 = time.time()
         nic.get_info_list(ws_lookup_table, self.wsClient)
         t2 = time.time()
@@ -84,7 +75,7 @@ class NarrativeListUtilsTest(unittest.TestCase):
         t4 = time.time()
         self.assertTrue(nic.check_cache_size() > 0)
         pprint(nic.clear_cache())
-        self.assertEquals(nic.check_cache_size(), 0)
+        self.assertEqual(nic.check_cache_size(), 0)
 
         wsName = "test_NarrativeService_CacheTest_" + str(int(time.time() * 1000))
         ws_info = self.wsClient.create_workspace({'workspace': wsName})
@@ -132,7 +123,7 @@ class NarrativeListUtilsTest(unittest.TestCase):
             self.assertTrue(int(nt['ws'][8]['narrative']), nt['nar'][0])
             if wsid == nt['ws'][0]:
                 found = True
-                self.assertEquals('some narratorial', nt['ws'][8]['narratorial_description'])
+                self.assertEqual('some narratorial', nt['ws'][8]['narratorial_description'])
 
         self.assertTrue(found)
 

@@ -12,7 +12,7 @@ from __future__ import print_function
 try:
     # baseclient and this client are in a package
     from .baseclient import BaseClient as _BaseClient  # @UnusedImport
-except:
+except ImportError:
     # no they aren't
     from baseclient import BaseClient as _BaseClient  # @Reimport
 
@@ -23,7 +23,7 @@ class NarrativeMethodStore(object):
             self, url=None, timeout=30 * 60, user_id=None,
             password=None, token=None, ignore_authrc=False,
             trust_all_ssl_certificates=False,
-            auth_svc='https://kbase.us/services/authorization/Sessions/Login'):
+            auth_svc='https://ci.kbase.us/services/auth/api/legacy/KBase/Sessions/Login'):
         if url is None:
             raise ValueError('A url is required')
         self._service_ver = None
@@ -38,9 +38,8 @@ class NarrativeMethodStore(object):
         Returns the current running version of the NarrativeMethodStore.
         :returns: instance of String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.ver',
-            [], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.ver',
+                                        [], self._service_ver, context)
 
     def status(self, context=None):
         """
@@ -51,9 +50,8 @@ class NarrativeMethodStore(object):
            parameter "git_spec_commit" of String, parameter "update_interval"
            of String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.status',
-            [], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.status',
+                                        [], self._service_ver, context)
 
     def list_categories(self, params, context=None):
         """
@@ -105,9 +103,8 @@ class NarrativeMethodStore(object):
            String to String, parameter "landing_page_url_prefix" of String,
            parameter "loading_error" of String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.list_categories',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.list_categories',
+                                        [params], self._service_ver, context)
 
     def get_category(self, params, context=None):
         """
@@ -119,9 +116,8 @@ class NarrativeMethodStore(object):
            String, parameter "parent_ids" of list of String, parameter
            "loading_error" of String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.get_category',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.get_category',
+                                        [params], self._service_ver, context)
 
     def list_methods(self, params, context=None):
         """
@@ -148,9 +144,8 @@ class NarrativeMethodStore(object):
            list of String, parameter "output_types" of list of String,
            parameter "app_type" of String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.list_methods',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.list_methods',
+                                        [params], self._service_ver, context)
 
     def list_methods_full_info(self, params, context=None):
         """
@@ -190,9 +185,8 @@ class NarrativeMethodStore(object):
            structure: parameter "pmid" of String, parameter "display_text" of
            String, parameter "link" of type "url"
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.list_methods_full_info',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.list_methods_full_info',
+                                        [params], self._service_ver, context)
 
     def list_methods_spec(self, params, context=None):
         """
@@ -351,40 +345,43 @@ class NarrativeMethodStore(object):
            parameter "parameter_groups" of list of type
            "MethodParameterGroup" (Description of a method parameter. id - id
            of the parameter group, must be unique within the method among all
-           parameters and groups parameter_ids - IDs of parameters included
-           in this group ui_name - short name that is displayed to the user
+           parameters and groups, parameter_ids - IDs of parameters included
+           in this group, ui_name - short name that is displayed to the user,
            short_hint - short phrase or sentence describing the parameter
-           group description - longer and more technical description of the
-           parameter group (long-hint) allow_mutiple - allows entry of a list
-           instead of a single structure, default is 0 if set, the number of
-           starting boxes will be either 1 or the number of elements in the
-           default_values list optional - set to true to make the group
-           optional, default is 0 id_mapping - optional mapping for parameter
-           IDs used to pack group into resulting value structure (not used
-           for non-multiple groups) with_border - flag for one-copy groups
-           saying to show these group with border @optional id_mapping) ->
-           structure: parameter "id" of String, parameter "parameter_ids" of
-           list of String, parameter "ui_name" of String, parameter
-           "short_hint" of String, parameter "description" of String,
-           parameter "allow_multiple" of type "boolean" (@range [0,1]),
-           parameter "optional" of type "boolean" (@range [0,1]), parameter
-           "id_mapping" of mapping from String to String, parameter
-           "with_border" of type "boolean" (@range [0,1]), parameter
-           "behavior" of type "MethodBehavior" (Determines how the method is
-           handled when run. kb_service_name - name of service which will be
-           part of fully qualified method name, optional field (in case it's
-           not defined developer should enter fully qualified name with dot
-           into 'kb_service_method'. kb_service_version - optional git commit
-           hash defining version of repo registered dynamically.
-           kb_service_input_mapping - mapping from input parameters to input
-           service method arguments. kb_service_output_mapping - mapping from
-           output of service method to final output of narrative method.
-           output_mapping - mapping from input to final output of narrative
-           method to support steps without back-end operations. @optional
-           kb_service_name kb_service_method kb_service_input_mapping
-           kb_service_output_mapping) -> structure: parameter
-           "kb_service_url" of String, parameter "kb_service_name" of String,
-           parameter "kb_service_version" of String, parameter
+           group, description - longer and more technical description of the
+           parameter group (long-hint), allow_mutiple - allows entry of a
+           list instead of a single structure, default is 0 if set, the
+           number of starting boxes will be either 1 or the number of
+           elements in the default_values list, optional - set to true to
+           make the group optional, default is 0, advanced - set to true to
+           make this an advanced option, default is 0 if an option is
+           advanced, it should also be optional or have a default value,
+           id_mapping - optional mapping for parameter IDs used to pack group
+           into resulting value structure (not used for non-multiple groups),
+           with_border - flag for one-copy groups saying to show these group
+           with border. @optional id_mapping) -> structure: parameter "id" of
+           String, parameter "parameter_ids" of list of String, parameter
+           "ui_name" of String, parameter "short_hint" of String, parameter
+           "description" of String, parameter "allow_multiple" of type
+           "boolean" (@range [0,1]), parameter "optional" of type "boolean"
+           (@range [0,1]), parameter "advanced" of type "boolean" (@range
+           [0,1]), parameter "id_mapping" of mapping from String to String,
+           parameter "with_border" of type "boolean" (@range [0,1]),
+           parameter "behavior" of type "MethodBehavior" (Determines how the
+           method is handled when run. kb_service_name - name of service
+           which will be part of fully qualified method name, optional field
+           (in case it's not defined developer should enter fully qualified
+           name with dot into 'kb_service_method'. kb_service_version -
+           optional git commit hash defining version of repo registered
+           dynamically. kb_service_input_mapping - mapping from input
+           parameters to input service method arguments.
+           kb_service_output_mapping - mapping from output of service method
+           to final output of narrative method. output_mapping - mapping from
+           input to final output of narrative method to support steps without
+           back-end operations. @optional kb_service_name kb_service_method
+           kb_service_input_mapping kb_service_output_mapping) -> structure:
+           parameter "kb_service_url" of String, parameter "kb_service_name"
+           of String, parameter "kb_service_version" of String, parameter
            "kb_service_method" of String, parameter
            "kb_service_input_mapping" of list of type
            "ServiceMethodInputMapping" (input_parameter - parameter_id, if
@@ -458,9 +455,8 @@ class NarrativeMethodStore(object):
            "target_property" of String, parameter "target_type_transform" of
            String, parameter "job_id_output_field" of String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.list_methods_spec',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.list_methods_spec',
+                                        [params], self._service_ver, context)
 
     def list_method_ids_and_names(self, params, context=None):
         """
@@ -469,9 +465,8 @@ class NarrativeMethodStore(object):
            'release').) -> structure: parameter "tag" of String
         :returns: instance of mapping from String to String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.list_method_ids_and_names',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.list_method_ids_and_names',
+                                        [params], self._service_ver, context)
 
     def list_apps(self, params, context=None):
         """
@@ -490,9 +485,8 @@ class NarrativeMethodStore(object):
            parameter "categories" of list of String, parameter
            "loading_error" of String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.list_apps',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.list_apps',
+                                        [params], self._service_ver, context)
 
     def list_apps_full_info(self, params, context=None):
         """
@@ -518,9 +512,8 @@ class NarrativeMethodStore(object):
            parameter "screenshots" of list of type "ScreenShot" -> structure:
            parameter "url" of type "url"
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.list_apps_full_info',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.list_apps_full_info',
+                                        [params], self._service_ver, context)
 
     def list_apps_spec(self, params, context=None):
         """
@@ -558,17 +551,15 @@ class NarrativeMethodStore(object):
            [0,1]), parameter "from" of String, parameter "to" of String,
            parameter "description" of String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.list_apps_spec',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.list_apps_spec',
+                                        [params], self._service_ver, context)
 
     def list_app_ids_and_names(self, context=None):
         """
         :returns: instance of mapping from String to String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.list_app_ids_and_names',
-            [], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.list_app_ids_and_names',
+                                        [], self._service_ver, context)
 
     def list_types(self, params, context=None):
         """
@@ -592,9 +583,8 @@ class NarrativeMethodStore(object):
            "landing_page_url_prefix" of String, parameter "loading_error" of
            String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.list_types',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.list_types',
+                                        [params], self._service_ver, context)
 
     def get_method_brief_info(self, params, context=None):
         """
@@ -618,9 +608,8 @@ class NarrativeMethodStore(object):
            list of String, parameter "output_types" of list of String,
            parameter "app_type" of String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.get_method_brief_info',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.get_method_brief_info',
+                                        [params], self._service_ver, context)
 
     def get_method_full_info(self, params, context=None):
         """
@@ -657,9 +646,8 @@ class NarrativeMethodStore(object):
            structure: parameter "pmid" of String, parameter "display_text" of
            String, parameter "link" of type "url"
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.get_method_full_info',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.get_method_full_info',
+                                        [params], self._service_ver, context)
 
     def get_method_spec(self, params, context=None):
         """
@@ -815,40 +803,43 @@ class NarrativeMethodStore(object):
            parameter "parameter_groups" of list of type
            "MethodParameterGroup" (Description of a method parameter. id - id
            of the parameter group, must be unique within the method among all
-           parameters and groups parameter_ids - IDs of parameters included
-           in this group ui_name - short name that is displayed to the user
+           parameters and groups, parameter_ids - IDs of parameters included
+           in this group, ui_name - short name that is displayed to the user,
            short_hint - short phrase or sentence describing the parameter
-           group description - longer and more technical description of the
-           parameter group (long-hint) allow_mutiple - allows entry of a list
-           instead of a single structure, default is 0 if set, the number of
-           starting boxes will be either 1 or the number of elements in the
-           default_values list optional - set to true to make the group
-           optional, default is 0 id_mapping - optional mapping for parameter
-           IDs used to pack group into resulting value structure (not used
-           for non-multiple groups) with_border - flag for one-copy groups
-           saying to show these group with border @optional id_mapping) ->
-           structure: parameter "id" of String, parameter "parameter_ids" of
-           list of String, parameter "ui_name" of String, parameter
-           "short_hint" of String, parameter "description" of String,
-           parameter "allow_multiple" of type "boolean" (@range [0,1]),
-           parameter "optional" of type "boolean" (@range [0,1]), parameter
-           "id_mapping" of mapping from String to String, parameter
-           "with_border" of type "boolean" (@range [0,1]), parameter
-           "behavior" of type "MethodBehavior" (Determines how the method is
-           handled when run. kb_service_name - name of service which will be
-           part of fully qualified method name, optional field (in case it's
-           not defined developer should enter fully qualified name with dot
-           into 'kb_service_method'. kb_service_version - optional git commit
-           hash defining version of repo registered dynamically.
-           kb_service_input_mapping - mapping from input parameters to input
-           service method arguments. kb_service_output_mapping - mapping from
-           output of service method to final output of narrative method.
-           output_mapping - mapping from input to final output of narrative
-           method to support steps without back-end operations. @optional
-           kb_service_name kb_service_method kb_service_input_mapping
-           kb_service_output_mapping) -> structure: parameter
-           "kb_service_url" of String, parameter "kb_service_name" of String,
-           parameter "kb_service_version" of String, parameter
+           group, description - longer and more technical description of the
+           parameter group (long-hint), allow_mutiple - allows entry of a
+           list instead of a single structure, default is 0 if set, the
+           number of starting boxes will be either 1 or the number of
+           elements in the default_values list, optional - set to true to
+           make the group optional, default is 0, advanced - set to true to
+           make this an advanced option, default is 0 if an option is
+           advanced, it should also be optional or have a default value,
+           id_mapping - optional mapping for parameter IDs used to pack group
+           into resulting value structure (not used for non-multiple groups),
+           with_border - flag for one-copy groups saying to show these group
+           with border. @optional id_mapping) -> structure: parameter "id" of
+           String, parameter "parameter_ids" of list of String, parameter
+           "ui_name" of String, parameter "short_hint" of String, parameter
+           "description" of String, parameter "allow_multiple" of type
+           "boolean" (@range [0,1]), parameter "optional" of type "boolean"
+           (@range [0,1]), parameter "advanced" of type "boolean" (@range
+           [0,1]), parameter "id_mapping" of mapping from String to String,
+           parameter "with_border" of type "boolean" (@range [0,1]),
+           parameter "behavior" of type "MethodBehavior" (Determines how the
+           method is handled when run. kb_service_name - name of service
+           which will be part of fully qualified method name, optional field
+           (in case it's not defined developer should enter fully qualified
+           name with dot into 'kb_service_method'. kb_service_version -
+           optional git commit hash defining version of repo registered
+           dynamically. kb_service_input_mapping - mapping from input
+           parameters to input service method arguments.
+           kb_service_output_mapping - mapping from output of service method
+           to final output of narrative method. output_mapping - mapping from
+           input to final output of narrative method to support steps without
+           back-end operations. @optional kb_service_name kb_service_method
+           kb_service_input_mapping kb_service_output_mapping) -> structure:
+           parameter "kb_service_url" of String, parameter "kb_service_name"
+           of String, parameter "kb_service_version" of String, parameter
            "kb_service_method" of String, parameter
            "kb_service_input_mapping" of list of type
            "ServiceMethodInputMapping" (input_parameter - parameter_id, if
@@ -922,9 +913,8 @@ class NarrativeMethodStore(object):
            "target_property" of String, parameter "target_type_transform" of
            String, parameter "job_id_output_field" of String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.get_method_spec',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.get_method_spec',
+                                        [params], self._service_ver, context)
 
     def get_app_brief_info(self, params, context=None):
         """
@@ -938,9 +928,8 @@ class NarrativeMethodStore(object):
            parameter "categories" of list of String, parameter
            "loading_error" of String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.get_app_brief_info',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.get_app_brief_info',
+                                        [params], self._service_ver, context)
 
     def get_app_full_info(self, params, context=None):
         """
@@ -961,9 +950,8 @@ class NarrativeMethodStore(object):
            parameter "screenshots" of list of type "ScreenShot" -> structure:
            parameter "url" of type "url"
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.get_app_full_info',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.get_app_full_info',
+                                        [params], self._service_ver, context)
 
     def get_app_spec(self, params, context=None):
         """
@@ -996,9 +984,8 @@ class NarrativeMethodStore(object):
            [0,1]), parameter "from" of String, parameter "to" of String,
            parameter "description" of String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.get_app_spec',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.get_app_spec',
+                                        [params], self._service_ver, context)
 
     def get_type_info(self, params, context=None):
         """
@@ -1017,16 +1004,17 @@ class NarrativeMethodStore(object):
            "landing_page_url_prefix" of String, parameter "loading_error" of
            String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.get_type_info',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.get_type_info',
+                                        [params], self._service_ver, context)
 
     def validate_method(self, params, context=None):
         """
-        :param params: instance of type "ValidateMethodParams" -> structure:
-           parameter "id" of String, parameter "spec_json" of String,
-           parameter "display_yaml" of String, parameter "extra_files" of
-           mapping from String to String
+        :param params: instance of type "ValidateMethodParams" (verbose -
+           flag for adding more details into error messages (like stack
+           traces).) -> structure: parameter "id" of String, parameter
+           "spec_json" of String, parameter "display_yaml" of String,
+           parameter "extra_files" of mapping from String to String,
+           parameter "verbose" of type "boolean" (@range [0,1])
         :returns: instance of type "ValidationResults" -> structure:
            parameter "is_valid" of type "boolean" (@range [0,1]), parameter
            "errors" of list of String, parameter "warnings" of list of
@@ -1245,40 +1233,43 @@ class NarrativeMethodStore(object):
            parameter "parameter_groups" of list of type
            "MethodParameterGroup" (Description of a method parameter. id - id
            of the parameter group, must be unique within the method among all
-           parameters and groups parameter_ids - IDs of parameters included
-           in this group ui_name - short name that is displayed to the user
+           parameters and groups, parameter_ids - IDs of parameters included
+           in this group, ui_name - short name that is displayed to the user,
            short_hint - short phrase or sentence describing the parameter
-           group description - longer and more technical description of the
-           parameter group (long-hint) allow_mutiple - allows entry of a list
-           instead of a single structure, default is 0 if set, the number of
-           starting boxes will be either 1 or the number of elements in the
-           default_values list optional - set to true to make the group
-           optional, default is 0 id_mapping - optional mapping for parameter
-           IDs used to pack group into resulting value structure (not used
-           for non-multiple groups) with_border - flag for one-copy groups
-           saying to show these group with border @optional id_mapping) ->
-           structure: parameter "id" of String, parameter "parameter_ids" of
-           list of String, parameter "ui_name" of String, parameter
-           "short_hint" of String, parameter "description" of String,
-           parameter "allow_multiple" of type "boolean" (@range [0,1]),
-           parameter "optional" of type "boolean" (@range [0,1]), parameter
-           "id_mapping" of mapping from String to String, parameter
-           "with_border" of type "boolean" (@range [0,1]), parameter
-           "behavior" of type "MethodBehavior" (Determines how the method is
-           handled when run. kb_service_name - name of service which will be
-           part of fully qualified method name, optional field (in case it's
-           not defined developer should enter fully qualified name with dot
-           into 'kb_service_method'. kb_service_version - optional git commit
-           hash defining version of repo registered dynamically.
-           kb_service_input_mapping - mapping from input parameters to input
-           service method arguments. kb_service_output_mapping - mapping from
-           output of service method to final output of narrative method.
-           output_mapping - mapping from input to final output of narrative
-           method to support steps without back-end operations. @optional
-           kb_service_name kb_service_method kb_service_input_mapping
-           kb_service_output_mapping) -> structure: parameter
-           "kb_service_url" of String, parameter "kb_service_name" of String,
-           parameter "kb_service_version" of String, parameter
+           group, description - longer and more technical description of the
+           parameter group (long-hint), allow_mutiple - allows entry of a
+           list instead of a single structure, default is 0 if set, the
+           number of starting boxes will be either 1 or the number of
+           elements in the default_values list, optional - set to true to
+           make the group optional, default is 0, advanced - set to true to
+           make this an advanced option, default is 0 if an option is
+           advanced, it should also be optional or have a default value,
+           id_mapping - optional mapping for parameter IDs used to pack group
+           into resulting value structure (not used for non-multiple groups),
+           with_border - flag for one-copy groups saying to show these group
+           with border. @optional id_mapping) -> structure: parameter "id" of
+           String, parameter "parameter_ids" of list of String, parameter
+           "ui_name" of String, parameter "short_hint" of String, parameter
+           "description" of String, parameter "allow_multiple" of type
+           "boolean" (@range [0,1]), parameter "optional" of type "boolean"
+           (@range [0,1]), parameter "advanced" of type "boolean" (@range
+           [0,1]), parameter "id_mapping" of mapping from String to String,
+           parameter "with_border" of type "boolean" (@range [0,1]),
+           parameter "behavior" of type "MethodBehavior" (Determines how the
+           method is handled when run. kb_service_name - name of service
+           which will be part of fully qualified method name, optional field
+           (in case it's not defined developer should enter fully qualified
+           name with dot into 'kb_service_method'. kb_service_version -
+           optional git commit hash defining version of repo registered
+           dynamically. kb_service_input_mapping - mapping from input
+           parameters to input service method arguments.
+           kb_service_output_mapping - mapping from output of service method
+           to final output of narrative method. output_mapping - mapping from
+           input to final output of narrative method to support steps without
+           back-end operations. @optional kb_service_name kb_service_method
+           kb_service_input_mapping kb_service_output_mapping) -> structure:
+           parameter "kb_service_url" of String, parameter "kb_service_name"
+           of String, parameter "kb_service_version" of String, parameter
            "kb_service_method" of String, parameter
            "kb_service_input_mapping" of list of type
            "ServiceMethodInputMapping" (input_parameter - parameter_id, if
@@ -1364,9 +1355,8 @@ class NarrativeMethodStore(object):
            "landing_page_url_prefix" of String, parameter "loading_error" of
            String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.validate_method',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.validate_method',
+                                        [params], self._service_ver, context)
 
     def validate_app(self, params, context=None):
         """
@@ -1592,40 +1582,43 @@ class NarrativeMethodStore(object):
            parameter "parameter_groups" of list of type
            "MethodParameterGroup" (Description of a method parameter. id - id
            of the parameter group, must be unique within the method among all
-           parameters and groups parameter_ids - IDs of parameters included
-           in this group ui_name - short name that is displayed to the user
+           parameters and groups, parameter_ids - IDs of parameters included
+           in this group, ui_name - short name that is displayed to the user,
            short_hint - short phrase or sentence describing the parameter
-           group description - longer and more technical description of the
-           parameter group (long-hint) allow_mutiple - allows entry of a list
-           instead of a single structure, default is 0 if set, the number of
-           starting boxes will be either 1 or the number of elements in the
-           default_values list optional - set to true to make the group
-           optional, default is 0 id_mapping - optional mapping for parameter
-           IDs used to pack group into resulting value structure (not used
-           for non-multiple groups) with_border - flag for one-copy groups
-           saying to show these group with border @optional id_mapping) ->
-           structure: parameter "id" of String, parameter "parameter_ids" of
-           list of String, parameter "ui_name" of String, parameter
-           "short_hint" of String, parameter "description" of String,
-           parameter "allow_multiple" of type "boolean" (@range [0,1]),
-           parameter "optional" of type "boolean" (@range [0,1]), parameter
-           "id_mapping" of mapping from String to String, parameter
-           "with_border" of type "boolean" (@range [0,1]), parameter
-           "behavior" of type "MethodBehavior" (Determines how the method is
-           handled when run. kb_service_name - name of service which will be
-           part of fully qualified method name, optional field (in case it's
-           not defined developer should enter fully qualified name with dot
-           into 'kb_service_method'. kb_service_version - optional git commit
-           hash defining version of repo registered dynamically.
-           kb_service_input_mapping - mapping from input parameters to input
-           service method arguments. kb_service_output_mapping - mapping from
-           output of service method to final output of narrative method.
-           output_mapping - mapping from input to final output of narrative
-           method to support steps without back-end operations. @optional
-           kb_service_name kb_service_method kb_service_input_mapping
-           kb_service_output_mapping) -> structure: parameter
-           "kb_service_url" of String, parameter "kb_service_name" of String,
-           parameter "kb_service_version" of String, parameter
+           group, description - longer and more technical description of the
+           parameter group (long-hint), allow_mutiple - allows entry of a
+           list instead of a single structure, default is 0 if set, the
+           number of starting boxes will be either 1 or the number of
+           elements in the default_values list, optional - set to true to
+           make the group optional, default is 0, advanced - set to true to
+           make this an advanced option, default is 0 if an option is
+           advanced, it should also be optional or have a default value,
+           id_mapping - optional mapping for parameter IDs used to pack group
+           into resulting value structure (not used for non-multiple groups),
+           with_border - flag for one-copy groups saying to show these group
+           with border. @optional id_mapping) -> structure: parameter "id" of
+           String, parameter "parameter_ids" of list of String, parameter
+           "ui_name" of String, parameter "short_hint" of String, parameter
+           "description" of String, parameter "allow_multiple" of type
+           "boolean" (@range [0,1]), parameter "optional" of type "boolean"
+           (@range [0,1]), parameter "advanced" of type "boolean" (@range
+           [0,1]), parameter "id_mapping" of mapping from String to String,
+           parameter "with_border" of type "boolean" (@range [0,1]),
+           parameter "behavior" of type "MethodBehavior" (Determines how the
+           method is handled when run. kb_service_name - name of service
+           which will be part of fully qualified method name, optional field
+           (in case it's not defined developer should enter fully qualified
+           name with dot into 'kb_service_method'. kb_service_version -
+           optional git commit hash defining version of repo registered
+           dynamically. kb_service_input_mapping - mapping from input
+           parameters to input service method arguments.
+           kb_service_output_mapping - mapping from output of service method
+           to final output of narrative method. output_mapping - mapping from
+           input to final output of narrative method to support steps without
+           back-end operations. @optional kb_service_name kb_service_method
+           kb_service_input_mapping kb_service_output_mapping) -> structure:
+           parameter "kb_service_url" of String, parameter "kb_service_name"
+           of String, parameter "kb_service_version" of String, parameter
            "kb_service_method" of String, parameter
            "kb_service_input_mapping" of list of type
            "ServiceMethodInputMapping" (input_parameter - parameter_id, if
@@ -1711,9 +1704,8 @@ class NarrativeMethodStore(object):
            "landing_page_url_prefix" of String, parameter "loading_error" of
            String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.validate_app',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.validate_app',
+                                        [params], self._service_ver, context)
 
     def validate_type(self, params, context=None):
         """
@@ -1939,40 +1931,43 @@ class NarrativeMethodStore(object):
            parameter "parameter_groups" of list of type
            "MethodParameterGroup" (Description of a method parameter. id - id
            of the parameter group, must be unique within the method among all
-           parameters and groups parameter_ids - IDs of parameters included
-           in this group ui_name - short name that is displayed to the user
+           parameters and groups, parameter_ids - IDs of parameters included
+           in this group, ui_name - short name that is displayed to the user,
            short_hint - short phrase or sentence describing the parameter
-           group description - longer and more technical description of the
-           parameter group (long-hint) allow_mutiple - allows entry of a list
-           instead of a single structure, default is 0 if set, the number of
-           starting boxes will be either 1 or the number of elements in the
-           default_values list optional - set to true to make the group
-           optional, default is 0 id_mapping - optional mapping for parameter
-           IDs used to pack group into resulting value structure (not used
-           for non-multiple groups) with_border - flag for one-copy groups
-           saying to show these group with border @optional id_mapping) ->
-           structure: parameter "id" of String, parameter "parameter_ids" of
-           list of String, parameter "ui_name" of String, parameter
-           "short_hint" of String, parameter "description" of String,
-           parameter "allow_multiple" of type "boolean" (@range [0,1]),
-           parameter "optional" of type "boolean" (@range [0,1]), parameter
-           "id_mapping" of mapping from String to String, parameter
-           "with_border" of type "boolean" (@range [0,1]), parameter
-           "behavior" of type "MethodBehavior" (Determines how the method is
-           handled when run. kb_service_name - name of service which will be
-           part of fully qualified method name, optional field (in case it's
-           not defined developer should enter fully qualified name with dot
-           into 'kb_service_method'. kb_service_version - optional git commit
-           hash defining version of repo registered dynamically.
-           kb_service_input_mapping - mapping from input parameters to input
-           service method arguments. kb_service_output_mapping - mapping from
-           output of service method to final output of narrative method.
-           output_mapping - mapping from input to final output of narrative
-           method to support steps without back-end operations. @optional
-           kb_service_name kb_service_method kb_service_input_mapping
-           kb_service_output_mapping) -> structure: parameter
-           "kb_service_url" of String, parameter "kb_service_name" of String,
-           parameter "kb_service_version" of String, parameter
+           group, description - longer and more technical description of the
+           parameter group (long-hint), allow_mutiple - allows entry of a
+           list instead of a single structure, default is 0 if set, the
+           number of starting boxes will be either 1 or the number of
+           elements in the default_values list, optional - set to true to
+           make the group optional, default is 0, advanced - set to true to
+           make this an advanced option, default is 0 if an option is
+           advanced, it should also be optional or have a default value,
+           id_mapping - optional mapping for parameter IDs used to pack group
+           into resulting value structure (not used for non-multiple groups),
+           with_border - flag for one-copy groups saying to show these group
+           with border. @optional id_mapping) -> structure: parameter "id" of
+           String, parameter "parameter_ids" of list of String, parameter
+           "ui_name" of String, parameter "short_hint" of String, parameter
+           "description" of String, parameter "allow_multiple" of type
+           "boolean" (@range [0,1]), parameter "optional" of type "boolean"
+           (@range [0,1]), parameter "advanced" of type "boolean" (@range
+           [0,1]), parameter "id_mapping" of mapping from String to String,
+           parameter "with_border" of type "boolean" (@range [0,1]),
+           parameter "behavior" of type "MethodBehavior" (Determines how the
+           method is handled when run. kb_service_name - name of service
+           which will be part of fully qualified method name, optional field
+           (in case it's not defined developer should enter fully qualified
+           name with dot into 'kb_service_method'. kb_service_version -
+           optional git commit hash defining version of repo registered
+           dynamically. kb_service_input_mapping - mapping from input
+           parameters to input service method arguments.
+           kb_service_output_mapping - mapping from output of service method
+           to final output of narrative method. output_mapping - mapping from
+           input to final output of narrative method to support steps without
+           back-end operations. @optional kb_service_name kb_service_method
+           kb_service_input_mapping kb_service_output_mapping) -> structure:
+           parameter "kb_service_url" of String, parameter "kb_service_name"
+           of String, parameter "kb_service_version" of String, parameter
            "kb_service_method" of String, parameter
            "kb_service_input_mapping" of list of type
            "ServiceMethodInputMapping" (input_parameter - parameter_id, if
@@ -2058,9 +2053,8 @@ class NarrativeMethodStore(object):
            "landing_page_url_prefix" of String, parameter "loading_error" of
            String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.validate_type',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.validate_type',
+                                        [params], self._service_ver, context)
 
     def load_widget_java_script(self, params, context=None):
         """
@@ -2075,9 +2069,8 @@ class NarrativeMethodStore(object):
            parameter "tag" of String
         :returns: instance of String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.load_widget_java_script',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.load_widget_java_script',
+                                        [params], self._service_ver, context)
 
     def register_repo(self, params, context=None):
         """
@@ -2086,27 +2079,24 @@ class NarrativeMethodStore(object):
            ******************************) -> structure: parameter "git_url"
            of String, parameter "git_commit_hash" of String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.register_repo',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.register_repo',
+                                        [params], self._service_ver, context)
 
     def disable_repo(self, params, context=None):
         """
         :param params: instance of type "DisableRepoParams" -> structure:
            parameter "module_name" of String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.disable_repo',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.disable_repo',
+                                        [params], self._service_ver, context)
 
     def enable_repo(self, params, context=None):
         """
         :param params: instance of type "EnableRepoParams" -> structure:
            parameter "module_name" of String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.enable_repo',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.enable_repo',
+                                        [params], self._service_ver, context)
 
     def push_repo_to_tag(self, params, context=None):
         """
@@ -2114,6 +2104,5 @@ class NarrativeMethodStore(object):
            two values: 'beta' or 'release'.) -> structure: parameter
            "module_name" of String, parameter "tag" of String
         """
-        return self._client.call_method(
-            'NarrativeMethodStore.push_repo_to_tag',
-            [params], self._service_ver, context)
+        return self._client.call_method('NarrativeMethodStore.push_repo_to_tag',
+                                        [params], self._service_ver, context)

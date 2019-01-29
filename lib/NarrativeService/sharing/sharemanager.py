@@ -1,13 +1,13 @@
 import NarrativeService.feeds as feeds
 import NarrativeService.util.workspace as ws
-from uuid import uuid4
+
 # from storage.mongo import (
 #     save_share_request,
 #     find_existing_share_request
 # )
-import os
 SERVICE_TOKEN_KEY = "service-token"
 WS_TOKEN = "ws-admin-token"
+
 
 class ShareRequester(object):
     def __init__(self, params, config):

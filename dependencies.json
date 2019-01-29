@@ -1,5 +1,25 @@
 [ {
+  "module_name" : "DataPaletteService",
+  "type" : "sdk",
+  "version_tag" : "release"
+}, {
+  "module_name" : "FakeObjectsForTests",
+  "type" : "sdk",
+  "version_tag" : "release"
+}, {
   "module_name" : "KBaseReport",
   "type" : "sdk",
   "version_tag" : "release"
+}, {
+  "module_name" : "NarrativeMethodStore",
+  "type" : "core",
+  "file_path" : "https://raw.githubusercontent.com/JamesJeffryes/narrative_method_store/master/NarrativeMethodStore.spec"
+}, {
+  "module_name" : "SetAPI",
+  "type" : "sdk",
+  "version_tag" : "release"
+}, {
+  "module_name" : "Workspace",
+  "type" : "core",
+  "file_path" : "https://raw.githubusercontent.com/kbase/workspace_deluxe/master/workspace.spec"
 } ]

@@ -1,31 +1,27 @@
 # -*- coding: utf-8 -*-
-import unittest
-import os  # noqa: F401
+import io
 import json  # noqa: F401
+import os  # noqa: F401
 import time
-import StringIO
-
+import unittest
+from configparser import ConfigParser
 from os import environ
+
 from NarrativeService.NarrativeManager import NarrativeManager
-try:
-    from ConfigParser import ConfigParser  # py2
-except:
-    from configparser import ConfigParser  # py3
-
-from pprint import pprint  # noqa: F401
-
-from Workspace.WorkspaceClient import Workspace
 from NarrativeService.NarrativeServiceImpl import NarrativeService
 from NarrativeService.NarrativeServiceServer import MethodContext
-from SetAPI.SetAPIClient import SetAPI
 from NarrativeService.WorkspaceListObjectsIterator import WorkspaceListObjectsIterator
-from FakeObjectsForTests.FakeObjectsForTestsClient import FakeObjectsForTests
-from DataPaletteService.DataPaletteServiceClient import DataPaletteService
-from DataPaletteService.authclient import KBaseAuth as _KBaseAuth
+from installed_clients.DataPaletteServiceServiceClient import DataPaletteService
+from installed_clients.FakeObjectsForTestsClient import FakeObjectsForTests
+from installed_clients.SetAPIServiceClient import SetAPI
+from installed_clients.WorkspaceClient import Workspace
+from installed_clients.authclient import KBaseAuth as _KBaseAuth
 
 
 def in_list(wsid, nar_list):
-    ''' Helper function to determine if ws with ID is returned from the Narrative listing functions '''
+    """
+    Helper function to determine if ws with ID is returned from the Narrative listing functions
+    """
     for nt in nar_list:
         if wsid == nt['ws'][0]:
             return True
@@ -71,14 +67,14 @@ class NarrativeServiceTest(unittest.TestCase):
         with open(test_cfg_file, "r") as f:
             test_cfg_text += f.read()
         config = ConfigParser()
-        config.readfp(StringIO.StringIO(test_cfg_text))
+        config.readfp(io.StringIO(test_cfg_text))
         test_cfg_dict = dict(config.items("test"))
         if 'test_token2' not in test_cfg_dict:
             raise ValueError("Configuration in <module>/test_local/test.cfg file should " +
                              "include second user credentials ('test_token2' key)")
         token2 = test_cfg_dict['test_token2']
         user2 = auth_client.get_user(token2)
-        print("Test user2: " + user2)
+        print(("Test user2: " + user2))
         cls.ctx2 = MethodContext(None)
         cls.ctx2.update({'token': token2,
                          'user_id': user2,
@@ -116,9 +112,9 @@ class NarrativeServiceTest(unittest.TestCase):
             for wsName in cls.createdWorkspaces[user_pos]:
                 try:
                     cls.wsClients[user_pos].delete_workspace({'workspace': wsName})
-                    print("Test workspace was deleted for user" + str(user_pos + 1))
+                    print(("Test workspace was deleted for user" + str(user_pos + 1)))
                 except:
-                    print("Error deleting test workspace for user" + str(user_pos + 1))
+                    print(("Error deleting test workspace for user" + str(user_pos + 1)))
 
 
     def getWsClient(self):
@@ -389,16 +385,16 @@ class NarrativeServiceTest(unittest.TestCase):
         copied_ws_info3 = ws.get_workspace_info({'id': copied_nar_info3['newWsId']})
 
         try:
-            self.assertEquals(source_nar_info['workspaceInfo']['metadata']['is_temporary'], 'true')
-            self.assertEquals(source_nar_info['narrativeInfo']['metadata']['is_temporary'], 'true')
-            self.assertEquals(copied_nar['data'][0]['info'][10]['is_temporary'], 'true')
-            self.assertEquals(copied_ws_info[8]['is_temporary'], 'true')
-            self.assertEquals(copied_nar2['data'][0]['info'][10]['is_temporary'], 'true')
-            self.assertEquals(copied_ws_info2[8]['is_temporary'], 'true')
-            self.assertEquals(source_nar_info2['workspaceInfo']['metadata']['is_temporary'], 'false')
-            self.assertEquals(source_nar_info2['narrativeInfo']['metadata']['is_temporary'], 'false')
-            self.assertEquals(copied_nar3['data'][0]['info'][10]['is_temporary'], 'false')
-            self.assertEquals(copied_ws_info3[8]['is_temporary'], 'false')
+            self.assertEqual(source_nar_info['workspaceInfo']['metadata']['is_temporary'], 'true')
+            self.assertEqual(source_nar_info['narrativeInfo']['metadata']['is_temporary'], 'true')
+            self.assertEqual(copied_nar['data'][0]['info'][10]['is_temporary'], 'true')
+            self.assertEqual(copied_ws_info[8]['is_temporary'], 'true')
+            self.assertEqual(copied_nar2['data'][0]['info'][10]['is_temporary'], 'true')
+            self.assertEqual(copied_ws_info2[8]['is_temporary'], 'true')
+            self.assertEqual(source_nar_info2['workspaceInfo']['metadata']['is_temporary'], 'false')
+            self.assertEqual(source_nar_info2['narrativeInfo']['metadata']['is_temporary'], 'false')
+            self.assertEqual(copied_nar3['data'][0]['info'][10]['is_temporary'], 'false')
+            self.assertEqual(copied_ws_info3[8]['is_temporary'], 'false')
         finally:
             self.getWsClient().delete_workspace({'id': source_ws_id})
             self.getWsClient().delete_workspace({'id': source_ws_id2})
@@ -463,7 +459,7 @@ class NarrativeServiceTest(unittest.TestCase):
         try:
             self.getWsClient2().get_object_info_new({'objects': [{'ref': reads_ref}]})
             raise ValueError("We shouldn't be able to access reads object")
-        except Exception, e:
+        except Exception as e:
             self.assertTrue("cannot be accessed" in str(e))
 
         # Copy
@@ -701,7 +697,7 @@ class NarrativeServiceTest(unittest.TestCase):
             dps.add_to_palette({'workspace': ws_name2,
                                  'new_refs': [{'ref': copy_reads_obj_ref}]})
             raise ValueError("We shouldn't be able to import reads object to DataPalette")
-        except Exception, e:
+        except Exception as e:
             self.assertTrue("Object TestReads cannot be accessed" in str(e))
         # Let's share this workspace with user2
         self.getWsClient().set_permissions({'workspace': ws_name1, 'new_permission': 'r',
@@ -722,7 +718,7 @@ class NarrativeServiceTest(unittest.TestCase):
         try:
             self.getWsClient2().get_object_info_new({'objects': [{'ref': copy_reads_obj_ref}]})
             raise ValueError("We shouldn't be able to access reads object")
-        except Exception, e:
+        except Exception as e:
             self.assertTrue("Object TestReads cannot be accessed" in str(e))
         # Check that we have an access to reads object through DataPalette
         reads_ref_path = item['dp_info']['ref'] + ';' + copy_reads_obj_ref
@@ -755,7 +751,7 @@ class NarrativeServiceTest(unittest.TestCase):
         # Import reads ref into DataPalette of second workspace
         dps.add_to_palette({'workspace': ws_name2, 'new_refs': [{'ref': copy_reads_obj_ref}]})
         dp_ref_map = dps.list_data({'workspaces': [ws_name2]})['data_palette_refs']
-        reads_ref_path = dp_ref_map.itervalues().next() + ';' + copy_reads_obj_ref
+        reads_ref_path = next(iter(dp_ref_map.values())) + ';' + copy_reads_obj_ref
         # Un-share original workspace
         self.getWsClient().set_permissions({'workspace': ws_name1, 'new_permission': 'n',
                                             'users': [self.getContext2()['user_id']]})
@@ -807,7 +803,7 @@ class NarrativeServiceTest(unittest.TestCase):
                                   service_ver=self.__class__.DataPalette_version)
         dps.add_to_palette({'workspace': ws_name2, 'new_refs': [{'ref': orig_set_ref}]})
         dp_ref_map = dps.list_data({'workspaces': [ws_name2]})['data_palette_refs']
-        set_ref_path = dp_ref_map.itervalues().next() + ';' + orig_set_ref
+        set_ref_path = next(iter(dp_ref_map.values())) + ';' + orig_set_ref
         reads_ref_path = set_ref_path + ';' + copy_reads_obj_ref
         # Un-share original workspace
         self.getWsClient().set_permissions({'workspace': ws_name1_2, 'new_permission': 'n',
@@ -838,13 +834,13 @@ class NarrativeServiceTest(unittest.TestCase):
                     ids.append(str(ws_info[0]))
                     if len(ids) >= 100:
                         break
-            print("Workspaces selected for bulk list_objects_with_sets: " + str(len(ids)))
+            print(("Workspaces selected for bulk list_objects_with_sets: " + str(len(ids))))
             if len(ids) > 0:
                 self.getImpl().list_objects_with_sets(self.getContext(), {'workspaces': [ids[0]]})
             NarrativeManager.DEBUG = False  #True
             t1 = time.time()
             ret = self.getImpl().list_objects_with_sets(self.getContext(), {'workspaces': ids})[0]["data"]
-            print("Objects found: " + str(len(ret)) + ", time=" + str(time.time() - t1))
+            print(("Objects found: " + str(len(ret)) + ", time=" + str(time.time() - t1)))
         finally:
             NarrativeManager.DEBUG = False
 
