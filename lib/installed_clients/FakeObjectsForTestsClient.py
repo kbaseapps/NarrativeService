@@ -12,10 +12,9 @@ from __future__ import print_function
 try:
     # baseclient and this client are in a package
     from .baseclient import BaseClient as _BaseClient  # @UnusedImport
-except:
+except ImportError:
     # no they aren't
     from baseclient import BaseClient as _BaseClient  # @Reimport
-import time
 
 
 class FakeObjectsForTests(object):
@@ -24,7 +23,7 @@ class FakeObjectsForTests(object):
             self, url=None, timeout=30 * 60, user_id=None,
             password=None, token=None, ignore_authrc=False,
             trust_all_ssl_certificates=False,
-            auth_svc='https://kbase.us/services/authorization/Sessions/Login',
+            auth_svc='https://ci.kbase.us/services/auth/api/legacy/KBase/Sessions/Login',
             service_ver='dev',
             async_job_check_time_ms=100, async_job_check_time_scale_percent=150, 
             async_job_check_max_time_ms=300000):
@@ -39,14 +38,6 @@ class FakeObjectsForTests(object):
             async_job_check_time_ms=async_job_check_time_ms,
             async_job_check_time_scale_percent=async_job_check_time_scale_percent,
             async_job_check_max_time_ms=async_job_check_max_time_ms)
-
-    def _check_job(self, job_id):
-        return self._client._check_job('FakeObjectsForTests', job_id)
-
-    def _create_any_objects_submit(self, params, context=None):
-        return self._client._submit_job(
-             'FakeObjectsForTests.create_any_objects', [params],
-             self._service_ver, context)
 
     def create_any_objects(self, params, context=None):
         """
@@ -101,22 +92,8 @@ class FakeObjectsForTests(object):
            metadata about an object. Arbitrary key-value pairs provided by
            the user.) -> mapping from String to String
         """
-        job_id = self._create_any_objects_submit(params, context)
-        async_job_check_time = self._client.async_job_check_time
-        while True:
-            time.sleep(async_job_check_time)
-            async_job_check_time = (async_job_check_time *
-                self._client.async_job_check_time_scale_percent / 100.0)
-            if async_job_check_time > self._client.async_job_check_max_time:
-                async_job_check_time = self._client.async_job_check_max_time
-            job_state = self._check_job(job_id)
-            if job_state['finished']:
-                return job_state['result'][0]
-
-    def _create_fake_genomes_submit(self, params, context=None):
-        return self._client._submit_job(
-             'FakeObjectsForTests.create_fake_genomes', [params],
-             self._service_ver, context)
+        return self._client.run_job('FakeObjectsForTests.create_any_objects',
+                                    [params], self._service_ver, context)
 
     def create_fake_genomes(self, params, context=None):
         """
@@ -172,22 +149,8 @@ class FakeObjectsForTests(object):
            metadata about an object. Arbitrary key-value pairs provided by
            the user.) -> mapping from String to String
         """
-        job_id = self._create_fake_genomes_submit(params, context)
-        async_job_check_time = self._client.async_job_check_time
-        while True:
-            time.sleep(async_job_check_time)
-            async_job_check_time = (async_job_check_time *
-                self._client.async_job_check_time_scale_percent / 100.0)
-            if async_job_check_time > self._client.async_job_check_max_time:
-                async_job_check_time = self._client.async_job_check_max_time
-            job_state = self._check_job(job_id)
-            if job_state['finished']:
-                return job_state['result'][0]
-
-    def _create_fake_reads_submit(self, params, context=None):
-        return self._client._submit_job(
-             'FakeObjectsForTests.create_fake_reads', [params],
-             self._service_ver, context)
+        return self._client.run_job('FakeObjectsForTests.create_fake_genomes',
+                                    [params], self._service_ver, context)
 
     def create_fake_reads(self, params, context=None):
         """
@@ -243,28 +206,9 @@ class FakeObjectsForTests(object):
            metadata about an object. Arbitrary key-value pairs provided by
            the user.) -> mapping from String to String
         """
-        job_id = self._create_fake_reads_submit(params, context)
-        async_job_check_time = self._client.async_job_check_time
-        while True:
-            time.sleep(async_job_check_time)
-            async_job_check_time = (async_job_check_time *
-                self._client.async_job_check_time_scale_percent / 100.0)
-            if async_job_check_time > self._client.async_job_check_max_time:
-                async_job_check_time = self._client.async_job_check_max_time
-            job_state = self._check_job(job_id)
-            if job_state['finished']:
-                return job_state['result'][0]
+        return self._client.run_job('FakeObjectsForTests.create_fake_reads',
+                                    [params], self._service_ver, context)
 
     def status(self, context=None):
-        job_id = self._client._submit_job('FakeObjectsForTests.status', 
-            [], self._service_ver, context)
-        async_job_check_time = self._client.async_job_check_time
-        while True:
-            time.sleep(async_job_check_time)
-            async_job_check_time = (async_job_check_time *
-                self._client.async_job_check_time_scale_percent / 100.0)
-            if async_job_check_time > self._client.async_job_check_max_time:
-                async_job_check_time = self._client.async_job_check_max_time
-            job_state = self._check_job(job_id)
-            if job_state['finished']:
-                return job_state['result'][0]
+        return self._client.run_job('FakeObjectsForTests.status',
+                                    [], self._service_ver, context)

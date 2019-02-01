@@ -1,13 +1,13 @@
-import time
 import json
-import uuid
 import os
-from NarrativeService.ServiceUtils import ServiceUtils
-from NarrativeService.DataPaletteTypes import DataPaletteTypes
+import time
+import uuid
 
-from Workspace.WorkspaceClient import Workspace
-from NarrativeMethodStore.NarrativeMethodStoreClient import NarrativeMethodStore
+from NarrativeService.DataPaletteTypes import DataPaletteTypes
+from NarrativeService.ServiceUtils import ServiceUtils
 from NarrativeService.WorkspaceListObjectsIterator import WorkspaceListObjectsIterator
+from installed_clients.NarrativeMethodStoreClient import NarrativeMethodStore
+from installed_clients.WorkspaceClient import Workspace
 
 
 class NarrativeManager:
@@ -377,7 +377,7 @@ class NarrativeManager:
         metadataExternal = {}
         for key in metadata:
             value = metadata[key]
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 metadataExternal[key] = value
             else:
                 metadataExternal[key] = json.dumps(value)
@@ -487,7 +487,7 @@ class NarrativeManager:
         return json.dumps(self._safeJSONStringifyPrepare(obj))
 
     def _safeJSONStringifyPrepare(self, obj):
-        if isinstance(obj, basestring):
+        if isinstance(obj, str):
             return obj.replace("'", "&apos;").replace('"', "&quot;")
         elif isinstance(obj, list):
             for pos in range(len(obj)):

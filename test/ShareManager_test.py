@@ -1,11 +1,9 @@
-import unittest
 import os
+import unittest
+from configparser import ConfigParser
+from unittest import mock
+
 import NarrativeService.sharing.sharemanager as sharemanager
-import mock
-try:
-    from ConfigParser import ConfigParser  # py2
-except:
-    from configparser import ConfigParser  # py3
 
 
 class WsMock:
@@ -73,4 +71,4 @@ class ShareRequesterTestCase(unittest.TestCase):
         req = sharemanager.ShareRequester({"user": "kbasetest", "ws_id": 123, "share_level": "r"}, self.config)
         res = req.request_share()
         self.assertIn("ok", res)
-        self.assertEquals(res['ok'], 1)
+        self.assertEqual(res['ok'], 1)

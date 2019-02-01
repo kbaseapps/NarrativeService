@@ -12,7 +12,7 @@ from __future__ import print_function
 try:
     # baseclient and this client are in a package
     from .baseclient import BaseClient as _BaseClient  # @UnusedImport
-except:
+except ImportError:
     # no they aren't
     from baseclient import BaseClient as _BaseClient  # @Reimport
 
@@ -23,7 +23,7 @@ class DataPaletteService(object):
             self, url=None, timeout=30 * 60, user_id=None,
             password=None, token=None, ignore_authrc=False,
             trust_all_ssl_certificates=False,
-            auth_svc='https://kbase.us/services/authorization/Sessions/Login',
+            auth_svc='https://ci.kbase.us/services/auth/api/legacy/KBase/Sessions/Login',
             service_ver='release'):
         if url is None:
             url = 'https://kbase.us/services/service_wizard'
@@ -37,12 +37,20 @@ class DataPaletteService(object):
 
     def list_data(self, params, context=None):
         """
-        :param params: instance of type "ListDataParams" (todo: pagination?)
-           -> structure: parameter "workspaces" of list of type
-           "ws_name_or_id"
-        :returns: instance of type "DataList" -> structure: parameter "data"
-           of list of type "DataInfo" -> structure: parameter "ref" of type
-           "ws_ref" (@id ws), parameter "info" of type "object_info"
+        :param params: instance of type "ListDataParams" (workspaces - list
+           of workspace names or IDs (converted to strings), include_metadata
+           - if 1, includes object metadata, if 0, does not. Default 0. TODO:
+           pagination?) -> structure: parameter "workspaces" of list of type
+           "ws_name_or_id", parameter "include_metadata" of type "boolean"
+           (@range [0,1])
+        :returns: instance of type "DataList" (data_palette_refs - mapping
+           from workspace ID to reference to DataPalette container object.)
+           -> structure: parameter "data" of list of type "DataInfo" (dp_ref
+           - reference to DataPalette container pointing to given object,
+           dp_refs - full list of references to DataPalette containers that
+           point to given object (in contrast to dp_ref which shows only
+           first item from dp_refs list).) -> structure: parameter "ref" of
+           type "ws_ref" (@id ws), parameter "info" of type "object_info"
            (Information about an object, including user provided metadata.
            obj_id objid - the numerical id of the object. obj_name name - the
            name of the object. type_string type - the type of the object.
@@ -85,43 +93,66 @@ class DataPaletteService(object):
            kbasetest:my_workspace.), parameter "chsum" of String, parameter
            "size" of Long, parameter "meta" of type "usermeta" (User provided
            metadata about an object. Arbitrary key-value pairs provided by
-           the user.) -> mapping from String to String
+           the user.) -> mapping from String to String, parameter "dp_ref" of
+           type "ws_ref" (@id ws), parameter "dp_refs" of list of type
+           "ws_ref" (@id ws), parameter "data_palette_refs" of mapping from
+           type "ws_text_id" (String with numeric ID of workspace (working as
+           key in mapping).) to type "ws_ref" (@id ws)
         """
-        return self._client.call_method(
-            'DataPaletteService.list_data',
-            [params], self._service_ver, context)
+        return self._client.call_method('DataPaletteService.list_data',
+                                        [params], self._service_ver, context)
 
     def add_to_palette(self, params, context=None):
         """
         :param params: instance of type "AddToPaletteParams" -> structure:
            parameter "workspace" of type "ws_name_or_id", parameter
-           "new_refs" of list of type "ObjectReference" (todo: allow passing
-           in a reference chain) -> structure: parameter "ref" of type
-           "ws_ref" (@id ws)
+           "new_refs" of list of type "ObjectReference" (ref - is workspace
+           reference or ref-path string) -> structure: parameter "ref" of
+           type "ws_ref" (@id ws)
+        :returns: instance of type "AddToPaletteResult" -> structure:
         """
-        return self._client.call_method(
-            'DataPaletteService.add_to_palette',
-            [params], self._service_ver, context)
+        return self._client.call_method('DataPaletteService.add_to_palette',
+                                        [params], self._service_ver, context)
 
     def remove_from_palette(self, params, context=None):
         """
+        Note: right now you must provide the exact, absolute reference of the
+        item to delete (e.g. 2524/3/1) and matched exactly to be removed.  Relative
+        refs will not be matched.  Currently, this method will throw an error
+        if a provided reference was not found in the palette.
         :param params: instance of type "RemoveFromPaletteParams" ->
            structure: parameter "workspace" of type "ws_name_or_id",
            parameter "refs" of list of type "ws_ref" (@id ws)
+        :returns: instance of type "RemoveFromPaletteResult" -> structure:
         """
-        return self._client.call_method(
-            'DataPaletteService.remove_from_palette',
-            [params], self._service_ver, context)
+        return self._client.call_method('DataPaletteService.remove_from_palette',
+                                        [params], self._service_ver, context)
 
     def copy_palette(self, params, context=None):
         """
         :param params: instance of type "CopyPaletteParams" -> structure:
            parameter "from_workspace" of type "ws_name_or_id", parameter
            "to_workspace" of type "ws_name_or_id"
+        :returns: instance of type "CopyPaletteResult" -> structure:
         """
-        return self._client.call_method(
-            'DataPaletteService.copy_palette',
-            [params], self._service_ver, context)
+        return self._client.call_method('DataPaletteService.copy_palette',
+                                        [params], self._service_ver, context)
+
+    def set_palette_for_ws(self, params, context=None):
+        """
+        In case the WS metadata is corrupted, or there was a manual
+        setup of the data palette, this function can be used to set
+        the workspace metadata to the specified palette in that workspace
+        by name or ID.  If you omit the name_or_id, then the code will
+        search for an existing data palette in that workspace.  Be careful
+        with this one- you could thrash your palette!
+        :param params: instance of type "SetPaletteForWsParams" -> structure:
+           parameter "workspace" of type "ws_name_or_id", parameter
+           "palette_name_or_id" of String
+        :returns: instance of type "SetPaletteForWsResult" -> structure:
+        """
+        return self._client.call_method('DataPaletteService.set_palette_for_ws',
+                                        [params], self._service_ver, context)
 
     def status(self, context=None):
         return self._client.call_method('DataPaletteService.status',

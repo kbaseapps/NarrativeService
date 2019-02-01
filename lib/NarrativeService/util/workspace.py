@@ -1,4 +1,4 @@
-from Workspace.WorkspaceClient import Workspace
+from installed_clients.WorkspaceClient import Workspace
 
 
 def get_ws_admins(ws_id, ws_url, admin_token):

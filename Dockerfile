@@ -1,4 +1,4 @@
-FROM kbase/kbase:sdkbase2.latest
+FROM kbase/sdkbase2:python
 MAINTAINER KBase Developer
 # -----------------------------------------
 
@@ -9,7 +9,8 @@ RUN pip install coverage
 
 # -----------------------------------------
 
-RUN pip install pylru
+RUN pip install pylru &&\
+    pip install python-dateutil
 
 COPY ./ /kb/module
 RUN mkdir -p /kb/module/work

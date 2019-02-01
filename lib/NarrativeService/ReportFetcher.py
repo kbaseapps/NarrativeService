@@ -1,4 +1,3 @@
-from Workspace.WorkspaceClient import Workspace
 from NarrativeService.ServiceUtils import ServiceUtils
 
 class ReportFetcher(object):

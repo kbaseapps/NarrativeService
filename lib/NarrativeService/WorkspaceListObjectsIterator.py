@@ -1,5 +1,5 @@
-import time
 from collections import deque
+
 
 class WorkspaceListObjectsIterator:
 
@@ -47,13 +47,13 @@ class WorkspaceListObjectsIterator:
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         while self.part_iter is not None:
             try:
                 self.total_counter += 1
                 if self.total_counter > self.global_limit:
                     raise StopIteration
-                return self.part_iter.next()
+                return next(self.part_iter)
             except StopIteration:
                 self.part_iter = self._load_next_part()
         raise StopIteration
@@ -61,7 +61,7 @@ class WorkspaceListObjectsIterator:
     def _load_next_part(self):
         if self.min_obj_id < 0 or self.min_obj_id > self.max_obj_count:
             try:
-                block = self.block_iter.next()
+                block = next(self.block_iter)
                 self.list_objects_params['ids'] = [ws_info[0] for ws_info in block]
             except StopIteration:
                 return None
