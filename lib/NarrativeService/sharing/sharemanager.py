@@ -72,6 +72,7 @@ class ShareRequester(object):
             "context": {
                 "level": self.share_level
             },
+            "level": "request",
             "users": [{"id": u, "type": "user"} for u in requestees + [self.user]]
         }
 
