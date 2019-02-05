@@ -1,6 +1,6 @@
 import NarrativeService.feeds as feeds
 import NarrativeService.util.workspace as ws
-
+from baseclient import ServerError
 # from storage.mongo import (
 #     save_share_request,
 #     find_existing_share_request
@@ -57,7 +57,7 @@ class ShareRequester(object):
         except ServerError as err:
             return {
                 "ok": 0,
-                "error": "Unable to request share - couldn't get Narrative owners!\n{}".format(x[0:10])
+                "error": "Unable to request share - couldn't get Narrative owners!"
             }
         note = {
             "actor": {
