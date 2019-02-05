@@ -1,5 +1,5 @@
 import io
-import os.path
+import os
 import sys
 from configparser import ConfigParser
 
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     for key in os.environ:
         if key.startswith('KBASE_SECURE_CONFIG_PARAM_'):
             param_name = key[len('KBASE_SECURE_CONFIG_PARAM_'):]
-            props += param_name + " = " + os.environ.get(key) + "\n"
+            props[param_name] = os.environ.get(key)
     output = t.render(props)
     with open(sys.argv[1] + ".orig", 'w') as f:
         f.write(text)
