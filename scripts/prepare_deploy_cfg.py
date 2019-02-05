@@ -37,6 +37,8 @@ if __name__ == "__main__":
     else:
         raise ValueError('Neither ' + sys.argv[2] + ' file nor KBASE_ENDPOINT env-variable found')
     props = dict(config.items("global"))
+    props["service_token"] = os.environ.get("service_token")
+    props["ws_admin_token"] = os.environ.get("ws_admin_token")
     output = t.render(props)
     with open(sys.argv[1] + ".orig", 'w') as f:
         f.write(text)
