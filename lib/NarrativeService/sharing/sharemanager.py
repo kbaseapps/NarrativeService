@@ -6,7 +6,7 @@ import NarrativeService.util.workspace as ws
 #     find_existing_share_request
 # )
 SERVICE_TOKEN_KEY = "service-token"
-WS_TOKEN = "ws-admin-token"
+WS_TOKEN_KEY = "ws-admin-token"
 
 
 class ShareRequester(object):
@@ -28,7 +28,14 @@ class ShareRequester(object):
         if service_token is None:
             return {
                 "ok": 0,
-                "error": "Unable to request share - NarrativeService is missing authorization."
+                "error": "Unable to request share - NarrativeService is missing authorization to make request."
+            }
+
+        ws_token = self.config.get(WS_TOKEN_KEY)
+        if ws_token is None:
+            return {
+                "ok": 0,
+                "error": "Unable to request share - NarrativeService is missing permission to find Workspace owners."
             }
 
         ret_value = {
@@ -45,7 +52,7 @@ class ShareRequester(object):
         #     return ret_value
 
         # Make the request by firing a notification
-        requestees = ws.get_ws_admins(self.ws_id, self.config['workspace-url'], self.config[WS_TOKEN])
+        requestees = ws.get_ws_admins(self.ws_id, self.config['workspace-url'], ws_token)
         note = {
             "actor": {
                 "type": "user",
