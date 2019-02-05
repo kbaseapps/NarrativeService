@@ -1,5 +1,5 @@
 import io
-import os.path
+import os
 import sys
 from configparser import ConfigParser
 
