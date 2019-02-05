@@ -11,7 +11,7 @@ class WsMock:
         pass
 
     def administer(self, *args, **kwargs):
-        return {"foo": "a", "bar": "w"}
+        return {"perms": [{"foo": "a", "bar": "w"}]}
 
 def mock_feed_post(*args, **kwargs):
     class MockResponse:

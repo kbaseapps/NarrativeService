@@ -33,16 +33,14 @@ if __name__ == "__main__":
             props += "auth_service_url = " + kbase_endpoint + "/auth/api/legacy/KBase/Sessions/Login\n"
         props += "auth_service_url_allow_insecure = " + \
                  os.environ.get("AUTH_SERVICE_URL_ALLOW_INSECURE", "false") + "\n"
-        for key in os.environ:
-            if key.startswith('KBASE_SECURE_CONFIG_PARAM_'):
-                param_name = key[len('KBASE_SECURE_CONFIG_PARAM_'):]
-                props += param_name + " = " + os.environ.get(key) + "\n"
         config.read_file(io.StringIO(props))
     else:
         raise ValueError('Neither ' + sys.argv[2] + ' file nor KBASE_ENDPOINT env-variable found')
     props = dict(config.items("global"))
-    props["service_token"] = os.environ.get("service_token")
-    props["ws_admin_token"] = os.environ.get("ws_admin_token")
+    for key in os.environ:
+        if key.startswith('KBASE_SECURE_CONFIG_PARAM_'):
+            param_name = key[len('KBASE_SECURE_CONFIG_PARAM_'):]
+            props += param_name + " = " + os.environ.get(key) + "\n"
     output = t.render(props)
     with open(sys.argv[1] + ".orig", 'w') as f:
         f.write(text)

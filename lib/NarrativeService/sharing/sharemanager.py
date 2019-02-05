@@ -1,6 +1,6 @@
 import NarrativeService.feeds as feeds
 import NarrativeService.util.workspace as ws
-
+from baseclient import ServerError
 # from storage.mongo import (
 #     save_share_request,
 #     find_existing_share_request
@@ -35,7 +35,7 @@ class ShareRequester(object):
         if ws_token is None:
             return {
                 "ok": 0,
-                "error": "Unable to request share - NarrativeService is missing permission to find Workspace owners."
+                "error": "Unable to request share - NarrativeService is missing permission to find Narrative owners."
             }
 
         ret_value = {
@@ -52,7 +52,13 @@ class ShareRequester(object):
         #     return ret_value
 
         # Make the request by firing a notification
-        requestees = ws.get_ws_admins(self.ws_id, self.config['workspace-url'], ws_token)
+        try:
+            requestees = ws.get_ws_admins(self.ws_id, self.config['workspace-url'], ws_token)
+        except ServerError as err:
+            return {
+                "ok": 0,
+                "error": "Unable to request share - couldn't get Narrative owners!"
+            }
         note = {
             "actor": {
                 "type": "user",
