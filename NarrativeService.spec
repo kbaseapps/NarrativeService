@@ -420,4 +420,50 @@ module NarrativeService {
         If a request has already been made, this will fail and return with the string "a request has already been made"
     */
     funcdef request_narrative_share(RequestNarrativeShareInput params) returns (RequestNarrativeShareOutput) authentication required;
+
+    typedef structure {
+        string tag;
+        string user_id;
+    } GetAppInfoInput;
+
+    typedef structure {
+        string description;
+        string id;
+        string name;
+        string parent_ids;
+        string tooltip;
+        string ver;
+    } CategoryInfo;
+
+    /*
+        favorite is optional - if the app is one of the user's favorites, this will be the timestamp when it was made a favorite.
+    */
+    typedef structure {
+        string app_type;
+        list<string> authors;
+        list<string> categories;
+        string git_commit_hash;
+        string id;
+        list<string> input_types;
+        string module_name;
+        string name;
+        string namespace;
+        list<string> output_types;
+        string subtitle;
+        string tooltip;
+        string ver;
+        int favorite;
+    } AppInfo;
+
+    typedef structure {
+        mapping<string, string> module_versions;
+        mapping<string, CategoryInfo> categories;
+        mapping<string, mapping<string, AppInfo>> app_infos;
+    } AllAppInfo;
+
+    /*
+        This returns all app info from the KBase catalog, formatted in a way to make life easy for the
+        Narrative APPS panel on startup.
+    */
+    funcdef get_all_app_info(GetAppInfoInput input) returns (AllAppInfo output);
 };

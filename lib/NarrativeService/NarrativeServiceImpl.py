@@ -5,6 +5,7 @@ from NarrativeService.NarrativeListUtils import NarrativeListUtils, NarratorialU
 from NarrativeService.NarrativeManager import NarrativeManager
 from NarrativeService.ReportFetcher import ReportFetcher
 from NarrativeService.sharing.sharemanager import ShareRequester
+from NarrativeService.apps.appinfo import get_all_app_info
 from installed_clients.WorkspaceClient import Workspace
 #END_HEADER
 
@@ -24,9 +25,9 @@ class NarrativeService:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.0.11"
-    GIT_URL = "https://github.com/kbaseapps/NarrativeService.git"
-    GIT_COMMIT_HASH = "d0b26f7feeb707326e395b2377ce6e29c4c369d8"
+    VERSION = "0.1.0"
+    GIT_URL = "https://github.com/briehl/NarrativeService"
+    GIT_COMMIT_HASH = "2222840c363bc98c578666ac7e0e6cd2588b5970"
 
     #BEGIN_CLASS_HEADER
     def _nm(self, ctx):
@@ -41,6 +42,7 @@ class NarrativeService:
         self.workspaceURL = config['workspace-url']
         self.serviceWizardURL = config['service-wizard']
         self.narrativeMethodStoreURL = config['narrative-method-store']
+        self.catalogURL = config['catalog-url']
         self.setAPICache = DynamicServiceCache(self.serviceWizardURL,
                                                config['setapi-version'],
                                                'SetAPI')
@@ -590,6 +592,44 @@ class NarrativeService:
                              'returnVal is not type dict as required.')
         # return the results
         return [returnVal]
+
+    def get_all_app_info(self, ctx, input):
+        """
+        This returns all app info from the KBase catalog, formatted in a way to make life easy for the
+        Narrative APPS panel on startup.
+        :param input: instance of type "GetAppInfoInput" -> structure:
+           parameter "tag" of String, parameter "user_id" of String
+        :returns: instance of type "AllAppInfo" -> structure: parameter
+           "module_versions" of mapping from String to String, parameter
+           "categories" of mapping from String to type "CategoryInfo" ->
+           structure: parameter "description" of String, parameter "id" of
+           String, parameter "name" of String, parameter "parent_ids" of
+           String, parameter "tooltip" of String, parameter "ver" of String,
+           parameter "app_infos" of mapping from String to mapping from
+           String to type "AppInfo" (favorite is optional - if the app is one
+           of the user's favorites, this will be the timestamp when it was
+           made a favorite.) -> structure: parameter "app_type" of String,
+           parameter "authors" of list of String, parameter "categories" of
+           list of String, parameter "git_commit_hash" of String, parameter
+           "id" of String, parameter "input_types" of list of String,
+           parameter "module_name" of String, parameter "name" of String,
+           parameter "namespace" of String, parameter "output_types" of list
+           of String, parameter "subtitle" of String, parameter "tooltip" of
+           String, parameter "ver" of String, parameter "favorite" of Long
+        """
+        # ctx is the context object
+        # return variables are: output
+        #BEGIN get_all_app_info
+        output = get_all_app_info(input['tag'], input['user'],
+                                  self.narrativeMethodStoreURL, self.catalogURL)
+        #END get_all_app_info
+
+        # At some point might do deeper type checking...
+        if not isinstance(output, dict):
+            raise ValueError('Method get_all_app_info return value ' +
+                             'output is not type dict as required.')
+        # return the results
+        return [output]
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': "OK",
