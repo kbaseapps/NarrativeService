@@ -466,4 +466,9 @@ module NarrativeService {
         Narrative APPS panel on startup.
     */
     funcdef get_all_app_info(GetAppInfoInput input) returns (AllAppInfo output);
+
+    /*
+        This returns ignored app categories used in Narrative Apps Panel.
+    */
+    funcdef get_ignore_categories() returns (mapping<string, int> ignore_categories);
 };
