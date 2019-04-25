@@ -10,6 +10,9 @@ def get_ignore_categories():
 
 
 def _shorten_types(type_list):
+    '''
+    convert ['KBaseMatrices.AmpliconMatrix'] to ['AmpliconMatrix']
+    '''
     shorten_types = list()
     for t in type_list:
         try:
