@@ -29,10 +29,12 @@ def get_all_app_info(tag, user, nms_url, catalog_url):
     app_infos = {}
     module_versions = {}
     for a in apps:
+        if not set(a.get('categories')).isdisjoint(IGNORE_CATEGORIES):
+            # ignore apps in IGNORE_CATEGORIES
+            continue
         [a.pop(key, None) for key in UNUSED_INFO]  # remove unused info
         a['short_input_types'] = _shorten_types(a.get('input_types'))
         a['short_output_types'] = _shorten_types(a.get('output_types'))
-        a['ignore'] = not set(a.get('categories')).isdisjoint(IGNORE_CATEGORIES)
         app_infos[a["id"].lower()] = {"info": a}
         if "module_name" in a:
             module_versions[a["module_name"].lower()] = a.get("ver")

@@ -7,6 +7,9 @@ from NarrativeService.NarrativeServiceImpl import NarrativeService
 from NarrativeService.NarrativeServiceServer import MethodContext
 
 
+IGNORE_CATEGORIES = {"inactive", "importers", "viewers"}
+
+
 class AppInfoTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -71,6 +74,8 @@ class AppInfoTestCase(unittest.TestCase):
             self.assertNotIn('authors', app)
             self.assertIn('categories', app)
             self.assertIsInstance(app['categories'], list)
+            for category in IGNORE_CATEGORIES:
+                self.assertNotIn(category, app['categories'])
             self.assertIn('id', app)
             self.assertIn('input_types', app)
             self.assertIsInstance(app['input_types'], list)
@@ -86,7 +91,6 @@ class AppInfoTestCase(unittest.TestCase):
             self.assertNotIn('tooltip', app)
             self.assertNotIn('icon', app)
             self.assertIn('ver', app)
-            self.assertIn('ignore', app)
 
     def test_get_ignore_categories_ok(self):
         impl = self.getImpl()
