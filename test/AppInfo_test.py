@@ -6,6 +6,10 @@ from installed_clients.authclient import KBaseAuth as _KBaseAuth
 from NarrativeService.NarrativeServiceImpl import NarrativeService
 from NarrativeService.NarrativeServiceServer import MethodContext
 
+
+IGNORE_CATEGORIES = {"inactive", "importers", "viewers"}
+
+
 class AppInfoTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -17,7 +21,7 @@ class AppInfoTestCase(unittest.TestCase):
         for nameval in config.items('NarrativeService'):
             cls.cfg[nameval[0]] = nameval[1]
         authServiceUrl = cls.cfg.get('auth-service-url',
-                "https://kbase.us/services/authorization/Sessions/Login")
+                                     "https://kbase.us/services/authorization/Sessions/Login")
         auth_client = _KBaseAuth(authServiceUrl)
         cls.user_id = auth_client.get_user(token)
         # WARNING: don't call any logging methods on the context object,
@@ -61,33 +65,37 @@ class AppInfoTestCase(unittest.TestCase):
 
     def _validate_app_info(self, info):
         self.assertIn('module_versions', info)
-        self.assertIn('categories', info)
         self.assertIn('app_infos', info)
         for m in info['module_versions']:
             self.assertIsNotNone(info['module_versions'][m])
-        for c in info['categories']:
-            category = info['categories'][c]
-            self.assertIsNotNone(category)
-            self.assertIn('description', category)
-            self.assertIn('id', category)
-            self.assertIn('name', category)
-            self.assertIn('parent_ids', category)
-            self.assertIn('tooltip', category)
-            self.assertIn('ver', category)
         for a in info['app_infos']:
             app = info['app_infos'][a]['info']
-            self.assertIn('app_type', app)
-            self.assertIn('authors', app)
-            self.assertIsInstance(app['authors'], list)
+            self.assertNotIn('app_type', app)
+            self.assertNotIn('authors', app)
             self.assertIn('categories', app)
             self.assertIsInstance(app['categories'], list)
+            for category in IGNORE_CATEGORIES:
+                self.assertNotIn(category, app['categories'])
             self.assertIn('id', app)
             self.assertIn('input_types', app)
             self.assertIsInstance(app['input_types'], list)
+            self.assertIn('short_input_types', app)
+            self.assertIsInstance(app['short_input_types'], list)
             self.assertIn('name', app)
-            self.assertIn('namespace', app)
+            self.assertNotIn('namespace', app)
             self.assertIn('output_types', app)
             self.assertIsInstance(app['output_types'], list)
+            self.assertIn('short_output_types', app)
+            self.assertIsInstance(app['short_output_types'], list)
             self.assertIn('subtitle', app)
-            self.assertIn('tooltip', app)
+            self.assertNotIn('tooltip', app)
+            self.assertNotIn('icon', app)
             self.assertIn('ver', app)
+
+    def test_get_ignore_categories_ok(self):
+        impl = self.getImpl()
+        ctx = self.getContext()
+        ignore_categories = impl.get_ignore_categories(ctx)[0]
+
+        expected_keys = ["inactive", "importers", "viewers"]
+        self.assertCountEqual(expected_keys, ignore_categories.keys())

@@ -5,7 +5,7 @@ from NarrativeService.NarrativeListUtils import NarrativeListUtils, NarratorialU
 from NarrativeService.NarrativeManager import NarrativeManager
 from NarrativeService.ReportFetcher import ReportFetcher
 from NarrativeService.sharing.sharemanager import ShareRequester
-from NarrativeService.apps.appinfo import get_all_app_info
+from NarrativeService.apps.appinfo import get_all_app_info, get_ignore_categories
 from installed_clients.WorkspaceClient import Workspace
 #END_HEADER
 
@@ -25,9 +25,9 @@ class NarrativeService:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.1.0"
-    GIT_URL = "https://github.com/briehl/NarrativeService"
-    GIT_COMMIT_HASH = "2222840c363bc98c578666ac7e0e6cd2588b5970"
+    VERSION = "0.2.1"
+    GIT_URL = "https://github.com/Tianhao-Gu/NarrativeService.git"
+    GIT_COMMIT_HASH = "1a9ec28a5fbc301e62945e12404470c53d62dd52"
 
     #BEGIN_CLASS_HEADER
     def _nm(self, ctx):
@@ -630,6 +630,24 @@ class NarrativeService:
                              'output is not type dict as required.')
         # return the results
         return [output]
+
+    def get_ignore_categories(self, ctx):
+        """
+        This returns ignored app categories used in Narrative Apps Panel.
+        :returns: instance of mapping from String to Long
+        """
+        # ctx is the context object
+        # return variables are: ignore_categories
+        #BEGIN get_ignore_categories
+        ignore_categories = get_ignore_categories()
+        #END get_ignore_categories
+
+        # At some point might do deeper type checking...
+        if not isinstance(ignore_categories, dict):
+            raise ValueError('Method get_ignore_categories return value ' +
+                             'ignore_categories is not type dict as required.')
+        # return the results
+        return [ignore_categories]
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': "OK",
