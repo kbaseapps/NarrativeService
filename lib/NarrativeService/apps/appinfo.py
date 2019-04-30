@@ -2,7 +2,6 @@ from installed_clients.NarrativeMethodStoreClient import NarrativeMethodStore
 from installed_clients.CatalogClient import Catalog
 
 IGNORE_CATEGORIES = {"inactive", "importers", "viewers"}
-UNUSED_INFO = {'tooltip', 'icon', 'authors', 'app_type', 'namespace'}
 
 
 def get_ignore_categories():
@@ -35,8 +34,6 @@ def get_all_app_info(tag, user, nms_url, catalog_url):
         # ignore empty apps or apps in IGNORE_CATEGORIES
         if not a or not set(a.get('categories')).isdisjoint(IGNORE_CATEGORIES):
             continue
-        # remove unused info
-        [a.pop(key, None) for key in UNUSED_INFO]
         # add short version of input/output types
         for target_type in ['input_types', 'output_types']:
             a['short_{}'.format(target_type)] = _shorten_types(a.get(target_type))
