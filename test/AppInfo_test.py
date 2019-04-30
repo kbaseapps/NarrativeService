@@ -70,8 +70,9 @@ class AppInfoTestCase(unittest.TestCase):
             self.assertIsNotNone(info['module_versions'][m])
         for a in info['app_infos']:
             app = info['app_infos'][a]['info']
-            self.assertNotIn('app_type', app)
-            self.assertNotIn('authors', app)
+            self.assertIn('app_type', app)
+            self.assertIn('authors', app)
+            self.assertIsInstance(app['authors'], list)
             self.assertIn('categories', app)
             self.assertIsInstance(app['categories'], list)
             for category in IGNORE_CATEGORIES:
@@ -82,14 +83,13 @@ class AppInfoTestCase(unittest.TestCase):
             self.assertIn('short_input_types', app)
             self.assertIsInstance(app['short_input_types'], list)
             self.assertIn('name', app)
-            self.assertNotIn('namespace', app)
+            self.assertIn('namespace', app)
             self.assertIn('output_types', app)
             self.assertIsInstance(app['output_types'], list)
             self.assertIn('short_output_types', app)
             self.assertIsInstance(app['short_output_types'], list)
             self.assertIn('subtitle', app)
-            self.assertNotIn('tooltip', app)
-            self.assertNotIn('icon', app)
+            self.assertIn('tooltip', app)
             self.assertIn('ver', app)
 
     def test_get_ignore_categories_ok(self):
