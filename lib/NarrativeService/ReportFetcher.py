@@ -1,5 +1,6 @@
 from NarrativeService.ServiceUtils import ServiceUtils
 
+
 class ReportFetcher(object):
     def __init__(self, ws_client):
         self.ws_client = ws_client
@@ -17,7 +18,7 @@ class ReportFetcher(object):
             report_upas = list()
             for ref_info in ref_list:
                 if "KBaseReport.Report" in ref_info[2]:
-                    report_upas.append(ServiceUtils.objectInfoToObject(ref_info)['ref'])
+                    report_upas.append(ServiceUtils.object_info_to_object(ref_info)['ref'])
             if len(report_upas):
                 return self.build_output(upa, report_upas)
             else:

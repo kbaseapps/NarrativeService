@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #BEGIN_HEADER
-from NarrativeService.DynamicServiceCache import DynamicServiceCache
+from NarrativeService.DynamicServiceCache import DynamicServiceClient
 from NarrativeService.NarrativeListUtils import NarrativeListUtils, NarratorialUtils
 from NarrativeService.NarrativeManager import NarrativeManager
 from NarrativeService.ReportFetcher import ReportFetcher
@@ -43,10 +43,10 @@ class NarrativeService:
         self.serviceWizardURL = config['service-wizard']
         self.narrativeMethodStoreURL = config['narrative-method-store']
         self.catalogURL = config['catalog-url']
-        self.setAPICache = DynamicServiceCache(self.serviceWizardURL,
+        self.setAPICache = DynamicServiceClient(self.serviceWizardURL,
                                                config['setapi-version'],
                                                'SetAPI')
-        self.dataPaletteCache = DynamicServiceCache(self.serviceWizardURL,
+        self.dataPaletteCache = DynamicServiceClient(self.serviceWizardURL,
                                                     config['datapaletteservice-version'],
                                                     'DataPaletteService')
 

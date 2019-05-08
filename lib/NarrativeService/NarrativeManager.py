@@ -322,12 +322,12 @@ class NarrativeManager:
                                                                    'description': 'Created new ' +
                                                                    'Workspace/Narrative bundle.'}],
                                                    'hidden': 0}]})[0]
-        objectInfo = ServiceUtils.objectInfoToObject(objectInfo)
+        objectInfo = ServiceUtils.object_info_to_object(objectInfo)
         ws_info = self._completeNewNarrative(ws_info[0], objectInfo['id'],
                                              importData, is_temporary, title,
                                              len(narrativeObject['cells']))
         return {
-            'workspaceInfo': ServiceUtils.workspaceInfoToObject(ws_info),
+            'workspaceInfo': ServiceUtils.workspace_info_to_object(ws_info),
             'narrativeInfo': objectInfo
         }
 
@@ -478,7 +478,7 @@ class NarrativeManager:
             objectsToCopy = [{'ref': x} for x in importData]
             infoList = self.ws.get_object_info_new({'objects': objectsToCopy, 'includeMetadata': 0})
             for item in infoList:
-                objectInfo = ServiceUtils.objectInfoToObject(item)
+                objectInfo = ServiceUtils.object_info_to_object(item)
                 self.copy_object(objectInfo['ref'], workspaceId, None, None, objectInfo)
 
         return self.ws.get_workspace_info({'id': workspaceId})
@@ -513,7 +513,7 @@ class NarrativeManager:
         if not src_info:
             src_info_tuple = self.ws.get_object_info_new({'objects': [{'ref': ref}],
                                                           'includeMetadata': 0})[0]
-            src_info = ServiceUtils.objectInfoToObject(src_info_tuple)
+            src_info = ServiceUtils.object_info_to_object(src_info_tuple)
         type_name = src_info['typeModule'] + '.' + src_info['typeName']
         type_config = self.DATA_PALETTES_TYPES.get(type_name)
         if type_config is not None:
@@ -532,7 +532,7 @@ class NarrativeManager:
                                                   'to': {'wsid': target_ws_id,
                                                          'workspace': target_ws_name,
                                                          'name': target_name}})
-            obj_info = ServiceUtils.objectInfoToObject(obj_info_tuple)
+            obj_info = ServiceUtils.object_info_to_object(obj_info_tuple)
             return {'info': obj_info}
 
 
