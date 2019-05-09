@@ -31,7 +31,10 @@ class NarrativeService:
 
     #BEGIN_CLASS_HEADER
     def _nm(self, ctx):
-        return NarrativeManager(self.config, ctx, self.setAPICache, self.dataPaletteCache)
+        """
+        ctx - the context object, gets tokens, etc.
+        """
+        return NarrativeManager(self.config, ctx, self.setAPIClient, self.dataPaletteClient)
     #END_CLASS_HEADER
 
     # config contains contents of config file in a hash or None if it couldn't
@@ -43,12 +46,12 @@ class NarrativeService:
         self.serviceWizardURL = config['service-wizard']
         self.narrativeMethodStoreURL = config['narrative-method-store']
         self.catalogURL = config['catalog-url']
-        self.setAPICache = DynamicServiceClient(self.serviceWizardURL,
-                                               config['setapi-version'],
-                                               'SetAPI')
-        self.dataPaletteCache = DynamicServiceClient(self.serviceWizardURL,
-                                                    config['datapaletteservice-version'],
-                                                    'DataPaletteService')
+        self.setAPIClient = DynamicServiceClient(self.serviceWizardURL,
+                                                 config['setapi-version'],
+                                                 'SetAPI')
+        self.dataPaletteClient = DynamicServiceClient(self.serviceWizardURL,
+                                                      config['datapaletteservice-version'],
+                                                      'DataPaletteService')
 
         self.narListUtils = NarrativeListUtils(config['narrative-list-cache-size'])
         #END_CONSTRUCTOR
