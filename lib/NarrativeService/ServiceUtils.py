@@ -2,10 +2,11 @@ import dateutil.parser
 import datetime
 import re
 
+
 class ServiceUtils:
-    
+
     @staticmethod
-    def workspaceInfoToObject(wsInfo):
+    def workspace_info_to_object(wsInfo):
         return {'id': wsInfo[0],
                 'name': wsInfo[1],
                 'owner': wsInfo[2],
@@ -15,10 +16,10 @@ class ServiceUtils:
                 'globalread': wsInfo[6],
                 'lockstat': wsInfo[7],
                 'metadata': wsInfo[8],
-                'modDateMs': ServiceUtils.iso8601ToMillisSinceEpoch(wsInfo[3])}
+                'modDateMs': ServiceUtils.iso8601_to_millis_since_epoch(wsInfo[3])}
 
     @staticmethod
-    def objectInfoToObject(data):
+    def object_info_to_object(data):
         dtype = re.split("-|\.", data[2])
         return {'id': data[0],
                 'name': data[1],
@@ -37,11 +38,11 @@ class ServiceUtils:
                 'typeName': dtype[1],
                 'typeMajorVersion': dtype[2],
                 'typeMinorVersion': dtype[3],
-                'saveDateMs': ServiceUtils.iso8601ToMillisSinceEpoch(data[3])}
+                'saveDateMs': ServiceUtils.iso8601_to_millis_since_epoch(data[3])}
 
     @staticmethod
-    def iso8601ToMillisSinceEpoch(date):
+    def iso8601_to_millis_since_epoch(date):
         epoch = datetime.datetime.utcfromtimestamp(0)
         dt = dateutil.parser.parse(date)
-        utc_naive  = dt.replace(tzinfo=None) - dt.utcoffset()
+        utc_naive = dt.replace(tzinfo=None) - dt.utcoffset()
         return int((utc_naive - epoch).total_seconds() * 1000.0)

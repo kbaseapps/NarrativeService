@@ -41,7 +41,7 @@ class NarrativeManager:
     def list_objects_with_sets(self, ws_id=None, ws_name=None, workspaces=None,
                                types=None, include_metadata=0):
         if not workspaces:
-            if (not ws_id) and (not ws_name):
+            if not ws_id and not ws_name:
                 raise ValueError("One and only one of 'ws_id', 'ws_name', 'workspaces' " +
                                  "parameters should be set")
             workspaces = [self._get_workspace_name_or_id(ws_id, ws_name)]
@@ -83,7 +83,7 @@ class NarrativeManager:
             print("NarrativeManager._list_objects_with_sets: loading ws_info")
         t2 = time.time()
         ws_info_list = []
-        #for ws in workspaces:
+        # for ws in workspaces:
         if len(workspaces) == 1:
             ws = workspaces[0]
             ws_id = None
@@ -107,7 +107,7 @@ class NarrativeManager:
         for info in WorkspaceListObjectsIterator(self.ws,
                                                  ws_info_list=ws_info_list,
                                                  list_objects_params={
-                                                    'includeMetadata': include_metadata
+                                                     'includeMetadata': include_metadata
                                                  }):
             item_ref = str(info[6]) + '/' + str(info[0]) + '/' + str(info[4])
             if item_ref not in processed_refs and self._check_info_type(info, type_map):
@@ -251,10 +251,10 @@ class NarrativeManager:
                 }
             })
             return {'newWsId': newWsId, 'newNarId': newNarId}
-        except:
+        except Exception:
             # let's delete copy of workspace so it's out of the way - it's broken
             self.ws.delete_workspace({'id': newWsId})
-            raise # continue raising previous exception
+            raise
 
     def create_new_narrative(self, app, method, appparam, appData, markdown,
                              copydata, importData, includeIntroCell, title):
@@ -322,12 +322,12 @@ class NarrativeManager:
                                                                    'description': 'Created new ' +
                                                                    'Workspace/Narrative bundle.'}],
                                                    'hidden': 0}]})[0]
-        objectInfo = ServiceUtils.objectInfoToObject(objectInfo)
+        objectInfo = ServiceUtils.object_info_to_object(objectInfo)
         ws_info = self._completeNewNarrative(ws_info[0], objectInfo['id'],
                                              importData, is_temporary, title,
                                              len(narrativeObject['cells']))
         return {
-            'workspaceInfo': ServiceUtils.workspaceInfoToObject(ws_info),
+            'workspaceInfo': ServiceUtils.workspace_info_to_object(ws_info),
             'narrativeInfo': objectInfo
         }
 
@@ -394,12 +394,12 @@ class NarrativeManager:
         for cell_pos, cell in enumerate(cells):
             if 'app' in cell:
                 cell_data.append(self._buildAppCell(len(cell_data),
-                                                   specMapping['apps'][cell['app']],
-                                                   parameters))
+                                                    specMapping['apps'][cell['app']],
+                                                    parameters))
             elif 'method' in cell:
                 cell_data.append(self._buildMethodCell(len(cell_data),
-                                                      specMapping['methods'][cell['method']],
-                                                      parameters))
+                                                       specMapping['methods'][cell['method']],
+                                                       parameters))
             elif 'markdown' in cell:
                 cell_data.append({'cell_type': 'markdown', 'source': cell['markdown'],
                                   'metadata': {}})
@@ -410,51 +410,53 @@ class NarrativeManager:
 
     def _buildAppCell(self, pos, spec, params):
         cellId = 'kb-cell-' + str(pos) + '-' + str(uuid.uuid4())
-        cell = {'cell_type': 'markdown',
-                'source': "<div id='" + cellId + "'></div>" +
-                    "\n<script>" +
-                    "$('#" + cellId + "').kbaseNarrativeAppCell({'appSpec' : '" +
-                    self._safeJSONStringify(spec) + "', 'cellId' : '" + cellId + "'});" +
-                    "</script>",
-                'metadata': {}}
+        cell = {
+            "cell_type": "markdown",
+            "source": "<div id='" + cellId + "'></div>" +
+                      "\n<script>" +
+                      "$('#" + cellId + "').kbaseNarrativeAppCell({'appSpec' : '" +
+                      self._safeJSONStringify(spec) + "', 'cellId' : '" + cellId + "'});" +
+                      "</script>",
+            "metadata": {}
+        }
         cellInfo = {}
         widgetState = []
-        cellInfo[self.KB_TYPE] = self.KB_APP_CELL;
-        cellInfo['app'] = spec;
+        cellInfo[self.KB_TYPE] = self.KB_APP_CELL
+        cellInfo['app'] = spec
         if params:
-            steps = {};
+            steps = {}
             for param in params:
                 stepid = 'step_' + str(param[0])
                 if stepid not in steps:
                     steps[stepid] = {}
                     steps[stepid]['inputState'] = {}
                 steps[stepid]['inputState'][param[1]] = param[2]
-            state = {'state': {'step': steps}};
-            widgetState.append(state);
-        cellInfo[self.KB_STATE] = widgetState;
-        cell['metadata'][self.KB_CELL] = cellInfo;
+            state = {'state': {'step': steps}}
+            widgetState.append(state)
+        cellInfo[self.KB_STATE] = widgetState
+        cell['metadata'][self.KB_CELL] = cellInfo
         return cell
 
     def _buildMethodCell(self, pos, spec, params):
-        cellId = 'kb-cell-' + str(pos) + '-' + str(uuid.uuid4())
-        cell = {'cell_type': 'markdown',
-                'source': "<div id='" + cellId + "'></div>" +
-                    "\n<script>" +
-                    "$('#" + cellId + "').kbaseNarrativeMethodCell({'method' : '" +
-                    self._safeJSONStringify(spec) + "'});" +
-                    "</script>",
-                'metadata': {}}
-        cellInfo = {'method': spec,
-                    'widget': spec['widgets']['input']}
+        cellId = "kb-cell-" + str(pos) + "-" + str(uuid.uuid4())
+        cell = {"cell_type": "markdown",
+                "source": "<div id='" + cellId + "'></div>" +
+                          "\n<script>" +
+                          "$('#" + cellId + "').kbaseNarrativeMethodCell({'method' : '" +
+                          self._safeJSONStringify(spec) + "'});" +
+                          "</script>",
+                "metadata": {}}
+        cellInfo = {"method": spec,
+                    "widget": spec["widgets"]["input"]}
         cellInfo[self.KB_TYPE] = self.KB_FUNCTION_CELL
         widgetState = []
         if params:
             wparams = {}
             for param in params:
-                wparams[param[1]] = param[2];
-            widgetState.append({'state': wparams});
-        cellInfo[self.KB_STATE] = widgetState;
-        cell['metadata'][self.KB_CELL] = cellInfo;
+                wparams[param[1]] = param[2]
+            widgetState.append({"state": wparams})
+        cellInfo[self.KB_STATE] = widgetState
+        cell["metadata"][self.KB_CELL] = cellInfo
         return cell
 
     def _completeNewNarrative(self, workspaceId, objectId, importData, is_temporary, title, num_cells):
@@ -478,7 +480,7 @@ class NarrativeManager:
             objectsToCopy = [{'ref': x} for x in importData]
             infoList = self.ws.get_object_info_new({'objects': objectsToCopy, 'includeMetadata': 0})
             for item in infoList:
-                objectInfo = ServiceUtils.objectInfoToObject(item)
+                objectInfo = ServiceUtils.object_info_to_object(item)
                 self.copy_object(objectInfo['ref'], workspaceId, None, None, objectInfo)
 
         return self.ws.get_workspace_info({'id': workspaceId})
@@ -497,7 +499,7 @@ class NarrativeManager:
             for key in obj_keys:
                 obj[key] = self._safeJSONStringifyPrepare(obj[key])
         else:
-            pass # it's boolean/int/float/None
+            pass  # it's boolean/int/float/None
         return obj
 
     def _get_workspace_name_or_id(self, ws_id, ws_name):
@@ -513,7 +515,7 @@ class NarrativeManager:
         if not src_info:
             src_info_tuple = self.ws.get_object_info_new({'objects': [{'ref': ref}],
                                                           'includeMetadata': 0})[0]
-            src_info = ServiceUtils.objectInfoToObject(src_info_tuple)
+            src_info = ServiceUtils.object_info_to_object(src_info_tuple)
         type_name = src_info['typeModule'] + '.' + src_info['typeName']
         type_config = self.DATA_PALETTES_TYPES.get(type_name)
         if type_config is not None:
@@ -532,9 +534,8 @@ class NarrativeManager:
                                                   'to': {'wsid': target_ws_id,
                                                          'workspace': target_ws_name,
                                                          'name': target_name}})
-            obj_info = ServiceUtils.objectInfoToObject(obj_info_tuple)
+            obj_info = ServiceUtils.object_info_to_object(obj_info_tuple)
             return {'info': obj_info}
-
 
     def list_available_types(self, workspaces):
         data = self.list_objects_with_sets(workspaces=workspaces)['data']
