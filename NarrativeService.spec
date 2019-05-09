@@ -104,6 +104,7 @@ module NarrativeService {
             converted into string).
         types - optional filter field, limiting output list to set of types.
         includeMetadata - if 1, includes object metadata, if 0, does not. Default 0.
+        include_data_palettes - if 1, includes data palette info, if 0, does not. Default 0.
     */
     typedef structure {
         string ws_name;
@@ -111,11 +112,13 @@ module NarrativeService {
         list<string> workspaces;
         list<string> types;
         boolean includeMetadata;
+        boolean include_data_palettes;
     } ListObjectsWithSetsParams;
 
     /*
         data_palette_refs - mapping from workspace Id to reference to DataPalette
-            container existing in given workspace.
+            container existing in given workspace. Not present if include_data_palettes is 0
+            in the input parameters.
     */
     typedef structure {
         list<ListItem> data;

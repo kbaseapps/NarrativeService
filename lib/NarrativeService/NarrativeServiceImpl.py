@@ -26,8 +26,8 @@ class NarrativeService:
     # the latter method is running.
     ######################################### noqa
     VERSION = "0.2.1"
-    GIT_URL = "https://github.com/Tianhao-Gu/NarrativeService.git"
-    GIT_COMMIT_HASH = "1a9ec28a5fbc301e62945e12404470c53d62dd52"
+    GIT_URL = "https://github.com/briehl/NarrativeService"
+    GIT_COMMIT_HASH = "d57f119e95cc9b8132ff4993cb0de4e11a0eb3ff"
 
     #BEGIN_CLASS_HEADER
     def _nm(self, ctx):
@@ -65,14 +65,17 @@ class NarrativeService:
            (in case of 'workspaces' each string could be workspace name or ID
            converted into string). types - optional filter field, limiting
            output list to set of types. includeMetadata - if 1, includes
-           object metadata, if 0, does not. Default 0.) -> structure:
-           parameter "ws_name" of String, parameter "ws_id" of Long,
-           parameter "workspaces" of list of String, parameter "types" of
-           list of String, parameter "includeMetadata" of type "boolean"
-           (@range [0,1])
+           object metadata, if 0, does not. Default 0. include_data_palettes
+           - if 1, includes data palette info, if 0, does not. Default 0.) ->
+           structure: parameter "ws_name" of String, parameter "ws_id" of
+           Long, parameter "workspaces" of list of String, parameter "types"
+           of list of String, parameter "includeMetadata" of type "boolean"
+           (@range [0,1]), parameter "include_data_palettes" of type
+           "boolean" (@range [0,1])
         :returns: instance of type "ListObjectsWithSetsOutput"
            (data_palette_refs - mapping from workspace Id to reference to
-           DataPalette container existing in given workspace.) -> structure:
+           DataPalette container existing in given workspace. Not present if
+           include_data_palettes is 0 in the input parameters.) -> structure:
            parameter "data" of list of type "ListItem" (object_info -
            workspace info for object (including set object), set_items -
            optional property listing info for items of set object, dp_info -
@@ -135,9 +138,11 @@ class NarrativeService:
         workspaces = params.get("workspaces")
         types = params.get("types")
         include_metadata = params.get("includeMetadata", 0)
-        returnVal = self._nm(ctx).list_objects_with_sets(ws_id=ws_id, ws_name=ws_name,
-                                                         workspaces=workspaces, types=types,
-                                                         include_metadata=include_metadata)
+        include_data_palettes = params.get("include_data_palettes", 0)
+        returnVal = self._nm(ctx).list_objects_with_sets(
+            ws_id=ws_id, ws_name=ws_name, workspaces=workspaces, types=types,
+            include_metadata=include_metadata, include_data_palettes=include_data_palettes
+        )
         #END list_objects_with_sets
 
         # At some point might do deeper type checking...
