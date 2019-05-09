@@ -167,26 +167,8 @@ class NarrativeServiceTest(unittest.TestCase):
                 set_items = item["set_items"]["set_items_info"]
                 self.assertEqual(1, len(set_items))
         self.assertEqual(1, set_count)
-        self.assertNotIn('data_palette_refs', list_ret)
-        ws_id = self.getWsClient().get_workspace_info({"workspace": ws_name1})[0]
-
-        list_ret = self.getImpl().list_objects_with_sets(self.getContext(),
-                                                         {"ws_name": ws_name1,
-                                                          "include_data_palettes": 1})[0]
-        ret = list_ret['data']
-        self.assertTrue(len(ret) > 0)
-        set_count = 0
-        for item in ret:
-            self.assertTrue("object_info" in item)
-            if "set_items" in item:
-                set_count += 1
-                set_items = item["set_items"]["set_items_info"]
-                self.assertEqual(1, len(set_items))
-        self.assertEqual(1, set_count)
         self.assertIn('data_palette_refs', list_ret)
         ws_id = self.getWsClient().get_workspace_info({"workspace": ws_name1})[0]
-
-
         ret2 = self.getImpl().list_objects_with_sets(self.getContext(),
                                                      {"ws_id": ws_id})[0]["data"]
         self.assertEqual(len(ret), len(ret2))
@@ -285,8 +267,7 @@ class NarrativeServiceTest(unittest.TestCase):
             self.assertNotEqual(ws_name, copy_nar_data['metadata']['ws_name'])
             self.assertEqual(copy_nar_name, copy_nar_data['metadata']['name'])
             ret = self.getImpl().list_objects_with_sets(self.getContext(),
-                                                        {"ws_id": copy_ws_id,
-                                                         "include_data_palettes": 1})[0]["data"]
+                                                        {"ws_id": copy_ws_id})[0]["data"]
             dp_found = False
             for item in ret:
                 obj_info = item["object_info"]
@@ -320,6 +301,7 @@ class NarrativeServiceTest(unittest.TestCase):
         try:
             ret = self.getImpl().list_objects_with_sets(self.getContext(),
                                                         {"ws_id": copy_ws_id})[0]["data"]
+            dp_found = False
             for item in ret:
                 obj_info = item["object_info"]
                 if obj_info[7] == reads_ws_name:
@@ -328,6 +310,7 @@ class NarrativeServiceTest(unittest.TestCase):
                     self.assertTrue('refs' in item['dp_info'])
                     self.assertEqual(str(copy_ws_id), item['dp_info']['ref'].split('/')[0])
                     self.assertEqual(reads_obj_name, obj_info[1])
+                    dp_found = True
             self.assertTrue(dp_found)
         finally:
             # Cleaning up new created workspace
@@ -487,8 +470,7 @@ class NarrativeServiceTest(unittest.TestCase):
         copy_ws_id = ret['newWsId']
         try:
             ret = self.getImpl().list_objects_with_sets(self.getContext2(),
-                                                        {"ws_name": str(copy_ws_id),
-                                                         "include_data_palettes": 1})[0]["data"]
+                                                        {"ws_name": str(copy_ws_id)})[0]["data"]
             found = False
             for item in ret:
                 info = item['object_info']
@@ -596,8 +578,7 @@ class NarrativeServiceTest(unittest.TestCase):
         target_name = ret[0]['info']['name']
         # Let's check that we see reads copy in list_objects_with_sets
         ret = self.getImpl().list_objects_with_sets(self.getContext(),
-                                                    {"ws_name": ws_name,
-                                                     "include_data_palettes": 1})[0]["data"]
+                                                    {"ws_name": ws_name})[0]["data"]
         found = False
         for item in ret:
             obj_info = item["object_info"]
@@ -630,8 +611,7 @@ class NarrativeServiceTest(unittest.TestCase):
                              'users': [self.getContext2()['user_id']]})
         # Get ref-path to reads object
         ret = self.getImpl().list_objects_with_sets(self.getContext(),
-                                                    {"ws_name": ws_name1,
-                                                     "include_data_palettes": 1})[0]['data']
+                                                    {"ws_name": ws_name1})[0]['data']
         reads_ref_path = None
         for item in ret:
             if 'dp_info' in item:
@@ -730,8 +710,7 @@ class NarrativeServiceTest(unittest.TestCase):
         # Let's check that we can list and access reads object
         ret = self.getImpl().list_objects_with_sets(self.getContext2(),
                                                     {"ws_name": ws_name2,
-                                                     "includeMetadata": 0,
-                                                     "include_data_palettes": 1})[0]["data"]
+                                                     "includeMetadata": 0})[0]["data"]
         self.assertEqual(1, len(ret))
         item = ret[0]
         self.assertTrue('dp_info' in item)
