@@ -590,21 +590,21 @@ class NarrativeServiceTest(unittest.TestCase):
         example_ws = self.__class__.example_ws_name
         ws_name = self.createWs()
         import_ref = self.__class__.example_reads_ref
-        ret = self.getImpl().copy_object(self.getContext(), {'ref': import_ref,
-                                                             'target_ws_name': ws_name})
-        self.assertEqual(example_ws, ret[0]['info']['ws'])
-        target_name = ret[0]['info']['name']
+        copied_object = self.getImpl().copy_object(self.getContext(), {'ref': import_ref,
+                                                                       'target_ws_name': ws_name})
+        self.assertNotEqual(example_ws, copied_object[0]['info']['ws'])
+        target_name = copied_object[0]['info']['name']
         # Let's check that we see reads copy in list_objects_with_sets
         ret = self.getImpl().list_objects_with_sets(self.getContext(),
-                                                    {"ws_name": ws_name,
-                                                     "include_data_palettes": 1})[0]["data"]
+                                                    {"ws_name": ws_name})[0]["data"]
         found = False
         for item in ret:
             obj_info = item["object_info"]
-            if obj_info[7] == example_ws:
-                self.assertTrue('dp_info' in item)
+            if obj_info[1] == target_name:
                 found = True
+                break
         self.assertTrue(found)
+
         # Genome
         import_ref = self.__class__.example_reads_ref
         # target_name = "MyReads.1"

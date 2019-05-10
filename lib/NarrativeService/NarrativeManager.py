@@ -516,33 +516,27 @@ class NarrativeManager:
         return ret
 
     def copy_object(self, ref, target_ws_id, target_ws_name, target_name, src_info):
-        # There should be some logic related to DataPalettes
-        if (not target_ws_id) and (not target_ws_name):
-            raise ValueError("Neither target workspace ID nor name is defined")
+        """
+        Copies an object from one workspace to another.
+        """
+        if not target_ws_id and not target_ws_name:
+            raise ValueError("Neither target workspace id nor name is defined")
         if not src_info:
             src_info_tuple = self.ws.get_object_info_new({'objects': [{'ref': ref}],
                                                           'includeMetadata': 0})[0]
             src_info = ServiceUtils.object_info_to_object(src_info_tuple)
-        type_name = src_info['typeModule'] + '.' + src_info['typeName']
-        type_config = self.DATA_PALETTES_TYPES.get(type_name)
-        if type_config is not None:
-            # Copy with DataPaletteService
-            if target_name:
-                raise ValueError("'target_name' cannot be defined for DataPalette copy")
-            target_ws_name_or_id = self._get_workspace_name_or_id(target_ws_id, target_ws_name)
-            self.dps_cache.call_method("add_to_palette", [{'workspace': target_ws_name_or_id,
-                                                           'new_refs': [{'ref': ref}]}],
-                                       self.token)
-            return {'info': src_info}
-        else:
-            if not target_name:
-                target_name = src_info['name']
-            obj_info_tuple = self.ws.copy_object({'from': {'ref': ref},
-                                                  'to': {'wsid': target_ws_id,
-                                                         'workspace': target_ws_name,
-                                                         'name': target_name}})
-            obj_info = ServiceUtils.object_info_to_object(obj_info_tuple)
-            return {'info': obj_info}
+        if not target_name:
+            target_name = src_info['name']
+        obj_info_tuple = self.ws.copy_object({
+            'from': {'ref': ref},
+            'to': {
+                'wsid': target_ws_id,
+                'workspace': target_ws_name,
+                'name': target_name
+            }
+        })
+        obj_info = ServiceUtils.object_info_to_object(obj_info_tuple)
+        return {'info': obj_info}
 
     def list_available_types(self, workspaces):
         data = self.list_objects_with_sets(workspaces=workspaces)['data']
