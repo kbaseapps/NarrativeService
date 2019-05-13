@@ -39,15 +39,15 @@ class NarrativeManager:
                 self.DATA_PALETTES_TYPES = DataPaletteTypes(True)
 
     def list_objects_with_sets(self, ws_id=None, ws_name=None, workspaces=None,
-                               types=None, include_metadata=0):
+                               types=None, include_metadata=0, include_data_palettes=0):
         if not workspaces:
             if not ws_id and not ws_name:
                 raise ValueError("One and only one of 'ws_id', 'ws_name', 'workspaces' " +
                                  "parameters should be set")
             workspaces = [self._get_workspace_name_or_id(ws_id, ws_name)]
-        return self._list_objects_with_sets(workspaces, types, include_metadata)
+        return self._list_objects_with_sets(workspaces, types, include_metadata, include_data_palettes)
 
-    def _list_objects_with_sets(self, workspaces, types, include_metadata):
+    def _list_objects_with_sets(self, workspaces, types, include_metadata, include_data_palettes):
         type_map = None
         if types is not None:
             type_map = {key: True for key in types}
@@ -117,35 +117,42 @@ class NarrativeManager:
         if self.DEBUG:
             print("    (time=" + str(time.time() - t3) + ")")
 
-        if self.DEBUG:
-            print("NarrativeManager._list_objects_with_sets: processing DataPalettes")
-        t5 = time.time()
-        if dp_data is None or dp_refs is None:
-            dps = self.dps_cache
-            dp_ret = dps.call_method("list_data", [{'workspaces': workspaces,
-                                                    'include_metadata': include_metadata}],
-                                     self.token)
-            dp_data = dp_ret['data']
-            dp_refs = dp_ret['data_palette_refs']
-        for item in dp_data:
-            ref = item['ref']
-            if self._check_info_type(item['info'], type_map):
-                data_item = None
-                if ref in processed_refs:
-                    data_item = processed_refs[ref]
-                else:
-                    data_item = {'object_info': item['info']}
-                    processed_refs[ref] = data_item
-                    data.append(data_item)
-                dp_info = {}
-                if 'dp_ref' in item:
-                    dp_info['ref'] = item['dp_ref']
-                if 'dp_refs' in item:
-                    dp_info['refs'] = item['dp_refs']
-                data_item['dp_info'] = dp_info
-        if self.DEBUG:
-            print("    (time=" + str(time.time() - t5) + ")")
-        return {"data": data, 'data_palette_refs': dp_refs}
+        return_data = {
+            "data": data
+        }
+
+        if include_data_palettes == 1:
+            if self.DEBUG:
+                print("NarrativeManager._list_objects_with_sets: processing DataPalettes")
+            t5 = time.time()
+            if dp_data is None or dp_refs is None:
+                dps = self.dps_cache
+                dp_ret = dps.call_method("list_data", [{'workspaces': workspaces,
+                                                        'include_metadata': include_metadata}],
+                                         self.token)
+                dp_data = dp_ret['data']
+                dp_refs = dp_ret['data_palette_refs']
+            for item in dp_data:
+                ref = item['ref']
+                if self._check_info_type(item['info'], type_map):
+                    data_item = None
+                    if ref in processed_refs:
+                        data_item = processed_refs[ref]
+                    else:
+                        data_item = {'object_info': item['info']}
+                        processed_refs[ref] = data_item
+                        data.append(data_item)
+                    dp_info = {}
+                    if 'dp_ref' in item:
+                        dp_info['ref'] = item['dp_ref']
+                    if 'dp_refs' in item:
+                        dp_info['refs'] = item['dp_refs']
+                    data_item['dp_info'] = dp_info
+            return_data["data_palette_refs"] = dp_refs
+            if self.DEBUG:
+                print("    (time=" + str(time.time() - t5) + ")")
+
+        return return_data
 
     def _check_info_type(self, info, type_map):
         if type_map is None:
@@ -509,33 +516,27 @@ class NarrativeManager:
         return ret
 
     def copy_object(self, ref, target_ws_id, target_ws_name, target_name, src_info):
-        # There should be some logic related to DataPalettes
-        if (not target_ws_id) and (not target_ws_name):
-            raise ValueError("Neither target workspace ID nor name is defined")
+        """
+        Copies an object from one workspace to another.
+        """
+        if not target_ws_id and not target_ws_name:
+            raise ValueError("Neither target workspace id nor name is defined")
         if not src_info:
             src_info_tuple = self.ws.get_object_info_new({'objects': [{'ref': ref}],
                                                           'includeMetadata': 0})[0]
             src_info = ServiceUtils.object_info_to_object(src_info_tuple)
-        type_name = src_info['typeModule'] + '.' + src_info['typeName']
-        type_config = self.DATA_PALETTES_TYPES.get(type_name)
-        if type_config is not None:
-            # Copy with DataPaletteService
-            if target_name:
-                raise ValueError("'target_name' cannot be defined for DataPalette copy")
-            target_ws_name_or_id = self._get_workspace_name_or_id(target_ws_id, target_ws_name)
-            self.dps_cache.call_method("add_to_palette", [{'workspace': target_ws_name_or_id,
-                                                           'new_refs': [{'ref': ref}]}],
-                                       self.token)
-            return {'info': src_info}
-        else:
-            if not target_name:
-                target_name = src_info['name']
-            obj_info_tuple = self.ws.copy_object({'from': {'ref': ref},
-                                                  'to': {'wsid': target_ws_id,
-                                                         'workspace': target_ws_name,
-                                                         'name': target_name}})
-            obj_info = ServiceUtils.object_info_to_object(obj_info_tuple)
-            return {'info': obj_info}
+        if not target_name:
+            target_name = src_info['name']
+        obj_info_tuple = self.ws.copy_object({
+            'from': {'ref': ref},
+            'to': {
+                'wsid': target_ws_id,
+                'workspace': target_ws_name,
+                'name': target_name
+            }
+        })
+        obj_info = ServiceUtils.object_info_to_object(obj_info_tuple)
+        return {'info': obj_info}
 
     def list_available_types(self, workspaces):
         data = self.list_objects_with_sets(workspaces=workspaces)['data']
