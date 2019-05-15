@@ -25,10 +25,10 @@ class NarrativeManager:
 
     DATA_PALETTES_TYPES = DataPaletteTypes(False)
 
-    def __init__(self, config, ctx, set_api_cache, dps_cache):
+    def __init__(self, config, ctx, set_api_client, data_palette_client):
         self.narrativeMethodStoreURL = config['narrative-method-store']
-        self.set_api_cache = set_api_cache  # DynamicServiceCache type
-        self.dps_cache = dps_cache          # DynamicServiceCache type
+        self.set_api_cache = set_api_client  # DynamicServiceCache type
+        self.data_palette_client = data_palette_client          # DynamicServiceCache type
         self.token = ctx["token"]
         self.user_id = ctx["user_id"]
         self.ws = Workspace(config['workspace-url'], token=self.token)
@@ -36,7 +36,7 @@ class NarrativeManager:
         # We switch DPs on only for internal Continuous Integration environment for now:
         if config['kbase-endpoint'].startswith("https://ci.kbase.us/") or \
            'USE_DP' in os.environ:
-                self.DATA_PALETTES_TYPES = DataPaletteTypes(True)
+            self.DATA_PALETTES_TYPES = DataPaletteTypes(True)
 
     def list_objects_with_sets(self, ws_id=None, ws_name=None, workspaces=None,
                                types=None, include_metadata=0, include_data_palettes=0):
@@ -60,12 +60,9 @@ class NarrativeManager:
         set_ret = self.set_api_cache.call_method("list_sets",
                                                  [{'workspaces': workspaces,
                                                    'include_set_item_info': 1,
-                                                   'include_raw_data_palettes': 1,
                                                    'include_metadata': include_metadata}],
                                                  self.token)
         sets = set_ret['sets']
-        dp_data = set_ret.get('raw_data_palettes')
-        dp_refs = set_ret.get('raw_data_palette_refs')
         for set_info in sets:
             # Process
             target_set_items = []
@@ -125,14 +122,12 @@ class NarrativeManager:
             if self.DEBUG:
                 print("NarrativeManager._list_objects_with_sets: processing DataPalettes")
             t5 = time.time()
-            if dp_data is None or dp_refs is None:
-                dps = self.dps_cache
-                dp_ret = dps.call_method("list_data", [{'workspaces': workspaces,
-                                                        'include_metadata': include_metadata}],
-                                         self.token)
-                dp_data = dp_ret['data']
-                dp_refs = dp_ret['data_palette_refs']
-            for item in dp_data:
+            dp_ret = self.data_palette_client.call_method(
+                "list_data",
+                [{'workspaces': workspaces, 'include_metadata': include_metadata}],
+                self.token
+            )
+            for item in dp_ret['data']:
                 ref = item['ref']
                 if self._check_info_type(item['info'], type_map):
                     data_item = None
@@ -148,7 +143,7 @@ class NarrativeManager:
                     if 'dp_refs' in item:
                         dp_info['refs'] = item['dp_refs']
                     data_item['dp_info'] = dp_info
-            return_data["data_palette_refs"] = dp_refs
+            return_data["data_palette_refs"] = dp_ret['data_palette_refs']
             if self.DEBUG:
                 print("    (time=" + str(time.time() - t5) + ")")
 
@@ -177,24 +172,33 @@ class NarrativeManager:
         # 1) currentNarrative object:
         excluded_list = [{'objid': currentNarrative['info'][0]}]
         # 2) let's exclude objects of types under DataPalette handling:
-        data_palette_type = "DataPalette.DataPalette"
-        excluded_types = [data_palette_type]
-        excluded_types.extend(self.DATA_PALETTES_TYPES.keys())
-        add_to_palette_list = []
-        dp_detected = False
-        for obj_type in excluded_types:
-            list_objects_params = {'type': obj_type}
-            if obj_type == data_palette_type:
-                list_objects_params['showHidden'] = 1
-            for info in WorkspaceListObjectsIterator(self.ws, ws_id=workspaceId,
-                                                     list_objects_params=list_objects_params):
-                if obj_type == data_palette_type:
-                    dp_detected = True
-                else:
-                    add_to_palette_list.append({'ref': str(info[6]) + '/' + str(info[0]) +
-                                                '/' + str(info[4])})
-                excluded_list.append({'objid': info[0]})
-        # clone the workspace EXCEPT for currentNarrative object + obejcts of DataPalette types:
+
+        ## DP CODE
+        # data_palette_type = "DataPalette.DataPalette"
+        # excluded_types = [data_palette_type]
+        # excluded_types.extend(self.DATA_PALETTES_TYPES.keys())
+        # add_to_palette_list = []
+        # dp_detected = False
+        ## END DP CODE
+        # for obj_type in excluded_types:
+        #     list_objects_params = {'type': obj_type}
+            ## DP CODE
+            # if obj_type == data_palette_type:
+            #     list_objects_params['showHidden'] = 1
+            ## END DP CODE
+            # for info in WorkspaceListObjectsIterator(self.ws,
+            #                                          ws_id=workspaceId,
+            #                                          list_objects_params=list_objects_params):
+                ## DP CODE
+                # if obj_type == data_palette_type:
+                    # dp_detected = True
+                # else:
+                #     add_to_palette_list.append({
+                #         'ref': str(info[6]) + '/' + str(info[0]) + '/' + str(info[4])
+                #     })
+                ## END DP CODE
+                # excluded_list.append({'objid': info[0]})
+        # clone the workspace EXCEPT for currentNarrative object
         newWsId = self.ws.clone_workspace({
             'wsi': {'id': workspaceId},
             'workspace': newWsName,
@@ -202,17 +206,23 @@ class NarrativeManager:
             'exclude': excluded_list
         })[0]
         try:
-            if dp_detected:
-                self.dps_cache.call_method("copy_palette", [{'from_workspace': str(workspaceId),
-                                                             'to_workspace': str(newWsId)}],
-                                           self.token)
-            if len(add_to_palette_list) > 0:
-                # There are objects in source workspace that have type under DataPalette handling
-                # but these objects are physically stored in source workspace rather that saved
-                # in DataPalette object. So they weren't copied by "dps.copy_palette".
-                self.dps_cache.call_method("add_to_palette", [{'workspace': str(newWsId),
-                                                               'new_refs': add_to_palette_list}],
-                                           self.token)
+            ## DP CODE
+            # if dp_detected:
+            #     self.data_palette_client.call_method(
+            #         "copy_palette",
+            #         [{'from_workspace': str(workspaceId), 'to_workspace': str(newWsId)}],
+            #         self.token
+            #     )
+            # if len(add_to_palette_list) > 0:
+            #     # There are objects in source workspace that have type under DataPalette handling
+            #     # but these objects are physically stored in source workspace rather that saved
+            #     # in DataPalette object. So they weren't copied by "dps.copy_palette".
+            #     self.data_palette_client.call_method(
+            #         "add_to_palette",
+            #         [{'workspace': str(newWsId), 'new_refs': add_to_palette_list}],
+            #         self.token
+            #     )
+            ## END DP CODE
 
             # update the ref inside the narrative object and the new workspace metadata.
             newNarMetadata = currentNarrative['info'][10]
@@ -268,10 +278,10 @@ class NarrativeManager:
         if app and method:
             raise ValueError("Must provide no more than one of the app or method params")
 
-        if (not importData) and copydata:
+        if not importData and copydata:
             importData = copydata.split(';')
 
-        if (not appData) and appparam:
+        if not appData and appparam:
             appData = []
             for tmp_item in appparam.split(';'):
                 tmp_tuple = tmp_item.split(',')
