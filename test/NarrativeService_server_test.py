@@ -231,6 +231,7 @@ class NarrativeServiceTest(unittest.TestCase):
 
     def test_copy_narrative(self):
         ws = self.getWsClient()
+        # Add a Narrative to the workspace
         with open("/kb/module/test/data/narrative1.json", "r") as f1:
             nar_obj_data = json.load(f1)
         user_id = self.getContext()['user_id']
@@ -256,7 +257,9 @@ class NarrativeServiceTest(unittest.TestCase):
                            'data': nar_obj_data,
                            'name': nar_obj_name,
                            'meta': nar_obj_meta}]})
-        # Adding DP object:
+        # Done adding Narrative
+
+        # Add a reads object
         reads_ref = self.__class__.example_reads_ref
         target_reads_name = "MyReads.copy.1"
         reads_info = ws.copy_object({'from': {'ref': reads_ref},
@@ -271,7 +274,6 @@ class NarrativeServiceTest(unittest.TestCase):
         try:
             copy_nar = ws.get_objects([{'ref': str(copy_ws_id) + '/' + str(copy_nar_id)}])[0]
             copy_ws_info = ws.get_workspace_info({'id': copy_ws_id})
-            #print("Copy object: " + json.dumps(copy_nar, indent=4, sort_keys=True))
             copy_nar_data = copy_nar['data']
 
             self.assertEqual(copy_ws_info[8]['searchtags'], 'narrative')
@@ -287,52 +289,52 @@ class NarrativeServiceTest(unittest.TestCase):
             ret = self.getImpl().list_objects_with_sets(self.getContext(),
                                                         {"ws_id": copy_ws_id,
                                                          "include_data_palettes": 1})[0]["data"]
-            dp_found = False
+
+            # The list of objects should just be 2 - the copied narrative and copied Reads
+            self.assertEqual(len(ret), 2)
+            print(ret)
             for item in ret:
                 obj_info = item["object_info"]
-                if obj_info[7] == ws_name:
+                self.assertEqual(copy_ws_id, obj_info[6])
+                info = item["object_info"]
+                if info[2].startswith("KBaseFile.SingleEndLibrary"):
                     self.assertEqual(target_reads_name, obj_info[1])
-                    self.assertTrue('dp_info' in item)
-                    self.assertEqual(reads_info[6], obj_info[6])
-                    self.assertEqual(reads_info[0], obj_info[0])
-                    dp_found = True
-                else:
-                    object_type = obj_info[2].split('-')[0]
-                    self.assertTrue(object_type != "KBaseFile.SingleEndLibrary",
-                                    "Unexpected type: " + object_type)
-            self.assertTrue(dp_found)
-        finally:
-            # Cleaning up new created workspace
-            ws.delete_workspace({'id': copy_ws_id})
-        #################################################################################
-        # Now it's copy with refs in DataPalette
-        reads_ws_name = self.__class__.example_ws_name
-        reads_obj_name = self.__class__.example_reads_name
-        reads_ref = reads_ws_name + '/' + reads_obj_name
-        # This reads object should appear in Narrative copy as well:
-        self.getImpl().copy_object(self.getContext(), {'ref': reads_ref,
-                                                       'target_ws_name': ws_name})
-        copy_nar_name = "NarrativeCopyTest - Copy2"
-        ret = self.getImpl().copy_narrative(self.getContext(),
-                                            {'workspaceRef': ws_name + '/' + nar_obj_name,
-                                             'newName': copy_nar_name})[0]
-        copy_ws_id = ret['newWsId']
-        try:
-            ret = self.getImpl().list_objects_with_sets(self.getContext(),
-                                                        {"ws_id": copy_ws_id})[0]["data"]
-            for item in ret:
-                obj_info = item["object_info"]
-                if obj_info[7] == reads_ws_name:
-                    self.assertTrue('dp_info' in item)
-                    self.assertTrue('ref' in item['dp_info'])
-                    self.assertTrue('refs' in item['dp_info'])
-                    self.assertEqual(str(copy_ws_id), item['dp_info']['ref'].split('/')[0])
-                    self.assertEqual(reads_obj_name, obj_info[1])
-            self.assertTrue(dp_found)
+                elif not info[2].startswith("KBaseNarrative.Narrative"):
+                    self.fail("Unexpected type in copied Narrative: {}".format(info[2]))
         finally:
             # Cleaning up new created workspace
             ws.delete_workspace({'id': copy_ws_id})
 
+        # #################################################################################
+        # # Now it's copy with refs in DataPalette
+        # reads_ws_name = self.__class__.example_ws_name
+        # reads_obj_name = self.__class__.example_reads_name
+        # reads_ref = reads_ws_name + '/' + reads_obj_name
+        # # This reads object should appear in Narrative copy as well:
+        # self.getImpl().copy_object(self.getContext(), {'ref': reads_ref,
+        #                                                'target_ws_name': ws_name})
+        # copy_nar_name = "NarrativeCopyTest - Copy2"
+        # ret = self.getImpl().copy_narrative(self.getContext(),
+        #                                     {'workspaceRef': ws_name + '/' + nar_obj_name,
+        #                                      'newName': copy_nar_name})[0]
+        # copy_ws_id = ret['newWsId']
+        # try:
+        #     ret = self.getImpl().list_objects_with_sets(self.getContext(),
+        #                                                 {"ws_id": copy_ws_id})[0]["data"]
+        #     for item in ret:
+        #         obj_info = item["object_info"]
+        #         if obj_info[7] == reads_ws_name:
+        #             self.assertTrue('dp_info' in item)
+        #             self.assertTrue('ref' in item['dp_info'])
+        #             self.assertTrue('refs' in item['dp_info'])
+        #             self.assertEqual(str(copy_ws_id), item['dp_info']['ref'].split('/')[0])
+        #             self.assertEqual(reads_obj_name, obj_info[1])
+        #     self.assertTrue(dp_found)
+        # finally:
+        #     # Cleaning up new created workspace
+        #     ws.delete_workspace({'id': copy_ws_id})
+
+    # @unittest.skip
     def test_copy_temp_narrative(self):
         """
         Now copy a Narrative flagged as temporary. E.g. create a new narrative, then make
@@ -419,6 +421,7 @@ class NarrativeServiceTest(unittest.TestCase):
             self.getWsClient().delete_workspace({'id': copied_nar_info2['newWsId']})
             self.getWsClient().delete_workspace({'id': copied_nar_info3['newWsId']})
 
+    # @unittest.skip
     def test_copy_narrative_two_users(self):
         # Create workspace with Reads object for user1
         ws_name1 = self.createWs()
@@ -494,11 +497,12 @@ class NarrativeServiceTest(unittest.TestCase):
                 info = item['object_info']
                 if info[1] == target_reads_name and info[7] == ws_name1:
                     found = True
-            self.assertTrue(found)
+            self.assertFalse(found)
         finally:
             # Cleaning up new created workspace
             ws2.delete_workspace({'id': copy_ws_id})
 
+    # @unittest.skip
     def test_create_new_temp_narrative(self):
         import_ref = self.__class__.example_reads_ref
         ws = self.getWsClient()
@@ -537,7 +541,7 @@ class NarrativeServiceTest(unittest.TestCase):
         title = "My Test Narrative"
         ret = self.getImpl().create_new_narrative(self.getContext(), {
             title: title
-        })
+        })[0]
         try:
             self.assertIn('workspaceInfo', ret)
             info = ret['workspaceInfo']
@@ -565,6 +569,7 @@ class NarrativeServiceTest(unittest.TestCase):
             new_ws_id = ret['workspaceInfo']['id']
             ws.delete_workspace({'id': new_ws_id})
 
+    # @unittest.skip
     def test_new_narrative_welcome(self):
         ws = self.getWsClient()
         narr_info = self.getImpl().create_new_narrative(self.getContext(), {'includeIntroCell': 1})[0]
@@ -585,6 +590,7 @@ class NarrativeServiceTest(unittest.TestCase):
             new_ws_id = narr_info['workspaceInfo']['id']
             ws.delete_workspace({'id': new_ws_id})
 
+    # @unittest.skip
     def test_copy_object(self):
         # Reads
         example_ws = self.__class__.example_ws_name
@@ -615,7 +621,7 @@ class NarrativeServiceTest(unittest.TestCase):
                                                              'target_ws_name': ws_name})
         self.assertEqual(target_name, ret[0]['info']['name'])
 
-
+    # @unittest.skip
     def test_copy_object_two_users(self):
         ws_name1 = self.createWs()
         orig_reads_ref = self.__class__.example_reads_ref
@@ -645,7 +651,7 @@ class NarrativeServiceTest(unittest.TestCase):
                                   service_ver=self.__class__.DataPalette_version)
         dps2.add_to_palette({'workspace': ws_name2, 'new_refs': [{'ref': reads_ref_path}]})
 
-
+    # @unittest.skip
     def test_workspace_list_objects_iterator(self):
         ws_name = self.__class__.example_ws_name
         part_size = 10
@@ -667,6 +673,7 @@ class NarrativeServiceTest(unittest.TestCase):
             obj_count2 += 1
         self.assertEqual(obj_count, obj_count2)
 
+    # @unittest.skip
     def test_list_available_types(self):
         ws_name = self.__class__.example_ws_name
         type_stat = self.getImpl().list_available_types(self.getContext(),
@@ -674,6 +681,7 @@ class NarrativeServiceTest(unittest.TestCase):
         # self.assertTrue("KBaseGenomes.Genome" in type_stat)
         self.assertTrue("KBaseFile.SingleEndLibrary" in type_stat)
 
+    # @unittest.skip
     def test_unique_items(self):
         # Create original workspace with reads object + ReadsSet object
         ws_name1 = self.createWs()
@@ -698,6 +706,7 @@ class NarrativeServiceTest(unittest.TestCase):
                                                     {"workspaces": [ws_name1, ws_name2]})[0]["data"]
         self.assertEqual(2, len(ret))
 
+    # @unittest.skip
     def test_two_users_sharing_dp(self):
         dps = DataPaletteService(self.__class__.serviceWizardURL,
                                   token=self.getContext2()['token'],
@@ -751,7 +760,7 @@ class NarrativeServiceTest(unittest.TestCase):
         info = self.getWsClient2().get_object_info_new({'objects': [{'ref': reads_ref_path}]})[0]
         self.assertEqual(item['object_info'][1], info[1])
 
-
+    # @unittest.skip
     def test_two_users_dp_inside_set(self):
         dps = DataPaletteService(self.__class__.serviceWizardURL,
                                   token=self.getContext2()['token'],
@@ -796,7 +805,7 @@ class NarrativeServiceTest(unittest.TestCase):
         info = self.getWsClient2().get_object_info_new({'objects': [{'ref': reads_ref_path}]})[0]
         self.assertEqual(reads_obj_name, info[1])
 
-
+    # @unittest.skip
     def test_two_users_set_inside_dp(self):
         ws_name1_1 = self.createWs()
         # Injecting reads object (real copy) into workspace1
@@ -843,7 +852,7 @@ class NarrativeServiceTest(unittest.TestCase):
         info = self.getWsClient2().get_object_info_new({'objects': [{'ref': reads_ref_path}]})[0]
         self.assertEqual(reads_obj_name, info[1])
 
-
+    # @unittest.skip
     def test_bulk_list(self):
         try:
             ids = []
@@ -865,7 +874,7 @@ class NarrativeServiceTest(unittest.TestCase):
         finally:
             NarrativeManager.DEBUG = False
 
-
+    # @unittest.skip
     def test_narratorials(self):
         ws = self.getWsClient()
         ret = self.getImpl().create_new_narrative(self.getContext(),
@@ -894,7 +903,7 @@ class NarrativeServiceTest(unittest.TestCase):
             new_ws_id = ret['workspaceInfo']['id']
             ws.delete_workspace({'id': new_ws_id})
 
-
+    # @unittest.skip
     def test_list_narratives(self):
         ws = self.getWsClient()
         ret = self.getImpl().create_new_narrative(self.getContext(),
