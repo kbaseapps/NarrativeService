@@ -385,6 +385,10 @@ class Application(object):
                              name='NarrativeService.get_ignore_categories',
                              types=[])
         self.method_authentication['NarrativeService.get_ignore_categories'] = 'none'  # noqa
+        self.rpc_service.add(impl_NarrativeService.list_all_data,
+                             name='NarrativeService.list_all_data',
+                             types=[dict])
+        self.method_authentication['NarrativeService.list_all_data'] = 'required'  # noqa
         self.rpc_service.add(impl_NarrativeService.status,
                              name='NarrativeService.status',
                              types=[dict])

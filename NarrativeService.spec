@@ -474,4 +474,54 @@ module NarrativeService {
         This returns ignored app categories used in Narrative Apps Panel.
     */
     funcdef get_ignore_categories() returns (mapping<string, int> ignore_categories);
+
+
+    /*
+        data_set - should be one of "mine", "shared" - other values with throw an error
+        include_type_counts - (default 0) if 1, will populate the list of types with the count of each data type
+        simple_types - (default 0) if 1, will "simplify" types to just their subtype (KBaseGenomes.Genome -> Genome)
+        ignore_narratives - (default 1) if 1, won't return any KBaseNarrative.* objects
+        ignore_workspaces - list of workspace ids - if present, will ignore any workspace ids given (useful for skipping the
+            currently loaded Narrative)
+    */
+    typedef structure {
+        string data_set;
+        boolean include_type_counts;
+        boolean simple_types;
+        boolean ignore_narratives;
+        list<int> ignore_workspaces;
+    } ListAllDataParams;
+
+    /*
+        upa - the UPA for the most recent version of the object (wsid/objid/ver format)
+        name - the string name for the object
+        narr_name - the name of the Narrative that the object came from
+        type - the type of object this is (if simple_types was used, then this will be the simple type)
+        savedate - the timestamp this object was saved
+        saved_by - the user id who saved this object
+    */
+    typedef structure {
+        string upa;
+        string name;
+        string narr_name;
+        string type;
+        int savedate;
+        string saved_by;
+    } DataObjectView;
+
+    /*
+        objects - list of objects returned by this function
+        type_counts - mapping of type -> count in this function call. If simple_types was 1, these types are all
+            the "simple" format (Genome vs KBaseGenomes.Genome)
+    */
+    typedef structure {
+        list<DataObjectView> objects;
+        mapping<string, int> type_counts;
+    } ListAllDataResult;
+
+    /*
+        This is intended to support the Narrative front end. It returns all data a user
+        owns, or is shared with them, excluding global data.
+    */
+    funcdef list_all_data(ListAllDataParams params) returns (ListAllDataResult result) authentication required;
 };

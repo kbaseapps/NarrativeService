@@ -13,6 +13,7 @@ from installed_clients.WorkspaceClient import Workspace
 from installed_clients.authclient import KBaseAuth as _KBaseAuth
 
 
+@unittest.skip
 class NarrativeListUtilsTest(unittest.TestCase):
 
     @classmethod
