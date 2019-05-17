@@ -510,13 +510,24 @@ module NarrativeService {
     } DataObjectView;
 
     /*
+        display - the display name for the workspace (typically the Narrative name)
+        count - the number of objects found in the workspace (excluding Narratives, if requested)
+    */
+    typedef structure {
+        string display;
+        int count;
+    } WorkspaceStats;
+
+    /*
         objects - list of objects returned by this function
         type_counts - mapping of type -> count in this function call. If simple_types was 1, these types are all
             the "simple" format (Genome vs KBaseGenomes.Genome)
+        workspace_display - handy thing for quickly displaying Narrative info.
     */
     typedef structure {
         list<DataObjectView> objects;
         mapping<string, int> type_counts;
+        mapping<int, WorkspaceStats> workspace_display;
     } ListAllDataResult;
 
     /*
