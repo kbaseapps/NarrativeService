@@ -6,6 +6,7 @@ from NarrativeService.NarrativeManager import NarrativeManager
 from NarrativeService.ReportFetcher import ReportFetcher
 from NarrativeService.sharing.sharemanager import ShareRequester
 from NarrativeService.apps.appinfo import get_all_app_info, get_ignore_categories
+from NarrativeService.data.fetcher import DataFetcher
 from installed_clients.WorkspaceClient import Workspace
 #END_HEADER
 
@@ -25,9 +26,9 @@ class NarrativeService:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.2.1"
+    VERSION = "0.2.2"
     GIT_URL = "https://github.com/briehl/NarrativeService"
-    GIT_COMMIT_HASH = "d57f119e95cc9b8132ff4993cb0de4e11a0eb3ff"
+    GIT_COMMIT_HASH = "5609d495382e69d161a19cde4da65e1bb5791b38"
 
     #BEGIN_CLASS_HEADER
     def _nm(self, ctx):
@@ -656,6 +657,55 @@ class NarrativeService:
                              'ignore_categories is not type dict as required.')
         # return the results
         return [ignore_categories]
+
+    def list_all_data(self, ctx, params):
+        """
+        This is intended to support the Narrative front end. It returns all data a user
+        owns, or is shared with them, excluding global data.
+        :param params: instance of type "ListAllDataParams" (data_set -
+           should be one of "mine", "shared" - other values with throw an
+           error include_type_counts - (default 0) if 1, will populate the
+           list of types with the count of each data type simple_types -
+           (default 0) if 1, will "simplify" types to just their subtype
+           (KBaseGenomes.Genome -> Genome) ignore_narratives - (default 1) if
+           1, won't return any KBaseNarrative.* objects ignore_workspaces -
+           list of workspace ids - if present, will ignore any workspace ids
+           given (useful for skipping the currently loaded Narrative)) ->
+           structure: parameter "data_set" of String, parameter
+           "include_type_counts" of type "boolean" (@range [0,1]), parameter
+           "simple_types" of type "boolean" (@range [0,1]), parameter
+           "ignore_narratives" of type "boolean" (@range [0,1]), parameter
+           "ignore_workspaces" of list of Long
+        :returns: instance of type "ListAllDataResult" (objects - list of
+           objects returned by this function type_counts - mapping of type ->
+           count in this function call. If simple_types was 1, these types
+           are all the "simple" format (Genome vs KBaseGenomes.Genome)) ->
+           structure: parameter "objects" of list of type "DataObjectView"
+           (upa - the UPA for the most recent version of the object
+           (wsid/objid/ver format) name - the string name for the object
+           narr_name - the name of the Narrative that the object came from
+           type - the type of object this is (if simple_types was used, then
+           this will be the simple type) savedate - the timestamp this object
+           was saved saved_by - the user id who saved this object) ->
+           structure: parameter "upa" of String, parameter "name" of String,
+           parameter "narr_name" of String, parameter "type" of String,
+           parameter "savedate" of Long, parameter "saved_by" of String,
+           parameter "type_counts" of mapping from String to Long
+        """
+        # ctx is the context object
+        # return variables are: result
+        #BEGIN list_all_data
+        auth_url = self.config["auth-service-url"]
+        fetcher = DataFetcher(self.workspaceURL, auth_url, ctx["token"])
+        result = fetcher.fetch_data(params)
+        #END list_all_data
+
+        # At some point might do deeper type checking...
+        if not isinstance(result, dict):
+            raise ValueError('Method list_all_data return value ' +
+                             'result is not type dict as required.')
+        # return the results
+        return [result]
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': "OK",
