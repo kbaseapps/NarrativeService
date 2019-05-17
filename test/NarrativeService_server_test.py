@@ -27,7 +27,6 @@ def in_list(wsid, nar_list):
             return True
     return False
 
-@unittest.skip
 class NarrativeServiceTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

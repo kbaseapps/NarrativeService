@@ -42,7 +42,8 @@ class DataFetcher(object):
             ws_display[ws_id]["count"] += 1  # gets initialized back in _get_non_temporary_workspaces
         return_val = {
             "workspace_display": ws_display,
-            "objects": return_objects
+            "objects": return_objects,
+            "ws_info": ws_info_list
         }
         if params.get("include_type_counts", 0) == 1:
             type_counts = defaultdict(lambda: 0)
@@ -59,7 +60,7 @@ class DataFetcher(object):
         if not simple_types:
             return obj_type
         else:
-            return obj_type.split('.')[-1].split('-')[-1]
+            return obj_type.split('-')[0].split('.')[1]
 
     def _validate_params(self, params):
         if params.get("data_set", "").lower() not in ["mine", "shared"]:
@@ -80,15 +81,14 @@ class DataFetcher(object):
         Gets the workspaces and workspace info for this run, based on the parameters. So, all of the user's
         workspaces or all workspaces explicitly shared with the user, or all global workspaces(?)
         """
-        get_info_params = {}
         which_set = params["data_set"].lower()
         if which_set == "mine":
-            get_info_params["owners"] = [self._user]
+            get_info_params = {"owners": self._user}
         else:
-            get_info_params["excludeGlobal"] = 1
+            get_info_params = {"excludeGlobal": 1}
         (all_ws_list, workspace_dict) = self._get_non_temporary_workspaces(get_info_params, params.get("ignore_workspaces", []))
         if which_set == "shared":
-            shared_ws_list = filter(lambda w: w[2] != self._user, all_ws_list)
+            shared_ws_list = list(filter(lambda w: w[2] != self._user, all_ws_list))
             workspace_dict = {w[0]: workspace_dict[w[0]] for w in shared_ws_list}
             all_ws_list = shared_ws_list
         return (all_ws_list, workspace_dict)
