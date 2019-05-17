@@ -83,7 +83,7 @@ class DataFetcher(object):
         """
         which_set = params["data_set"].lower()
         if which_set == "mine":
-            get_info_params = {"owners": self._user}
+            get_info_params = {"owners": [self._user]}
         else:
             get_info_params = {"excludeGlobal": 1}
         (all_ws_list, workspace_dict) = self._get_non_temporary_workspaces(get_info_params, params.get("ignore_workspaces", []))
