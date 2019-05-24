@@ -10,7 +10,18 @@ class DataFetcher(object):
         auth = KBaseAuth(auth_url=auth_url)
         self._user = auth.get_user(token)
 
-    def fetch_data(self, params):
+    def fetch_accessible_data(self, params):
+        self._validate_list_all_params(params)
+        (ws_info_list, ws_display) = self._get_accessible_workspaces(params)
+        # do same stuff as other function
+        return self._fetch_data(ws_info_list, ws_display, params)
+
+    def fetch_specific_workspace_data(self, params):
+        self._validate_list_workspace_params(params)
+        (ws_info_list, ws_display) = self._get_workspace_infos(params["workspace_ids"])
+        return self._fetch_data(ws_info_list, ws_display, params)
+
+    def _fetch_data(self, ws_info_list, ws_display, params):
         """
         params is a dict with (expected) keys:
         data_set - string, should be one of "mine" or "shared", anything else will throw an error
@@ -18,8 +29,6 @@ class DataFetcher(object):
         simple_types - boolean, default 0
         ignore_narratives - boolean, default 1
         """
-        self._validate_params(params)
-        (ws_info_list, ws_display) = self._get_workspaces(params)
         data_objects = self._fetch_all_objects(ws_info_list, include_metadata=params.get("include_metadata", 0))
         # now, post-process the data objects.
         return_objects = list()
@@ -62,21 +71,35 @@ class DataFetcher(object):
         else:
             return obj_type.split('-')[0].split('.')[1]
 
-    def _validate_params(self, params):
+    def _validate_list_all_params(self, params):
         if params.get("data_set", "").lower() not in ["mine", "shared"]:
-            raise ValueError("Parameter 'data_set' must be either 'mine' or 'shared', not '{}'".format(params.get("data_set")))
+            raise ValueError("Parameter 'data_set' must be either 'mine' or 'shared', not '{}'.".format(params.get("data_set")))
 
         for p in ["include_type_counts", "simple_types", "ignore_narratives"]:
             self._validate_boolean(params, p)
 
         if not isinstance(params.get("ignore_workspaces", []), list):
-            raise ValueError("Parameter 'ignore_workspaces' must be a list if present")
+            raise ValueError("Parameter 'ignore_workspaces' must be a list if present.")
+
+    def _validate_list_workspace_params(self, params):
+        ws_ids_err = "Parameter 'workspace_ids' must be a list of integers."
+        if "workspace_ids" not in params or \
+           not isinstance(params["workspace_ids"], list) or \
+           len(params["workspace_ids"]) == 0:
+            raise ValueError(ws_ids_err)
+
+        for ws_id in params["workspace_ids"]:
+            if not isinstance(ws_id, int):
+                raise ValueError(ws_ids_err)
+
+        for p in ["include_type_counts", "simple_types", "ignore_narratives"]:
+            self._validate_boolean(params, p)
 
     def _validate_boolean(self, params, param_name):
         if params.get(param_name, 0) not in [0, 1]:
             raise ValueError("Parameter '{}' must be 0 or 1, not '{}'".format(param_name, params.get(param_name)))
 
-    def _get_workspaces(self, params):
+    def _get_accessible_workspaces(self, params):
         """
         Gets the workspaces and workspace info for this run, based on the parameters. So, all of the user's
         workspaces or all workspaces explicitly shared with the user, or all global workspaces(?)
@@ -103,6 +126,25 @@ class DataFetcher(object):
             items.append(info)
         return items
 
+    def _get_workspace_infos(self, ws_ids):
+        """
+        From a set of workspace ids, return a set of workspace info. These workspaces
+        are given a display name based on either the Narrative name, or some legacy / data only
+        state.
+        "Legacy" is given for thsoe old workspaces that pre-date the "is_temporary" stuff
+        and haven't been updated.
+        "Data only" is given for workspaces that have a special flag set by JGI imports.
+
+        This returns a 2-tuple.
+        first element = list of workspace info
+        second element = dict where keys are the numerical workspace ids, and
+            values are the display name for the workspace (later augmented with
+            data object counts)
+        """
+        ws_info_list = [self._ws.get_workspace_info({"id": ws_id}) for ws_id in ws_ids]
+        ws_display = self._get_ws_display(ws_info_list)
+        return (ws_info_list, ws_display)
+
     def _get_non_temporary_workspaces(self, get_info_params, ignore_workspaces):
         """
         Given a set of workspaces.list_workspace_info parameters, this runs the
@@ -125,19 +167,55 @@ class DataFetcher(object):
         """
         ws_list = self._ws.list_workspace_info(get_info_params)
         return_list = list()
-        workspaces = dict()
         for ws in ws_list:
             if ws[0] in ignore_workspaces or ws[8].get("is_temporary", "false") == "true":
                 continue
-            ws_name = ws[1]
-            display_name = ws[8].get("narrative_nice_name")
-            if not display_name and ws[8].get("show_in_narrative_data_panel"):
-                display_name = "(data only) " + ws_name
-            elif not display_name:
-                display_name = "Legacy (" + ws_name + ")"
-            workspaces[ws[0]] = {
-                "display": display_name,
-                "count": 0  # initial object count - this gets filled out later.
-            }
             return_list.append(ws)
-        return (return_list, workspaces)
+        return (return_list, self._get_ws_display(return_list))
+
+    def _get_ws_display(self, ws_info_list):
+        """
+        Creates and returns a dict of workspace display info from the list
+        of workspace infos.
+        This dict has the workspace ids for keys and a dictionary with a key "display"
+        and value of the display name as values, and a "count" key that's initialized to 0.
+        This is intended to pre-process the workspace info results.
+        So:
+        {
+            384: {
+                "display": "Some Narrative",
+                "count": 0
+            },
+            456: {
+                "display": "Legacy (some_ws_name)",
+                "count": 0
+            },
+            ...etc...
+        }
+        """
+        ws_display_info = dict()
+        for ws_info in ws_info_list:
+            display_name = self._get_display_name(ws_info)
+            ws_display_info[ws_info[0]] = {
+                "display": display_name,
+                "count": 0
+            }
+        return ws_display_info
+
+    def _get_display_name(self, ws_info):
+        """
+        From a workspace info tuple, figure out the proper display name for a workspace with
+        these rules:
+        1. If there's a "narrative_nice_name" in the metadata, use that.
+        2. If there's "show_in_narrative_data_panel" in the metadata, use that with "(data only)"
+            in the front
+        3. If there's still no result, use the name "Legacy (workspace name)"
+        """
+        meta = ws_info[8]
+
+        display_name = meta.get("narrative_nice_name")
+        if not display_name and meta.get("show_in_narrative_data_panel"):
+            display_name = "(data only) " + ws_info[1]
+        elif not display_name:
+            display_name = "Legacy (" + ws_info[1] + ")"
+        return display_name

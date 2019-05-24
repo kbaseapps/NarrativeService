@@ -48,29 +48,66 @@ class DataFetcherTestCase(unittest.TestCase):
     def get_context(self):
         return self.__class__.ctx
 
-    def test_bad_params(self):
+    def test_fetch_accessible_bad_params(self):
         df = DataFetcher(
             self.cfg["workspace-url"],
             self.cfg["auth-service-url"],
             self.get_context()["token"]
         )
         with self.assertRaises(ValueError) as err:
-            df.fetch_data({"data_set": "foo"})
+            df.fetch_accessible_data({"data_set": "foo"})
         self.assertIn("Parameter 'data_set' must be either 'mine' or 'shared', not 'foo'", str(err.exception))
 
         optional_params = ["include_type_counts", "simple_types", "ignore_narratives"]
         for opt in optional_params:
             with self.assertRaises(ValueError) as err:
-                df.fetch_data({"data_set": "mine", opt: "wat"})
+                df.fetch_accessible_data({"data_set": "mine", opt: "wat"})
             self.assertIn("Parameter '{}' must be 0 or 1, not 'wat'".format(opt), str(err.exception))
 
         with self.assertRaises(ValueError) as err:
-            df.fetch_data({"data_set": "mine", "ignore_workspaces": "wat"})
+            df.fetch_accessible_data({"data_set": "mine", "ignore_workspaces": "wat"})
         self.assertIn("Parameter 'ignore_workspaces' must be a list if present", str(err.exception))
 
+    def test_fetch_specific_bad_params(self):
+        df = DataFetcher(
+            self.cfg["workspace-url"],
+            self.cfg["auth-service-url"],
+            self.get_context()["token"]
+        )
+        with self.assertRaises(ValueError) as err:
+            df.fetch_specific_workspace_data({"workspace_ids": "foo"})
+        self.assertIn("Parameter 'workspace_ids' must be a list of integers.", str(err.exception))
+
+        with self.assertRaises(ValueError) as err:
+            df.fetch_specific_workspace_data({"workspace_ids": []})
+        self.assertIn("Parameter 'workspace_ids' must be a list of integers.", str(err.exception))
+
+        with self.assertRaises(ValueError) as err:
+            df.fetch_specific_workspace_data({"workspace_ids": ["foo"]})
+        self.assertIn("Parameter 'workspace_ids' must be a list of integers.", str(err.exception))
+
+        with self.assertRaises(ValueError) as err:
+            df.fetch_specific_workspace_data({"workspace_ids": [1, 2, 3, "foo", 5]})
+        self.assertIn("Parameter 'workspace_ids' must be a list of integers.", str(err.exception))
+
+        optional_params = ["include_type_counts", "simple_types", "ignore_narratives"]
+        for opt in optional_params:
+            with self.assertRaises(ValueError) as err:
+                df.fetch_specific_workspace_data({"workspace_ids": [1, 2], opt: "wat"})
+            self.assertIn("Parameter '{}' must be 0 or 1, not 'wat'".format(opt), str(err.exception))
+
     @mock.patch("NarrativeService.data.fetcher.Workspace", side_effect=WorkspaceMock)
-    def test_data_fetcher_impl(self, mock_ws):
+    def test_list_all_data_impl(self, mock_ws):
         my_data = self.service_impl.list_all_data(self.ctx, {"data_set": "mine"})[0]
+        self.assertEqual(len(my_data["objects"]), 36)
+        for obj in my_data["objects"]:
+            self._validate_obj(obj, "KBaseModule.SomeType-1.0")
+        self._validate_ws_display(my_data["workspace_display"], 9)
+        self.assertNotIn("type_counts", my_data)
+
+    @mock.patch("NarrativeService.data.fetcher.Workspace", side_effect=WorkspaceMock)
+    def test_list_specific_data_impl(self, mock_ws):
+        my_data = self.service_impl.list_workspace_data(self.ctx, {"workspace_ids": [1, 2, 3, 5]})[0]
         self.assertEqual(len(my_data["objects"]), 36)
         for obj in my_data["objects"]:
             self._validate_obj(obj, "KBaseModule.SomeType-1.0")
@@ -86,7 +123,7 @@ class DataFetcherTestCase(unittest.TestCase):
         )
 
         # 1. my data, default options
-        my_data = df.fetch_data({"data_set": "mine"})
+        my_data = df.fetch_accessible_data({"data_set": "mine"})
         self.assertEqual(len(my_data["objects"]), 36)
         for obj in my_data["objects"]:
             self._validate_obj(obj, "KBaseModule.SomeType-1.0")
@@ -94,7 +131,7 @@ class DataFetcherTestCase(unittest.TestCase):
         self.assertNotIn("type_counts", my_data)
 
         # 2. my data, with type counts
-        my_data = df.fetch_data({"data_set": "mine", "include_type_counts": 1})
+        my_data = df.fetch_accessible_data({"data_set": "mine", "include_type_counts": 1})
         self.assertEqual(len(my_data["objects"]), 36)
         for obj in my_data["objects"]:
             self._validate_obj(obj, "KBaseModule.SomeType-1.0")
@@ -105,7 +142,7 @@ class DataFetcherTestCase(unittest.TestCase):
         self.assertEqual(my_data["type_counts"]["KBaseModule.SomeType-1.0"], 36)
 
         # 3. my data, with simple types, with type counts
-        my_data = df.fetch_data({"data_set": "mine", "include_type_counts": 1, "simple_types": 1})
+        my_data = df.fetch_accessible_data({"data_set": "mine", "include_type_counts": 1, "simple_types": 1})
         self.assertEqual(len(my_data["objects"]), 36)
         for obj in my_data["objects"]:
             self._validate_obj(obj, "SomeType")
@@ -116,7 +153,7 @@ class DataFetcherTestCase(unittest.TestCase):
         self.assertEqual(my_data["type_counts"]["SomeType"], 36)
 
         # 4. my data, with simple types, and type counts, don't ignore narratives
-        my_data = df.fetch_data({
+        my_data = df.fetch_accessible_data({
             "data_set": "mine",
             "include_type_counts": 1,
             "simple_types": 1,
@@ -145,7 +182,7 @@ class DataFetcherTestCase(unittest.TestCase):
         )
 
         # 1. my data, default options
-        shared_data = df.fetch_data({"data_set": "shared"})
+        shared_data = df.fetch_accessible_data({"data_set": "shared"})
         self.assertEqual(len(shared_data["objects"]), 36)
         for obj in shared_data["objects"]:
             self._validate_obj(obj, "KBaseModule.SomeType-1.0")
@@ -153,7 +190,7 @@ class DataFetcherTestCase(unittest.TestCase):
         self.assertNotIn("type_counts", shared_data)
 
         # 2. my data, with type counts
-        shared_data = df.fetch_data({"data_set": "shared", "include_type_counts": 1})
+        shared_data = df.fetch_accessible_data({"data_set": "shared", "include_type_counts": 1})
         self.assertEqual(len(shared_data["objects"]), 36)
         for obj in shared_data["objects"]:
             self._validate_obj(obj, "KBaseModule.SomeType-1.0")
@@ -164,7 +201,7 @@ class DataFetcherTestCase(unittest.TestCase):
         self.assertEqual(shared_data["type_counts"]["KBaseModule.SomeType-1.0"], 36)
 
         # 3. my data, with simple types, with type counts
-        shared_data = df.fetch_data({"data_set": "shared", "include_type_counts": 1, "simple_types": 1})
+        shared_data = df.fetch_accessible_data({"data_set": "shared", "include_type_counts": 1, "simple_types": 1})
         self.assertEqual(len(shared_data["objects"]), 36)
         for obj in shared_data["objects"]:
             self._validate_obj(obj, "SomeType")
@@ -175,7 +212,7 @@ class DataFetcherTestCase(unittest.TestCase):
         self.assertEqual(shared_data["type_counts"]["SomeType"], 36)
 
         # 4. my data, with simple types, and type counts, don't ignore narratives
-        shared_data = df.fetch_data({
+        shared_data = df.fetch_accessible_data({
             "data_set": "shared",
             "include_type_counts": 1,
             "simple_types": 1,

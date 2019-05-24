@@ -1,4 +1,12 @@
 class WorkspaceMock:
+    ws_info_meta = {
+        1: {},
+        2: {"narrative": 1, "narrative_nice_name": "Some Narrative", "is_temporary": "false"},
+        3: {"narrative": 1, "narrative_nice_name": "Some Other Narrative", "is_temporary": "false"},
+        4: {"narrative": 1, "narrative_nice_name": "Untitled", "is_temporary": "true"},
+        5: {"narrative": 1, "is_temporary": "false", "show_in_narrative_data_panel": "true"}
+    }
+
     def __init__(self, *args, **kwargs):
         self.user = "wjriehl"
         self.shared_user = "some_random_user"
@@ -37,6 +45,12 @@ class WorkspaceMock:
     def _ws_name(self, ws_id):
         return "TestWs_{}".format(ws_id)
 
+    def get_workspace_info(self, params):
+        """
+        Only used with params[id] right now (5/24/19), so return based on that.
+        """
+        return self._ws_info(self.user, params["id"], 10, self.ws_info_meta[params["id"]])
+
     def list_workspace_info(self, params):
         """
         Always returns the same list of ws infos, regardless of parameters.
@@ -50,11 +64,11 @@ class WorkspaceMock:
         if "owner" in params:
             user = params["owner"][0]
         return [
-            self._ws_info(user, 1, 10, {}),
-            self._ws_info(user, 2, 10, {"narrative": 1, "narrative_nice_name": "Some Narrative", "is_temporary": "false"}),
-            self._ws_info(user, 3, 10, {"narrative": 1, "narrative_nice_name": "Some Other Narrative", "is_temporary": "false"}),
-            self._ws_info(user, 4, 10, {"narrative": 1, "narrative_nice_name": "Untitled", "is_temporary": "true"}),
-            self._ws_info(user, 5, 10, {"narrative": 1, "is_temporary": "false", "show_in_narrative_data_panel": "true"})
+            self._ws_info(user, 1, 10, self.ws_info_meta[1]),
+            self._ws_info(user, 2, 10, self.ws_info_meta[2]),
+            self._ws_info(user, 3, 10, self.ws_info_meta[3]),
+            self._ws_info(user, 4, 10, self.ws_info_meta[4]),
+            self._ws_info(user, 5, 10, self.ws_info_meta[5]),
         ]
 
     def list_objects(self, params):
