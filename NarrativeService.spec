@@ -481,7 +481,8 @@ module NarrativeService {
         include_type_counts - (default 0) if 1, will populate the list of types with the count of each data type
         simple_types - (default 0) if 1, will "simplify" types to just their subtype (KBaseGenomes.Genome -> Genome)
         ignore_narratives - (default 1) if 1, won't return any KBaseNarrative.* objects
-        ignore_workspaces - list of workspace ids - if present, will ignore any workspace ids given (useful for skipping the
+        include_metadata - (default 0) if 1, includes object metadata
+        ignore_workspaces - (optional) list of workspace ids - if present, will ignore any workspace ids given (useful for skipping the
             currently loaded Narrative)
     */
     typedef structure {
@@ -489,6 +490,7 @@ module NarrativeService {
         boolean include_type_counts;
         boolean simple_types;
         boolean ignore_narratives;
+        boolean include_metadata;
         list<int> ignore_workspaces;
     } ListAllDataParams;
 
@@ -528,11 +530,33 @@ module NarrativeService {
         list<DataObjectView> objects;
         mapping<string, int> type_counts;
         mapping<int, WorkspaceStats> workspace_display;
-    } ListAllDataResult;
+    } ListDataResult;
 
     /*
         This is intended to support the Narrative front end. It returns all data a user
         owns, or is shared with them, excluding global data.
     */
-    funcdef list_all_data(ListAllDataParams params) returns (ListAllDataResult result) authentication required;
+    funcdef list_all_data(ListAllDataParams params) returns (ListDataResult result) authentication required;
+
+    /*
+        workspace_ids - list of workspace ids - will only return info from these workspaces.
+        include_type_counts - (default 0) if 1, will populate the list of types with the count of each data type
+        simple_types - (default 0) if 1, will "simplify" types to just their subtype (KBaseGenomes.Genome -> Genome)
+        ignore_narratives - (default 1) if 1, won't return any KBaseNarrative.* objects
+        include_metadata - (default 0) if 1, includes object metadata
+    */
+    typedef structure {
+        list<int> workspace_ids;
+        boolean include_type_counts;
+        boolean simple_types;
+        boolean ignore_narratives;
+        boolean include_metadata;
+    } ListWorkspaceDataParams;
+
+    /*
+        Also intended to support the Narrative front end. It returns data from a list of
+        workspaces. If the authenticated user doesn't have access to any of workspaces, it raises
+        an exception. Otherwise, it returns the same structure of results as list_all_data.
+    */
+    funcdef list_workspace_data(ListWorkspaceDataParams params) returns (ListDataResult result) authentication required;
 };

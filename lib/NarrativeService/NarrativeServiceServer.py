@@ -389,6 +389,10 @@ class Application(object):
                              name='NarrativeService.list_all_data',
                              types=[dict])
         self.method_authentication['NarrativeService.list_all_data'] = 'required'  # noqa
+        self.rpc_service.add(impl_NarrativeService.list_workspace_data,
+                             name='NarrativeService.list_workspace_data',
+                             types=[dict])
+        self.method_authentication['NarrativeService.list_workspace_data'] = 'required'  # noqa
         self.rpc_service.add(impl_NarrativeService.status,
                              name='NarrativeService.status',
                              types=[dict])
