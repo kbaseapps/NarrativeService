@@ -76,10 +76,10 @@ class WorkspaceMock:
         Returns the same list of objects, with info adjusted to match the requesting workspace.
         Based on params["ids"], it returns 10 objects for each workspace.
         The first (id 1) will always be a Narrative
-        The rest are dummy, KBaseModule.SomeType-1.0.
+        The rest are dummy, KBaseModule.SomeType-N.0. where N ranges from 1 - 10 (for each id. so we can test version collapsing.)
         """
         obj_info_list = list()
         for ws_id in params.get('ids', []):
             obj_info_list.append(self._obj_info(self.user, ws_id, 1, "KBaseNarrative.Narrative-4.0"))
-            obj_info_list.extend([self._obj_info(self.user, ws_id, i, "KBaseModule.SomeType-1.0") for i in range(2, 11)])
+            obj_info_list.extend([self._obj_info(self.user, ws_id, i, f"KBaseModule.SomeType-{i-1}.0") for i in range(2, 11)])
         return obj_info_list

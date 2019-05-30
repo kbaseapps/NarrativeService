@@ -3,14 +3,14 @@ from collections import deque
 
 class WorkspaceListObjectsIterator:
 
-    # ws_info - optional workspace info tuple (if is not defined then either ws_id 
+    # ws_info - optional workspace info tuple (if is not defined then either ws_id
     #    or ws_name should be provided),
-    # ws_id/ws_name - optional workspace identification (if neither is defined 
+    # ws_id/ws_name - optional workspace identification (if neither is defined
     #    then ws_info should be provided),
-    # list_objects_params - optional structure with such Woskspace.ListObjectsParams 
+    # list_objects_params - optional structure with such Woskspace.ListObjectsParams
     #    as 'type' or 'before', 'after', 'showHidden', 'includeMetadata' and so on,
     #    wherein there is no need to set 'ids' or 'workspaces' or 'min/maxObjectID'.
-    def __init__(self, ws_client, ws_info_list = None, ws_id = None, ws_name = None, 
+    def __init__(self, ws_client, ws_info_list = None, ws_id = None, ws_name = None,
                  list_objects_params = {}, part_size = 10000, global_limit = 100000):
         self.ws = ws_client
         if not ws_info_list:
@@ -51,7 +51,7 @@ class WorkspaceListObjectsIterator:
         while self.part_iter is not None:
             try:
                 self.total_counter += 1
-                if self.total_counter > self.global_limit:
+                if self.global_limit is not None and self.total_counter > self.global_limit:
                     raise StopIteration
                 return next(self.part_iter)
             except StopIteration:
