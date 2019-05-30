@@ -484,6 +484,8 @@ module NarrativeService {
         include_metadata - (default 0) if 1, includes object metadata
         ignore_workspaces - (optional) list of workspace ids - if present, will ignore any workspace ids given (useful for skipping the
             currently loaded Narrative)
+        limit - (default is 30000) if present, limits returned data objects to the number given. Must be > 0 if present.
+        types - (default null or empty list) if present, will only return the types specified.
     */
     typedef structure {
         string data_set;
@@ -492,6 +494,8 @@ module NarrativeService {
         boolean ignore_narratives;
         boolean include_metadata;
         list<int> ignore_workspaces;
+        int limit;
+        list<string> types;
     } ListAllDataParams;
 
     /*
@@ -522,12 +526,14 @@ module NarrativeService {
 
     /*
         objects - list of objects returned by this function
+        limit_reached - 1 if there are more data objects than given by the limit in params, 0 otherwise
         type_counts - mapping of type -> count in this function call. If simple_types was 1, these types are all
             the "simple" format (Genome vs KBaseGenomes.Genome)
         workspace_display - handy thing for quickly displaying Narrative info.
     */
     typedef structure {
         list<DataObjectView> objects;
+        boolean limit_reached;
         mapping<string, int> type_counts;
         mapping<int, WorkspaceStats> workspace_display;
     } ListDataResult;
@@ -544,6 +550,8 @@ module NarrativeService {
         simple_types - (default 0) if 1, will "simplify" types to just their subtype (KBaseGenomes.Genome -> Genome)
         ignore_narratives - (default 1) if 1, won't return any KBaseNarrative.* objects
         include_metadata - (default 0) if 1, includes object metadata
+        limit - (default is 30000) if present, limits returned data objects to the number given. Must be > 0 if present.
+        types - (default null or empty list) if present, will only return the types specified.
     */
     typedef structure {
         list<int> workspace_ids;
@@ -551,6 +559,8 @@ module NarrativeService {
         boolean simple_types;
         boolean ignore_narratives;
         boolean include_metadata;
+        int limit;
+        list<string> types;
     } ListWorkspaceDataParams;
 
     /*

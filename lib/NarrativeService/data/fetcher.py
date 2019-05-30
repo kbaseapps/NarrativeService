@@ -3,6 +3,7 @@ from ..authclient import KBaseAuth
 from ..WorkspaceListObjectsIterator import WorkspaceListObjectsIterator
 from collections import defaultdict
 
+DEFAULT_DATA_LIMIT = 30000
 
 class DataFetcher(object):
     def __init__(self, ws_url, auth_url, token):
@@ -11,12 +12,16 @@ class DataFetcher(object):
         self._user = auth.get_user(token)
 
     def fetch_accessible_data(self, params):
+        if 'limit' not in params:
+            params['limit'] = DEFAULT_DATA_LIMIT
         self._validate_list_all_params(params)
         (ws_info_list, ws_display) = self._get_accessible_workspaces(params)
         # do same stuff as other function
         return self._fetch_data(ws_info_list, ws_display, params)
 
     def fetch_specific_workspace_data(self, params):
+        if 'limit' not in params:
+            params['limit'] = DEFAULT_DATA_LIMIT
         self._validate_list_workspace_params(params)
         (ws_info_list, ws_display) = self._get_workspace_infos(params["workspace_ids"])
         return self._fetch_data(ws_info_list, ws_display, params)
@@ -34,8 +39,13 @@ class DataFetcher(object):
         return_objects = list()
         ignore_narratives = params.get("ignore_narratives", 1) == 1
         simple_types = params.get("simple_types", 0) == 1
+        type_set = None
+        if 'types' in params:
+            type_set = set(params['types'])
         for obj in data_objects:
             if ignore_narratives and obj[2].startswith("KBaseNarrative"):
+                continue
+            if type_set and not obj[2].split('-')[0] in type_set:
                 continue
             obj_type = self._parse_type(obj[2], simple_types)
             ws_id = obj[6]
@@ -71,15 +81,25 @@ class DataFetcher(object):
         else:
             return obj_type.split('-')[0].split('.')[1]
 
+    def _validate_common_params(self, params):
+        for p in ["include_type_counts", "simple_types", "ignore_narratives"]:
+            self._validate_boolean(params, p)
+
+        limit = params['limit']
+        if not isinstance(limit, int) or limit < 1:
+            raise ValueError("Parameter 'limit' must be an integer > 0.")
+
+        if not isinstance(params.get("types", []), list):
+            raise ValueError("Parameter 'types' must be a list if present.")
+
     def _validate_list_all_params(self, params):
         if params.get("data_set", "").lower() not in ["mine", "shared"]:
             raise ValueError("Parameter 'data_set' must be either 'mine' or 'shared', not '{}'.".format(params.get("data_set")))
 
-        for p in ["include_type_counts", "simple_types", "ignore_narratives"]:
-            self._validate_boolean(params, p)
-
         if not isinstance(params.get("ignore_workspaces", []), list):
             raise ValueError("Parameter 'ignore_workspaces' must be a list if present.")
+
+        self._validate_common_params(params)
 
     def _validate_list_workspace_params(self, params):
         ws_ids_err = "Parameter 'workspace_ids' must be a list of integers."
@@ -92,8 +112,7 @@ class DataFetcher(object):
             if not isinstance(ws_id, int):
                 raise ValueError(ws_ids_err)
 
-        for p in ["include_type_counts", "simple_types", "ignore_narratives"]:
-            self._validate_boolean(params, p)
+        self._validate_common_params(params)
 
     def _validate_boolean(self, params, param_name):
         if params.get(param_name, 0) not in [0, 1]:
