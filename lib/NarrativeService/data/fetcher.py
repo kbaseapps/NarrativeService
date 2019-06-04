@@ -59,6 +59,7 @@ class DataFetcher(object):
                 "timestamp": obj[3]
             })
             ws_display[ws_id]["count"] += 1  # gets initialized back in _get_non_temporary_workspaces
+        return_objects.sort(key=lambda obj: obj['timestamp'], reverse=True)
         return_val = {
             "workspace_display": ws_display,
             "objects": return_objects,
