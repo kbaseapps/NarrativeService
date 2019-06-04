@@ -7,11 +7,55 @@ DEFAULT_DATA_LIMIT = 30000
 
 class DataFetcher(object):
     def __init__(self, ws_url, auth_url, token):
+        """
+        The data fetcher needs a workspace client and auth client.
+        It needs Auth to get the current user id out of the token, so we know what workspaces
+        are actually shared as opposed to just visible.
+
+        Args:
+            ws_url (str): Workspace service URL
+            auth_url (str): Auth service URL
+            token (str): auth token
+        """
         self._ws = Workspace(url=ws_url, token=token)
         auth = KBaseAuth(auth_url=auth_url)
         self._user = auth.get_user(token)
 
     def fetch_accessible_data(self, params):
+        """
+        Returns all data accessible to the user.
+
+        params (dict):
+            data_set (str): one of "mine" or "shared" - which data set to return. "mine" comes from
+                            workspaces owned by the user, shared are only those shared with the
+                            user, and NOT those that are public
+            ignore_workspaces (list<int>, optional): list of workspace ids to not fetch data from
+            include_type_counts (boolean (0, 1), def 0): if 1, return a dict of type counts
+            simple_types (boolean (0, 1), def 0): if 1, "simplify" all type strings to just the
+                                                  type (cut the module)
+            ignore_narratives (boolean (0, 1), def 1): if 1, don't return any Narrative objects
+            types (list<str>, optional): if present, only return these types. These are expected
+                                         to be type strings with the format "Module.Type"
+            limit (int, optional): maximum number of objects to return
+
+        Returns a dict with keys:
+            workspace_display (dict): each key is a workspace id, values are smaller dicts
+                                      with a "display" key (for how the workspace should be shown
+                                      in the browser) and "count" key (number of objects returned)
+            objects (list<dict>): list of dicts that describe an object. Each dict has keys:
+                ws_id (int): the workspace id
+                obj_id (int): the object id
+                ver (int): the object version
+                saved_by (str): the user id who saved that object
+                name (str): the object name
+                type (str): the object data type (Module.Type-Major_version.Minor_version, or just
+                            Type if simple_types==1. E.g. KBaseGenomes.Genome-1.0 or Genome)
+                timestamp (str): the ISO 8601 timestamp when the object was saved
+            ws_info (list<list>): list of workspace info tuples for all workspaces returned. See
+                                  the Workspace docs for details.
+            type_counts (dict): dict where each type is a key and each value is the number of
+                                instances of that type returned
+        """
         if 'limit' not in params:
             params['limit'] = DEFAULT_DATA_LIMIT
         self._validate_list_all_params(params)
@@ -20,6 +64,41 @@ class DataFetcher(object):
         return self._fetch_data(ws_info_list, ws_display, params)
 
     def fetch_specific_workspace_data(self, params):
+        """
+        Returns all data from a list of workspaces.
+        If the user doesn't have access to any of those workspaces, then a Workspace error will
+        get raised.
+
+        params (dict):
+            workspace_ids (list<int>): a list of workspace ids to search for data. Must be present
+                                       with at least one element.
+            ignore_workspaces (list<int>, optional): list of workspace ids to not fetch data from
+            include_type_counts (boolean (0, 1), def 0): if 1, return a dict of type counts
+            simple_types (boolean (0, 1), def 0): if 1, "simplify" all type strings to just the
+                                                  type (cut the module)
+            ignore_narratives (boolean (0, 1), def 1): if 1, don't return any Narrative objects
+            types (list<str>, optional): if present, only return these types. These are expected
+                                         to be type strings with the format "Module.Type"
+            limit (int, optional): maximum number of objects to return
+
+        Returns a dict with keys:
+            workspace_display (dict): each key is a workspace id, values are smaller dicts
+                                      with a "display" key (for how the workspace should be shown
+                                      in the browser) and "count" key (number of objects returned)
+            objects (list<dict>): list of dicts that describe an object. Each dict has keys:
+                ws_id (int): the workspace id
+                obj_id (int): the object id
+                ver (int): the object version
+                saved_by (str): the user id who saved that object
+                name (str): the object name
+                type (str): the object data type (Module.Type-Major_version.Minor_version, or just
+                            Type if simple_types==1. E.g. KBaseGenomes.Genome-1.0 or Genome)
+                timestamp (str): the ISO 8601 timestamp when the object was saved
+            ws_info (list<list>): list of workspace info tuples for all workspaces returned. See
+                                  the Workspace docs for details.
+            type_counts (dict): dict where each type is a key and each value is the number of
+                                instances of that type returned
+        """
         if 'limit' not in params:
             params['limit'] = DEFAULT_DATA_LIMIT
         self._validate_list_workspace_params(params)
@@ -28,11 +107,43 @@ class DataFetcher(object):
 
     def _fetch_data(self, ws_info_list, ws_display, params):
         """
-        params is a dict with (expected) keys:
-        data_set - string, should be one of "mine" or "shared", anything else will throw an error
-        include_type_counts - boolean, default 0
-        simple_types - boolean, default 0
-        ignore_narratives - boolean, default 1
+        Fetches and returns all data from the workspaces in ws_info_list, collates it, and arranges
+        it into a helpful structure.
+
+        Args:
+            ws_info_list (list<list>): list of Workspace info tuples (see the workspace docs). This
+                                       is the list of workspaces to comb for data to return.
+            ws_display (dict): the pre-made dictionary for workspace display info. Should contain
+                               a "display" key and a "count" key (that would be 0). This updates
+                               the "count" key with the number of objects found in that workspace
+                               that match the other parameters.
+            params (dict):
+                ignore_narratives (boolean (0, 1) def 1): if 1, ignores any KBaseNarrative.Narrative
+                                                          objects found
+                simple_types (boolean (0, 1) def 0): if 1, transforms all type strings to just get
+                                                     the type (e.g. KBaseGenomes.Genome -> Genome)
+                types (list<str>, optional): if present, only returns the types that are present in
+                                             the list. They should be of format "Module.Type"
+                include_type_counts (boolean (0, 1) def 0): if 1, return the counts of each type in
+                                                            a dictionary keyed on the type.
+
+        Returns a dict with keys:
+            workspace_display (dict): each key is a workspace id, values are smaller dicts
+                                      with a "display" key (for how the workspace should be shown
+                                      in the browser) and "count" key (number of objects returned)
+            objects (list<dict>): list of dicts that describe an object. Each dict has keys:
+                ws_id (int): the workspace id
+                obj_id (int): the object id
+                ver (int): the object version
+                saved_by (str): the user id who saved that object
+                name (str): the object name
+                type (str): the object data type (Module.Type-Major_version.Minor_version, or just
+                            Type if simple_types==1. E.g. KBaseGenomes.Genome-1.0 or Genome)
+                timestamp (str): the ISO 8601 timestamp when the object was saved
+            ws_info (list<list>): list of workspace info tuples for all workspaces returned. See
+                                  the Workspace docs for details.
+            type_counts (dict): dict where each type is a key and each value is the number of
+                                instances of that type returned
         """
         data_objects = self._fetch_all_objects(ws_info_list, include_metadata=params.get("include_metadata", 0))
         # now, post-process the data objects.
@@ -75,7 +186,14 @@ class DataFetcher(object):
     def _parse_type(self, obj_type, simple_types=False):
         """
         Parses a type name, optionally.
-        If simple_types = True, returns just the central subtype (KBaseNarrative.Narrative-4.0 -> Narrative)
+        If simple_types = True, returns just the central subtype (e.g. KBaseNarrative.Narrative-4.0
+        becomes Narrative)
+
+        Args:
+            obj_type (str): the original type string
+            simple_types (boolean): if True, do the parsing
+        Returns:
+            a parsed (or not) type string
         """
         if not simple_types:
             return obj_type
@@ -83,6 +201,20 @@ class DataFetcher(object):
             return obj_type.split('-')[0].split('.')[1]
 
     def _validate_common_params(self, params):
+        """
+        Validates all parameters common to the two forms of data lookup. These are all optional,
+        so we only raise errors if they're present. But if they are present, but malformatted,
+        this raises a ValueError.
+
+        include_type_counts, simple_types, and ignore_narratives should be "boolean"
+        (KBase SDK style - ints with 0 or 1)
+
+        limit should be an int > 0
+
+        types should be a list
+
+        The rest are optional "common" params.
+        """
         for p in ["include_type_counts", "simple_types", "ignore_narratives"]:
             self._validate_boolean(params, p)
 
@@ -94,6 +226,14 @@ class DataFetcher(object):
             raise ValueError("Parameter 'types' must be a list if present.")
 
     def _validate_list_all_params(self, params):
+        """
+        Validates the parameters intended to be sent to the fetch_accessible_data function /
+        NarrativeService.list_all_data.
+
+        data_set must be present and "mine" or "shared"
+
+        ignore_workspaces must be a list, if present
+        """
         if params.get("data_set", "").lower() not in ["mine", "shared"]:
             raise ValueError("Parameter 'data_set' must be either 'mine' or 'shared', not '{}'.".format(params.get("data_set")))
 
@@ -103,6 +243,14 @@ class DataFetcher(object):
         self._validate_common_params(params)
 
     def _validate_list_workspace_params(self, params):
+        """
+        Validates the parameters intended to be sent to the fetch_specific_workspace_data /
+        NarrativeService.list_workspace_data function.
+
+        workspace_ids must be present and a list of integers
+
+        The rest are optional common params.
+        """
         ws_ids_err = "Parameter 'workspace_ids' must be a list of integers."
         if "workspace_ids" not in params or \
            not isinstance(params["workspace_ids"], list) or \
@@ -116,6 +264,16 @@ class DataFetcher(object):
         self._validate_common_params(params)
 
     def _validate_boolean(self, params, param_name):
+        """
+        Validates a KBase SDK-style boolean in a params dict. The value has to be 0 or 1 if present
+        or it raises a ValueError.
+
+        Args:
+            params (dict): dict of params to skim
+            param_name (str): the name of the parameter to investigate
+        Returns:
+            None if all is well, raises a ValueError otherwise.
+        """
         if params.get(param_name, 0) not in [0, 1]:
             raise ValueError("Parameter '{}' must be 0 or 1, not '{}'".format(param_name, params.get(param_name)))
 
