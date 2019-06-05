@@ -541,6 +541,11 @@ module NarrativeService {
     /*
         This is intended to support the Narrative front end. It returns all data a user
         owns, or is shared with them, excluding global data.
+
+        Note that if the limit is reached, then the workspace data counts and type counts only
+        reflect what data is returned.
+
+        If there's a limit, this will return objects from the most recently modified Workspace(s).
     */
     funcdef list_all_data(ListAllDataParams params) returns (ListDataResult result) authentication required;
 
@@ -567,6 +572,11 @@ module NarrativeService {
         Also intended to support the Narrative front end. It returns data from a list of
         workspaces. If the authenticated user doesn't have access to any of workspaces, it raises
         an exception. Otherwise, it returns the same structure of results as list_all_data.
+
+        Note that if the limit is reached, then the workspace data counts and type counts only
+        reflect what data is returned.
+
+        If there's a limit, this will return objects from the most recently modified Workspace(s).
     */
     funcdef list_workspace_data(ListWorkspaceDataParams params) returns (ListDataResult result) authentication required;
 };

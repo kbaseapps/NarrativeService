@@ -131,21 +131,30 @@ class DataFetcher(object):
             workspace_display (dict): each key is a workspace id, values are smaller dicts
                                       with a "display" key (for how the workspace should be shown
                                       in the browser) and "count" key (number of objects returned)
-            objects (list<dict>): list of dicts that describe an object. Each dict has keys:
-                ws_id (int): the workspace id
-                obj_id (int): the object id
-                ver (int): the object version
-                saved_by (str): the user id who saved that object
-                name (str): the object name
-                type (str): the object data type (Module.Type-Major_version.Minor_version, or just
-                            Type if simple_types==1. E.g. KBaseGenomes.Genome-1.0 or Genome)
-                timestamp (str): the ISO 8601 timestamp when the object was saved
-            ws_info (list<list>): list of workspace info tuples for all workspaces returned. See
-                                  the Workspace docs for details.
-            type_counts (dict): dict where each type is a key and each value is the number of
-                                instances of that type returned
+            objects (list<dict>):
+                list of dicts that describe an object. Each dict has keys:
+                    ws_id (int): the workspace id
+                    obj_id (int): the object id
+                    ver (int): the object version
+                    saved_by (str): the user id who saved that object
+                    name (str): the object name
+                    type (str): the object data type (Module.Type-Major_version.Minor_version, or
+                                just Type if simple_types==1. E.g. KBaseGenomes.Genome-1.0 or
+                                Genome)
+                    timestamp (str): the ISO 8601 timestamp when the object was saved
+            ws_info (list<list>):
+                list of workspace info tuples for all workspaces returned. See the Workspace docs
+                for details.
+            type_counts (dict):
+                dict where each type is a key and each value is the number of instances of that
+                type returned
+            limit_reached (boolean (0, 1)):
+                if there's a limit, and it was reached before returning all data, this is 1,
+                otherwise it's 0.
         """
-        data_objects = self._fetch_all_objects(ws_info_list, include_metadata=params.get("include_metadata", 0))
+        (data_objects, limit_reached) = self._fetch_all_objects(
+            ws_info_list, include_metadata=params.get("include_metadata", 0)
+        )
         # now, post-process the data objects.
         return_objects = list()
         ignore_narratives = params.get("ignore_narratives", 1) == 1
@@ -174,7 +183,8 @@ class DataFetcher(object):
         return_val = {
             "workspace_display": ws_display,
             "objects": return_objects,
-            "ws_info": ws_info_list
+            "ws_info": ws_info_list,
+            "limit_reached": 1 if limit_reached else 0
         }
         if params.get("include_type_counts", 0) == 1:
             type_counts = defaultdict(lambda: 0)
@@ -279,8 +289,21 @@ class DataFetcher(object):
 
     def _get_accessible_workspaces(self, params):
         """
-        Gets the workspaces and workspace info for this run, based on the parameters. So, all of the user's
-        workspaces or all workspaces explicitly shared with the user, or all global workspaces(?)
+        Gets the workspaces and workspace info for this run, based on the parameters. So, all of
+        the user's workspaces or all workspaces explicitly shared with the user.
+
+        params (dict):
+            data_set (str): one of "mine" or "shared"
+            ignore_workspaces (list<int>): list of workspaces to ignore when looking up workspaces
+
+        returns 2-tuple:
+            all_ws_list (list<list>):
+                list of workspace info tuples from all Workspaces identified (see Workspace docs
+                for details)
+            workspace_dict (dict<int, dict>):
+                keys = workspace id, values = small dict with keys "display" (workspace display
+                name, generally the narrative name), and "count" (number of objects in the
+                workspace, to be filled out by another function)
         """
         which_set = params["data_set"].lower()
         if which_set == "mine":
@@ -294,15 +317,38 @@ class DataFetcher(object):
             all_ws_list = shared_ws_list
         return (all_ws_list, workspace_dict)
 
-    def _fetch_all_objects(self, ws_info_list, include_metadata=0):
+    def _fetch_all_objects(self, ws_info_list, include_metadata=0, limit=None):
+        """
+        Returns all objects in the workspace info list, with or without metadata.
+
+        Args:
+            ws_info_list(list<list>):
+                list of Workspace info tuples. These are the workspaces to fetch data from
+            include_metadata(truthy, default 0):
+                if truthy, will return object metadata as well
+            limit(int, default None):
+                if some value, then will stop returning objects after reaching the limit
+
+        Returns 2-tuple:
+            items(list<list>):
+                list of Workspace object info tuples
+            limit_reached(boolean):
+                True if the limit was reached, and there are more items that weren't returned
+        """
+
         items = list()
+        limit_reached = False
         for info in WorkspaceListObjectsIterator(
             self._ws,
             ws_info_list=ws_info_list,
             list_objects_params={"includeMetadata": include_metadata}
         ):
-            items.append(info)
-        return items
+            if limit is not None and len(items) >= limit:
+                limit_reached = True
+                break
+            else:
+                items.append(info)
+        return (items, limit_reached)
 
     def _get_workspace_infos(self, ws_ids):
         """
@@ -349,6 +395,7 @@ class DataFetcher(object):
             if ws[0] in ignore_workspaces or ws[8].get("is_temporary", "false") == "true":
                 continue
             return_list.append(ws)
+        return_list.sort(key=lambda ws: ws[3], reverse=True)
         return (return_list, self._get_ws_display(return_list))
 
     def _get_ws_display(self, ws_info_list):
