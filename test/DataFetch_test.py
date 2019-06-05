@@ -340,13 +340,14 @@ class DataFetcherTestCase(unittest.TestCase):
             self.get_context()["token"]
         )
 
-        # Get my data, but limit it to 5 objects total.
+        # Get my data, but limit it.
+        limit = 19
         data = df.fetch_accessible_data({
             "data_set": "mine",
-            "limit": 5
+            "limit": limit
         })
-        self.assertEqual(len(shared_data["objects"]), 5)
         self.assertEqual(data["limit_reached"], 1)
+        self.assertEqual(len(data["objects"]), limit)
 
     def _validate_ws_display(self, ws_disp, count):
         self.assertEqual(len(ws_disp), 4)

@@ -126,6 +126,7 @@ class DataFetcher(object):
                                              the list. They should be of format "Module.Type"
                 include_type_counts (boolean (0, 1) def 0): if 1, return the counts of each type in
                                                             a dictionary keyed on the type.
+                limit (int): the maximum number of objects to return
 
         Returns a dict with keys:
             workspace_display (dict): each key is a workspace id, values are smaller dicts
@@ -152,21 +153,19 @@ class DataFetcher(object):
                 if there's a limit, and it was reached before returning all data, this is 1,
                 otherwise it's 0.
         """
-        (data_objects, limit_reached) = self._fetch_all_objects(
-            ws_info_list, include_metadata=params.get("include_metadata", 0)
-        )
-        # now, post-process the data objects.
-        return_objects = list()
         ignore_narratives = params.get("ignore_narratives", 1) == 1
-        simple_types = params.get("simple_types", 0) == 1
+        include_metadata = params.get("include_metadata", 0) == 1
         type_set = None
         if 'types' in params:
             type_set = set(params['types'])
+
+        (data_objects, limit_reached) = self._fetch_all_objects(
+            ws_info_list, include_metadata=include_metadata, types=type_set, ignore_narratives=ignore_narratives, limit=params["limit"]
+        )
+        # now, post-process the data objects.
+        simple_types = params.get("simple_types", 0) == 1
+        return_objects = list()
         for obj in data_objects:
-            if ignore_narratives and obj[2].startswith("KBaseNarrative"):
-                continue
-            if type_set and not obj[2].split('-')[0] in type_set:
-                continue
             obj_type = self._parse_type(obj[2], simple_types)
             ws_id = obj[6]
             return_objects.append({
@@ -317,14 +316,18 @@ class DataFetcher(object):
             all_ws_list = shared_ws_list
         return (all_ws_list, workspace_dict)
 
-    def _fetch_all_objects(self, ws_info_list, include_metadata=0, limit=None):
+    def _fetch_all_objects(self, ws_info_list, ignore_narratives=True, types=None, include_metadata=False, limit=None):
         """
         Returns all objects in the workspace info list, with or without metadata.
 
         Args:
             ws_info_list(list<list>):
                 list of Workspace info tuples. These are the workspaces to fetch data from
-            include_metadata(truthy, default 0):
+            ignore_narratives(boolean, def False):
+                if False, will ignore any type from the KBaseNarrative module
+            types(list<str>, def None):
+                if present, will only return objects whose type is in the list
+            include_metadata(truthy, default False):
                 if truthy, will return object metadata as well
             limit(int, default None):
                 if some value, then will stop returning objects after reaching the limit
@@ -341,12 +344,16 @@ class DataFetcher(object):
         for info in WorkspaceListObjectsIterator(
             self._ws,
             ws_info_list=ws_info_list,
-            list_objects_params={"includeMetadata": include_metadata}
+            list_objects_params={"includeMetadata": 1 if include_metadata else 0}
         ):
-            if limit is not None and len(items) >= limit:
+            if limit and len(items) == limit:
                 limit_reached = True
                 break
             else:
+                if ignore_narratives and info[2].startswith("KBaseNarrative"):
+                    continue
+                if types and not info[2].split('-')[0] in types:
+                    continue
                 items.append(info)
         return (items, limit_reached)
 
