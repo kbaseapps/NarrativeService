@@ -332,6 +332,22 @@ class DataFetcherTestCase(unittest.TestCase):
         self._validate_ws_display(shared_data["workspace_display"], 1)
         self.assertNotIn("type_counts", shared_data)
 
+    @mock.patch("NarrativeService.data.fetcher.Workspace", side_effect=WorkspaceMock)
+    def test_data_fetcher_limit(self, mock_ws):
+        df = DataFetcher(
+            self.cfg["workspace-url"],
+            self.cfg["auth-service-url"],
+            self.get_context()["token"]
+        )
+
+        # Get my data, but limit it to 5 objects total.
+        data = df.fetch_accessible_data({
+            "data_set": "mine",
+            "limit": 5
+        })
+        self.assertEqual(len(shared_data["objects"]), 5)
+        self.assertEqual(data["limit_reached"], 1)
+
     def _validate_ws_display(self, ws_disp, count):
         self.assertEqual(len(ws_disp), 4)
         for ws_id in ws_disp:
