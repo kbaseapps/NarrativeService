@@ -20,6 +20,8 @@ WORKDIR /kb/module
 
 RUN make all
 
+EXPOSE 5000
+
 ENTRYPOINT [ "./scripts/entrypoint.sh" ]
 
 CMD [ ]
