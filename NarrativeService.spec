@@ -474,4 +474,109 @@ module NarrativeService {
         This returns ignored app categories used in Narrative Apps Panel.
     */
     funcdef get_ignore_categories() returns (mapping<string, int> ignore_categories);
+
+
+    /*
+        data_set - should be one of "mine", "shared" - other values with throw an error
+        include_type_counts - (default 0) if 1, will populate the list of types with the count of each data type
+        simple_types - (default 0) if 1, will "simplify" types to just their subtype (KBaseGenomes.Genome -> Genome)
+        ignore_narratives - (default 1) if 1, won't return any KBaseNarrative.* objects
+        include_metadata - (default 0) if 1, includes object metadata
+        ignore_workspaces - (optional) list of workspace ids - if present, will ignore any workspace ids given (useful for skipping the
+            currently loaded Narrative)
+        limit - (default is 30000) if present, limits returned data objects to the number given. Must be > 0 if present.
+        types - (default null or empty list) if present, will only return the types specified.
+    */
+    typedef structure {
+        string data_set;
+        boolean include_type_counts;
+        boolean simple_types;
+        boolean ignore_narratives;
+        boolean include_metadata;
+        list<int> ignore_workspaces;
+        int limit;
+        list<string> types;
+    } ListAllDataParams;
+
+    /*
+        upa - the UPA for the most recent version of the object (wsid/objid/ver format)
+        name - the string name for the object
+        narr_name - the name of the Narrative that the object came from
+        type - the type of object this is (if simple_types was used, then this will be the simple type)
+        savedate - the timestamp this object was saved
+        saved_by - the user id who saved this object
+    */
+    typedef structure {
+        string upa;
+        string name;
+        string narr_name;
+        string type;
+        int savedate;
+        string saved_by;
+    } DataObjectView;
+
+    /*
+        display - the display name for the workspace (typically the Narrative name)
+        count - the number of objects found in the workspace (excluding Narratives, if requested)
+    */
+    typedef structure {
+        string display;
+        int count;
+    } WorkspaceStats;
+
+    /*
+        objects - list of objects returned by this function
+        limit_reached - 1 if there are more data objects than given by the limit in params, 0 otherwise
+        type_counts - mapping of type -> count in this function call. If simple_types was 1, these types are all
+            the "simple" format (Genome vs KBaseGenomes.Genome)
+        workspace_display - handy thing for quickly displaying Narrative info.
+    */
+    typedef structure {
+        list<DataObjectView> objects;
+        boolean limit_reached;
+        mapping<string, int> type_counts;
+        mapping<int, WorkspaceStats> workspace_display;
+    } ListDataResult;
+
+    /*
+        This is intended to support the Narrative front end. It returns all data a user
+        owns, or is shared with them, excluding global data.
+
+        Note that if the limit is reached, then the workspace data counts and type counts only
+        reflect what data is returned.
+
+        If there's a limit, this will return objects from the most recently modified Workspace(s).
+    */
+    funcdef list_all_data(ListAllDataParams params) returns (ListDataResult result) authentication required;
+
+    /*
+        workspace_ids - list of workspace ids - will only return info from these workspaces.
+        include_type_counts - (default 0) if 1, will populate the list of types with the count of each data type
+        simple_types - (default 0) if 1, will "simplify" types to just their subtype (KBaseGenomes.Genome -> Genome)
+        ignore_narratives - (default 1) if 1, won't return any KBaseNarrative.* objects
+        include_metadata - (default 0) if 1, includes object metadata
+        limit - (default is 30000) if present, limits returned data objects to the number given. Must be > 0 if present.
+        types - (default null or empty list) if present, will only return the types specified.
+    */
+    typedef structure {
+        list<int> workspace_ids;
+        boolean include_type_counts;
+        boolean simple_types;
+        boolean ignore_narratives;
+        boolean include_metadata;
+        int limit;
+        list<string> types;
+    } ListWorkspaceDataParams;
+
+    /*
+        Also intended to support the Narrative front end. It returns data from a list of
+        workspaces. If the authenticated user doesn't have access to any of workspaces, it raises
+        an exception. Otherwise, it returns the same structure of results as list_all_data.
+
+        Note that if the limit is reached, then the workspace data counts and type counts only
+        reflect what data is returned.
+
+        If there's a limit, this will return objects from the most recently modified Workspace(s).
+    */
+    funcdef list_workspace_data(ListWorkspaceDataParams params) returns (ListDataResult result) authentication required;
 };
