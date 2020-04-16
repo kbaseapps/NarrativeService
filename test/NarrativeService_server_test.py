@@ -707,7 +707,7 @@ class NarrativeServiceTest(unittest.TestCase):
                                                     {"workspaces": [ws_name1, ws_name2]})[0]["data"]
         self.assertEqual(2, len(ret))
 
-    # @unittest.skip
+    @unittest.skip
     def test_two_users_sharing_dp(self):
         dps = DataPaletteService(self.__class__.serviceWizardURL,
                                   token=self.getContext2()['token'],
@@ -761,7 +761,7 @@ class NarrativeServiceTest(unittest.TestCase):
         info = self.getWsClient2().get_object_info_new({'objects': [{'ref': reads_ref_path}]})[0]
         self.assertEqual(item['object_info'][1], info[1])
 
-    # @unittest.skip
+    @unittest.skip
     def test_two_users_dp_inside_set(self):
         dps = DataPaletteService(self.__class__.serviceWizardURL,
                                   token=self.getContext2()['token'],
@@ -806,7 +806,7 @@ class NarrativeServiceTest(unittest.TestCase):
         info = self.getWsClient2().get_object_info_new({'objects': [{'ref': reads_ref_path}]})[0]
         self.assertEqual(reads_obj_name, info[1])
 
-    # @unittest.skip
+    @unittest.skip
     def test_two_users_set_inside_dp(self):
         ws_name1_1 = self.createWs()
         # Injecting reads object (real copy) into workspace1

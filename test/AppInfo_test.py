@@ -5,7 +5,7 @@ from configparser import ConfigParser
 from installed_clients.authclient import KBaseAuth as _KBaseAuth
 from NarrativeService.NarrativeServiceImpl import NarrativeService
 from NarrativeService.NarrativeServiceServer import MethodContext
-
+from installed_clients.CatalogClient import Catalog
 
 IGNORE_CATEGORIES = {"inactive", "importers", "viewers"}
 
@@ -52,6 +52,13 @@ class AppInfoTestCase(unittest.TestCase):
             info = get_all_app_info(t, self.user_id, self.nmsURL, self.catalogURL)
             self._validate_app_info(info)
 
+    def test_get_all_app_info_bad_tag(self):
+        bad_tags = [None, [], {}, "foo", 5, -3]
+        for t in bad_tags:
+            with self.assertRaises(ValueError) as e:
+                get_all_app_info(t, self.user_id, self.nmsURL, self.catalogURL)
+            self.assertIn("tag must be one of 'release', 'beta', or 'dev'", str(e.exception))
+
     def test_get_all_app_info_impl_ok(self):
         impl = self.getImpl()
         ctx = self.getContext()
@@ -62,6 +69,19 @@ class AppInfoTestCase(unittest.TestCase):
                 'user': self.user_id
             })[0]
             self._validate_app_info(info)
+
+    def test_app_info_with_favorites(self):
+        impl = self.getImpl()
+        ctx = self.getContext()
+        tag = 'release'
+        catalog = Catalog(self.catalogURL)
+        favorite_user = "wjriehl"  # this is all public info, so just use my username, and i'll make sure to have at least one favorite
+        cat_favorites = catalog.list_favorites(favorite_user)
+        app_info = impl.get_all_app_info(ctx, {"tag": tag, "user": favorite_user})[0]
+        for f in cat_favorites:
+            fav_id = f"{f['module_name_lc']}/{f['id']}".lower()
+            if fav_id in app_info["app_infos"]:
+                self.assertIn("favorite", app_info["app_infos"][fav_id])
 
     def _validate_app_info(self, info):
         self.assertIn('module_versions', info)

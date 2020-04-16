@@ -426,7 +426,7 @@ module NarrativeService {
 
     typedef structure {
         string tag;
-        string user_id;
+        string user;
     } GetAppInfoInput;
 
     typedef structure {
@@ -458,6 +458,9 @@ module NarrativeService {
         int favorite;
     } AppInfo;
 
+    /*
+        App info ids are all lowercase - module/app_id
+    */
     typedef structure {
         mapping<string, string> module_versions;
         mapping<string, CategoryInfo> categories;

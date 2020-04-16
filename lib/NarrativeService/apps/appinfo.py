@@ -44,7 +44,7 @@ def get_all_app_info(tag, user, nms_url, catalog_url):
     favorites = catalog.list_favorites(user)
 
     for fav in favorites:
-        app_id = fav["module_name_lc"] + "/" + fav["id"]
+        app_id = f"{fav['module_name_lc']}/{fav['id']}".lower()
         if app_id in app_infos:
             app_infos[app_id]["favorite"] = fav["timestamp"]
 
