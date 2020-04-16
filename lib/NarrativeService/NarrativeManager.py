@@ -26,17 +26,13 @@ class NarrativeManager:
     DATA_PALETTES_TYPES = DataPaletteTypes(False)
 
     def __init__(self, config, ctx, set_api_client, data_palette_client):
-        self.narrativeMethodStoreURL = config['narrative-method-store']
+        self.narrativeMethodStoreURL = config["narrative-method-store"]
         self.set_api_cache = set_api_client  # DynamicServiceCache type
         self.data_palette_client = data_palette_client          # DynamicServiceCache type
         self.token = ctx["token"]
         self.user_id = ctx["user_id"]
-        self.ws = Workspace(config['workspace-url'], token=self.token)
-        self.intro_md_file = config['intro-markdown-file']
-        # We switch DPs on only for internal Continuous Integration environment for now:
-        if config['kbase-endpoint'].startswith("https://ci.kbase.us/") or \
-           'USE_DP' in os.environ:
-            self.DATA_PALETTES_TYPES = DataPaletteTypes(True)
+        self.ws = Workspace(config["workspace-url"], token=self.token)
+        self.intro_md_file = config["intro-markdown-file"]
 
     def list_objects_with_sets(self, ws_id=None, ws_name=None, workspaces=None,
                                types=None, include_metadata=0, include_data_palettes=0):
@@ -173,31 +169,6 @@ class NarrativeManager:
         excluded_list = [{'objid': currentNarrative['info'][0]}]
         # 2) let's exclude objects of types under DataPalette handling:
 
-        ## DP CODE
-        # data_palette_type = "DataPalette.DataPalette"
-        # excluded_types = [data_palette_type]
-        # excluded_types.extend(self.DATA_PALETTES_TYPES.keys())
-        # add_to_palette_list = []
-        # dp_detected = False
-        ## END DP CODE
-        # for obj_type in excluded_types:
-        #     list_objects_params = {'type': obj_type}
-            ## DP CODE
-            # if obj_type == data_palette_type:
-            #     list_objects_params['showHidden'] = 1
-            ## END DP CODE
-            # for info in WorkspaceListObjectsIterator(self.ws,
-            #                                          ws_id=workspaceId,
-            #                                          list_objects_params=list_objects_params):
-                ## DP CODE
-                # if obj_type == data_palette_type:
-                    # dp_detected = True
-                # else:
-                #     add_to_palette_list.append({
-                #         'ref': str(info[6]) + '/' + str(info[0]) + '/' + str(info[4])
-                #     })
-                ## END DP CODE
-                # excluded_list.append({'objid': info[0]})
         # clone the workspace EXCEPT for currentNarrative object
         newWsId = self.ws.clone_workspace({
             'wsi': {'id': workspaceId},
@@ -206,24 +177,6 @@ class NarrativeManager:
             'exclude': excluded_list
         })[0]
         try:
-            ## DP CODE
-            # if dp_detected:
-            #     self.data_palette_client.call_method(
-            #         "copy_palette",
-            #         [{'from_workspace': str(workspaceId), 'to_workspace': str(newWsId)}],
-            #         self.token
-            #     )
-            # if len(add_to_palette_list) > 0:
-            #     # There are objects in source workspace that have type under DataPalette handling
-            #     # but these objects are physically stored in source workspace rather that saved
-            #     # in DataPalette object. So they weren't copied by "dps.copy_palette".
-            #     self.data_palette_client.call_method(
-            #         "add_to_palette",
-            #         [{'workspace': str(newWsId), 'new_refs': add_to_palette_list}],
-            #         self.token
-            #     )
-            ## END DP CODE
-
             # update the ref inside the narrative object and the new workspace metadata.
             newNarMetadata = currentNarrative['info'][10]
             newNarMetadata['name'] = newName
