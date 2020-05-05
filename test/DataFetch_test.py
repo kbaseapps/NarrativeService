@@ -7,7 +7,10 @@ from installed_clients.authclient import KBaseAuth
 from installed_clients.WorkspaceClient import Workspace
 from NarrativeService.NarrativeServiceServer import MethodContext
 from NarrativeService.NarrativeServiceImpl import NarrativeService
-from workspace_mock import WorkspaceMock
+from workspace_mock import (
+    WorkspaceMock,
+    EmptyWorkspaceMock
+)
 
 
 class WsMock:
@@ -348,6 +351,22 @@ class DataFetcherTestCase(unittest.TestCase):
         })
         self.assertEqual(data["limit_reached"], 1)
         self.assertEqual(len(data["objects"]), limit)
+
+    @mock.patch("NarrativeService.data.fetcher.Workspace", side_effect=EmptyWorkspaceMock)
+    def test_fetch_data_no_ws(self, mock_ws):
+        df = DataFetcher(
+            self.cfg["workspace-url"],
+            self.cfg["auth-service-url"],
+            self.get_context()["token"]
+        )
+
+        data = df.fetch_accessible_data({"data_set": "mine", "limit": 30000})
+        self.assertEqual(data["limit_reached"], 0)
+        self.assertEqual(len(data["objects"]), 0)
+
+        data = df.fetch_accessible_data({"data_set": "shared", "limit": 30000})
+        self.assertEqual(data["limit_reached"], 0)
+        self.assertEqual(len(data["objects"]), 0)
 
     def _validate_ws_display(self, ws_disp, count):
         self.assertEqual(len(ws_disp), 4)

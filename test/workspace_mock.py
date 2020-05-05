@@ -1,3 +1,12 @@
+class EmptyWorkspaceMock:
+    def __init__(self, *args, **kwargs):
+        self.user = "some_user"
+        self.shared_user = "some_other_user"
+
+    def list_workspace_info(self, params):
+        return []
+
+
 class WorkspaceMock:
     ws_info_meta = {
         1: {},
