@@ -10,17 +10,16 @@ class WorkspaceListObjectsIterator:
     # list_objects_params - optional structure with such Woskspace.ListObjectsParams
     #    as 'type' or 'before', 'after', 'showHidden', 'includeMetadata' and so on,
     #    wherein there is no need to set 'ids' or 'workspaces' or 'min/maxObjectID'.
-    def __init__(self, ws_client, ws_info_list = None, ws_id = None, ws_name = None,
-                 list_objects_params = {}, part_size = 10000, global_limit = 100000):
+    def __init__(self, ws_client, ws_info_list=None, ws_id=None, ws_name=None,
+                 list_objects_params={}, part_size=10000, global_limit=100000):
         self.ws = ws_client
-        if not ws_info_list:
-            if (not ws_id) and (not ws_name):
-                raise ValueError("In case ws_info_list is not set either ws_id or " +
-                                 "ws_name should be set")
+        if ws_info_list is None:
+            if ws_id is None and ws_name is None:
+                raise ValueError("In case ws_info_list is not set either ws_id or ws_name should be set")
             ws_info_list = [self.ws.get_workspace_info({"id": ws_id, "workspace": ws_name})]
         # Let's split workspaces into blocks
-        blocks = [] # Each block is array of ws_info
-        sorted_ws_info_deque = deque(sorted(ws_info_list, key = lambda x: x[4]))
+        blocks = []  # Each block is array of ws_info
+        sorted_ws_info_deque = deque(sorted(ws_info_list, key=lambda x: x[4]))
         while sorted_ws_info_deque:
             block_size = 0
             block = []
@@ -41,7 +40,6 @@ class WorkspaceListObjectsIterator:
         self.global_limit = global_limit
         self.total_counter = 0
         self.part_iter = self._load_next_part()
-        pass
 
     # iterator implementation
     def __iter__(self):
