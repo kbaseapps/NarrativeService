@@ -1,9 +1,7 @@
 import json
-import os
 import time
 import uuid
 
-from NarrativeService.DataPaletteTypes import DataPaletteTypes
 from NarrativeService.ServiceUtils import ServiceUtils
 from NarrativeService.WorkspaceListObjectsIterator import WorkspaceListObjectsIterator
 from installed_clients.NarrativeMethodStoreClient import NarrativeMethodStore
@@ -22,8 +20,6 @@ class NarrativeManager:
     KB_STATE = 'widget_state'
 
     DEBUG = False
-
-    DATA_PALETTES_TYPES = DataPaletteTypes(False)
 
     def __init__(self, config, ctx, set_api_client, data_palette_client):
         self.narrativeMethodStoreURL = config["narrative-method-store"]
