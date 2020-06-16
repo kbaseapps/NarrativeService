@@ -5,6 +5,7 @@ from collections import defaultdict
 
 DEFAULT_DATA_LIMIT = 30000
 
+
 class DataFetcher(object):
     def __init__(self, ws_url, auth_url, token):
         """

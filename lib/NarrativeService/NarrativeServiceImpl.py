@@ -7,6 +7,7 @@ from NarrativeService.ReportFetcher import ReportFetcher
 from NarrativeService.sharing.sharemanager import ShareRequester
 from NarrativeService.apps.appinfo import get_all_app_info, get_ignore_categories
 from NarrativeService.data.fetcher import DataFetcher
+from NarrativeService.data.objectswithsets import ObjectsWithSets
 from installed_clients.WorkspaceClient import Workspace
 #END_HEADER
 
@@ -35,7 +36,27 @@ class NarrativeService:
         """
         ctx - the context object, gets tokens, etc.
         """
-        return NarrativeManager(self.config, ctx, self.setAPIClient, self.dataPaletteClient)
+        return NarrativeManager(self.config,
+                                ctx["user_id"],
+                                self._get_set_api_client(ctx["token"]),
+                                self._get_data_palette_client(ctx["token"]),
+                                self._get_workspace_client(ctx["token"]))
+
+    def _get_data_palette_client(self, token):
+        return DynamicServiceClient(self.serviceWizardURL,
+                                    self.config["datapaletteservice-version"],
+                                    "DataPaletteService",
+                                    token)
+
+    def _get_set_api_client(self, token):
+        return DynamicServiceClient(self.serviceWizardURL,
+                                    self.config["setapi-version"],
+                                    "SetAPI",
+                                    token)
+
+    def _get_workspace_client(self, token):
+        return Workspace(self.workspaceURL, token=token)
+
     #END_CLASS_HEADER
 
     # config contains contents of config file in a hash or None if it couldn't
@@ -47,17 +68,9 @@ class NarrativeService:
         self.serviceWizardURL = config['service-wizard']
         self.narrativeMethodStoreURL = config['narrative-method-store']
         self.catalogURL = config['catalog-url']
-        self.setAPIClient = DynamicServiceClient(self.serviceWizardURL,
-                                                 config['setapi-version'],
-                                                 'SetAPI')
-        self.dataPaletteClient = DynamicServiceClient(self.serviceWizardURL,
-                                                      config['datapaletteservice-version'],
-                                                      'DataPaletteService')
-
         self.narListUtils = NarrativeListUtils(config['narrative-list-cache-size'])
         #END_CONSTRUCTOR
         pass
-
 
     def list_objects_with_sets(self, ctx, params):
         """
@@ -140,7 +153,12 @@ class NarrativeService:
         types = params.get("types")
         include_metadata = params.get("includeMetadata", 0)
         include_data_palettes = params.get("include_data_palettes", 0)
-        returnVal = self._nm(ctx).list_objects_with_sets(
+        ows = ObjectsWithSets(
+            self._get_set_api_client(ctx["token"]),
+            self._get_data_palette_client(ctx["token"]),
+            self._get_workspace_client(ctx["token"])
+        )
+        returnVal = ows.list_objects_with_sets(
             ws_id=ws_id, ws_name=ws_name, workspaces=workspaces, types=types,
             include_metadata=include_metadata, include_data_palettes=include_data_palettes
         )
@@ -331,7 +349,11 @@ class NarrativeService:
         # return variables are: returnVal
         #BEGIN list_available_types
         workspaces = params.get("workspaces")
-        returnVal = self._nm(ctx).list_available_types(workspaces)
+        ows = ObjectsWithSets(
+            self._get_set_api_client(ctx["token"]),
+            self._get_data_palette_client(ctx["token"]),
+            self._get_workspace_client(ctx["token"]))
+        returnVal = ows.list_available_types(workspaces)
         #END list_available_types
 
         # At some point might do deeper type checking...
@@ -391,7 +413,7 @@ class NarrativeService:
         # ctx is the context object
         # return variables are: returnVal
         #BEGIN list_narratorials
-        ws = Workspace(self.workspaceURL, token=ctx["token"])
+        ws = self._get_workspace_client(ctx["token"])
         returnVal = {'narratorials': self.narListUtils.list_narratorials(ws)}
         #END list_narratorials
 
@@ -452,7 +474,7 @@ class NarrativeService:
         # ctx is the context object
         # return variables are: returnVal
         #BEGIN list_narratives
-        ws = Workspace(self.workspaceURL, token=ctx["token"])
+        ws = self._get_workspace_client(ctx["token"])
         nar_type = 'mine'
         valid_types = ['mine', 'shared', 'public']
         if 'type' in params:
@@ -496,7 +518,7 @@ class NarrativeService:
             raise ValueError('"ws" field indicating WS name or id is required.')
         if 'description' not in params:
             raise ValueError('"description" field indicating WS name or id is required.')
-        ws = Workspace(self.workspaceURL, token=ctx["token"])
+        ws = self._get_workspace_client(ctx["token"])
         nu = NarratorialUtils()
         nu.set_narratorial(params['ws'], params['description'], ws)
         returnVal = {}
@@ -520,7 +542,7 @@ class NarrativeService:
         #BEGIN remove_narratorial
         if 'ws' not in params:
             raise ValueError('"ws" field indicating WS name or id is required.')
-        ws = Workspace(self.workspaceURL, token=ctx["token"])
+        ws = self._get_workspace_client(ctx["token"])
         nu = NarratorialUtils()
         nu.remove_narratorial(params['ws'], ws)
         returnVal = {}
@@ -560,7 +582,7 @@ class NarrativeService:
         # ctx is the context object
         # return variables are: returnVal
         #BEGIN find_object_report
-        report_fetcher = ReportFetcher(Workspace(self.workspaceURL, token=ctx["token"]))
+        report_fetcher = ReportFetcher(self._get_workspace_client(ctx["token"]))
         returnVal = report_fetcher.find_report_from_object(params['upa'])
         #END find_object_report
 

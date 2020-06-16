@@ -9,7 +9,8 @@ from .baseclient import (
 
 class DynamicServiceClient:
 
-    def __init__(self, sw_url, service_ver, module_name, url_cache_time=300):
+    def __init__(self, sw_url: str, service_ver: str, module_name: str,
+                 token: str, url_cache_time: int = 300):
         """
         sw_url - service wizard URL
         service_ver - version of service to invoke
@@ -22,8 +23,9 @@ class DynamicServiceClient:
         self.url_cache_time = url_cache_time
         self.cached_url = None
         self.last_refresh_time = None
+        self.token = token
 
-    def call_method(self, method, params_array, token):
+    def call_method(self, method: str, params_array: list) -> list:
         """
         Calls the given method. Uses the BaseClient and cached service URL.
         """
@@ -32,14 +34,14 @@ class DynamicServiceClient:
             self._lookup_url()
             was_url_refreshed = True
         try:
-            return self._call(method, params_array, token)
+            return self._call(method, params_array, self.token)
         except ServerError:
             # Happens if a URL expired for real, even though it's still cached.
             if was_url_refreshed:
                 raise  # Forwarding error with no changes
             else:
                 self._lookup_url()
-                return self._call(method, params_array, token)
+                return self._call(method, params_array, self.token)
 
     def _lookup_url(self):
         bc = BaseClient(url=self.sw_url, lookup_url=False)
