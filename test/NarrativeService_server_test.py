@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+
+# These are all basically integration tests. They require access to running services.
 import io
 import json  # noqa: F401
 import os  # noqa: F401

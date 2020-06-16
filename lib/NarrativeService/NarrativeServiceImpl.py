@@ -837,6 +837,10 @@ class NarrativeService:
         # ctx is the context object
         # return variables are: result
         #BEGIN rename_narrative
+        new_upa = self._nm(ctx).rename_narrative(params.get("narrative_ref"), params.get("new_name"), self.VERSION)
+        result = {
+            "narrative_upa": new_upa
+        }
         #END rename_narrative
 
         # At some point might do deeper type checking...
