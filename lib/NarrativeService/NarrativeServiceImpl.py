@@ -7,6 +7,7 @@ from NarrativeService.ReportFetcher import ReportFetcher
 from NarrativeService.sharing.sharemanager import ShareRequester
 from NarrativeService.apps.appinfo import get_all_app_info, get_ignore_categories
 from NarrativeService.data.fetcher import DataFetcher
+from NarrativeService.data.objectswithsets import ObjectsWithSets
 from installed_clients.WorkspaceClient import Workspace
 #END_HEADER
 
@@ -26,16 +27,36 @@ class NarrativeService:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.2.2"
+    VERSION = "0.2.5"
     GIT_URL = "https://github.com/briehl/NarrativeService"
-    GIT_COMMIT_HASH = "d82de2ec155d8ddf6f794fef67382be823847db7"
+    GIT_COMMIT_HASH = "77ec2a9d6260b7944411ac43f572f06dbaf8cd10"
 
     #BEGIN_CLASS_HEADER
     def _nm(self, ctx):
         """
         ctx - the context object, gets tokens, etc.
         """
-        return NarrativeManager(self.config, ctx, self.setAPIClient, self.dataPaletteClient)
+        return NarrativeManager(self.config,
+                                ctx["user_id"],
+                                self._get_set_api_client(ctx["token"]),
+                                self._get_data_palette_client(ctx["token"]),
+                                self._get_workspace_client(ctx["token"]))
+
+    def _get_data_palette_client(self, token):
+        return DynamicServiceClient(self.serviceWizardURL,
+                                    self.config["datapaletteservice-version"],
+                                    "DataPaletteService",
+                                    token)
+
+    def _get_set_api_client(self, token):
+        return DynamicServiceClient(self.serviceWizardURL,
+                                    self.config["setapi-version"],
+                                    "SetAPI",
+                                    token)
+
+    def _get_workspace_client(self, token):
+        return Workspace(self.workspaceURL, token=token)
+
     #END_CLASS_HEADER
 
     # config contains contents of config file in a hash or None if it couldn't
@@ -47,17 +68,9 @@ class NarrativeService:
         self.serviceWizardURL = config['service-wizard']
         self.narrativeMethodStoreURL = config['narrative-method-store']
         self.catalogURL = config['catalog-url']
-        self.setAPIClient = DynamicServiceClient(self.serviceWizardURL,
-                                                 config['setapi-version'],
-                                                 'SetAPI')
-        self.dataPaletteClient = DynamicServiceClient(self.serviceWizardURL,
-                                                      config['datapaletteservice-version'],
-                                                      'DataPaletteService')
-
         self.narListUtils = NarrativeListUtils(config['narrative-list-cache-size'])
         #END_CONSTRUCTOR
         pass
-
 
     def list_objects_with_sets(self, ctx, params):
         """
@@ -140,7 +153,12 @@ class NarrativeService:
         types = params.get("types")
         include_metadata = params.get("includeMetadata", 0)
         include_data_palettes = params.get("include_data_palettes", 0)
-        returnVal = self._nm(ctx).list_objects_with_sets(
+        ows = ObjectsWithSets(
+            self._get_set_api_client(ctx["token"]),
+            self._get_data_palette_client(ctx["token"]),
+            self._get_workspace_client(ctx["token"])
+        )
+        returnVal = ows.list_objects_with_sets(
             ws_id=ws_id, ws_name=ws_name, workspaces=workspaces, types=types,
             include_metadata=include_metadata, include_data_palettes=include_data_palettes
         )
@@ -331,7 +349,11 @@ class NarrativeService:
         # return variables are: returnVal
         #BEGIN list_available_types
         workspaces = params.get("workspaces")
-        returnVal = self._nm(ctx).list_available_types(workspaces)
+        ows = ObjectsWithSets(
+            self._get_set_api_client(ctx["token"]),
+            self._get_data_palette_client(ctx["token"]),
+            self._get_workspace_client(ctx["token"]))
+        returnVal = ows.list_available_types(workspaces)
         #END list_available_types
 
         # At some point might do deeper type checking...
@@ -391,7 +413,7 @@ class NarrativeService:
         # ctx is the context object
         # return variables are: returnVal
         #BEGIN list_narratorials
-        ws = Workspace(self.workspaceURL, token=ctx["token"])
+        ws = self._get_workspace_client(ctx["token"])
         returnVal = {'narratorials': self.narListUtils.list_narratorials(ws)}
         #END list_narratorials
 
@@ -452,7 +474,7 @@ class NarrativeService:
         # ctx is the context object
         # return variables are: returnVal
         #BEGIN list_narratives
-        ws = Workspace(self.workspaceURL, token=ctx["token"])
+        ws = self._get_workspace_client(ctx["token"])
         nar_type = 'mine'
         valid_types = ['mine', 'shared', 'public']
         if 'type' in params:
@@ -496,7 +518,7 @@ class NarrativeService:
             raise ValueError('"ws" field indicating WS name or id is required.')
         if 'description' not in params:
             raise ValueError('"description" field indicating WS name or id is required.')
-        ws = Workspace(self.workspaceURL, token=ctx["token"])
+        ws = self._get_workspace_client(ctx["token"])
         nu = NarratorialUtils()
         nu.set_narratorial(params['ws'], params['description'], ws)
         returnVal = {}
@@ -520,7 +542,7 @@ class NarrativeService:
         #BEGIN remove_narratorial
         if 'ws' not in params:
             raise ValueError('"ws" field indicating WS name or id is required.')
-        ws = Workspace(self.workspaceURL, token=ctx["token"])
+        ws = self._get_workspace_client(ctx["token"])
         nu = NarratorialUtils()
         nu.remove_narratorial(params['ws'], ws)
         returnVal = {}
@@ -560,7 +582,7 @@ class NarrativeService:
         # ctx is the context object
         # return variables are: returnVal
         #BEGIN find_object_report
-        report_fetcher = ReportFetcher(Workspace(self.workspaceURL, token=ctx["token"]))
+        report_fetcher = ReportFetcher(self._get_workspace_client(ctx["token"]))
         returnVal = report_fetcher.find_report_from_object(params['upa'])
         #END find_object_report
 
@@ -607,8 +629,9 @@ class NarrativeService:
         This returns all app info from the KBase catalog, formatted in a way to make life easy for the
         Narrative APPS panel on startup.
         :param input: instance of type "GetAppInfoInput" -> structure:
-           parameter "tag" of String, parameter "user_id" of String
-        :returns: instance of type "AllAppInfo" -> structure: parameter
+           parameter "tag" of String, parameter "user" of String
+        :returns: instance of type "AllAppInfo" (App info ids are all
+           lowercase - module/app_id) -> structure: parameter
            "module_versions" of mapping from String to String, parameter
            "categories" of mapping from String to type "CategoryInfo" ->
            structure: parameter "description" of String, parameter "id" of
@@ -662,6 +685,9 @@ class NarrativeService:
         """
         This is intended to support the Narrative front end. It returns all data a user
         owns, or is shared with them, excluding global data.
+        Note that if the limit is reached, then the workspace data counts and type counts only
+        reflect what data is returned.
+        If there's a limit, this will return objects from the most recently modified Workspace(s).
         :param params: instance of type "ListAllDataParams" (data_set -
            should be one of "mine", "shared" - other values with throw an
            error include_type_counts - (default 0) if 1, will populate the
@@ -672,33 +698,40 @@ class NarrativeService:
            (default 0) if 1, includes object metadata ignore_workspaces -
            (optional) list of workspace ids - if present, will ignore any
            workspace ids given (useful for skipping the currently loaded
-           Narrative)) -> structure: parameter "data_set" of String,
+           Narrative) limit - (default is 30000) if present, limits returned
+           data objects to the number given. Must be > 0 if present. types -
+           (default null or empty list) if present, will only return the
+           types specified.) -> structure: parameter "data_set" of String,
            parameter "include_type_counts" of type "boolean" (@range [0,1]),
            parameter "simple_types" of type "boolean" (@range [0,1]),
            parameter "ignore_narratives" of type "boolean" (@range [0,1]),
            parameter "include_metadata" of type "boolean" (@range [0,1]),
-           parameter "ignore_workspaces" of list of Long
+           parameter "ignore_workspaces" of list of Long, parameter "limit"
+           of Long, parameter "types" of list of String
         :returns: instance of type "ListDataResult" (objects - list of
-           objects returned by this function type_counts - mapping of type ->
-           count in this function call. If simple_types was 1, these types
-           are all the "simple" format (Genome vs KBaseGenomes.Genome)
-           workspace_display - handy thing for quickly displaying Narrative
-           info.) -> structure: parameter "objects" of list of type
-           "DataObjectView" (upa - the UPA for the most recent version of the
-           object (wsid/objid/ver format) name - the string name for the
-           object narr_name - the name of the Narrative that the object came
-           from type - the type of object this is (if simple_types was used,
-           then this will be the simple type) savedate - the timestamp this
-           object was saved saved_by - the user id who saved this object) ->
-           structure: parameter "upa" of String, parameter "name" of String,
-           parameter "narr_name" of String, parameter "type" of String,
-           parameter "savedate" of Long, parameter "saved_by" of String,
-           parameter "type_counts" of mapping from String to Long, parameter
-           "workspace_display" of mapping from Long to type "WorkspaceStats"
-           (display - the display name for the workspace (typically the
-           Narrative name) count - the number of objects found in the
-           workspace (excluding Narratives, if requested)) -> structure:
-           parameter "display" of String, parameter "count" of Long
+           objects returned by this function limit_reached - 1 if there are
+           more data objects than given by the limit in params, 0 otherwise
+           type_counts - mapping of type -> count in this function call. If
+           simple_types was 1, these types are all the "simple" format
+           (Genome vs KBaseGenomes.Genome) workspace_display - handy thing
+           for quickly displaying Narrative info.) -> structure: parameter
+           "objects" of list of type "DataObjectView" (upa - the UPA for the
+           most recent version of the object (wsid/objid/ver format) name -
+           the string name for the object narr_name - the name of the
+           Narrative that the object came from type - the type of object this
+           is (if simple_types was used, then this will be the simple type)
+           savedate - the timestamp this object was saved saved_by - the user
+           id who saved this object) -> structure: parameter "upa" of String,
+           parameter "name" of String, parameter "narr_name" of String,
+           parameter "type" of String, parameter "savedate" of Long,
+           parameter "saved_by" of String, parameter "limit_reached" of type
+           "boolean" (@range [0,1]), parameter "type_counts" of mapping from
+           String to Long, parameter "workspace_display" of mapping from Long
+           to type "WorkspaceStats" (display - the display name for the
+           workspace (typically the Narrative name) count - the number of
+           objects found in the workspace (excluding Narratives, if
+           requested)) -> structure: parameter "display" of String, parameter
+           "count" of Long
         """
         # ctx is the context object
         # return variables are: result
@@ -720,6 +753,9 @@ class NarrativeService:
         Also intended to support the Narrative front end. It returns data from a list of
         workspaces. If the authenticated user doesn't have access to any of workspaces, it raises
         an exception. Otherwise, it returns the same structure of results as list_all_data.
+        Note that if the limit is reached, then the workspace data counts and type counts only
+        reflect what data is returned.
+        If there's a limit, this will return objects from the most recently modified Workspace(s).
         :param params: instance of type "ListWorkspaceDataParams"
            (workspace_ids - list of workspace ids - will only return info
            from these workspaces. include_type_counts - (default 0) if 1,
@@ -727,33 +763,40 @@ class NarrativeService:
            simple_types - (default 0) if 1, will "simplify" types to just
            their subtype (KBaseGenomes.Genome -> Genome) ignore_narratives -
            (default 1) if 1, won't return any KBaseNarrative.* objects
-           include_metadata - (default 0) if 1, includes object metadata) ->
-           structure: parameter "workspace_ids" of list of Long, parameter
-           "include_type_counts" of type "boolean" (@range [0,1]), parameter
-           "simple_types" of type "boolean" (@range [0,1]), parameter
-           "ignore_narratives" of type "boolean" (@range [0,1]), parameter
-           "include_metadata" of type "boolean" (@range [0,1])
+           include_metadata - (default 0) if 1, includes object metadata
+           limit - (default is 30000) if present, limits returned data
+           objects to the number given. Must be > 0 if present. types -
+           (default null or empty list) if present, will only return the
+           types specified.) -> structure: parameter "workspace_ids" of list
+           of Long, parameter "include_type_counts" of type "boolean" (@range
+           [0,1]), parameter "simple_types" of type "boolean" (@range [0,1]),
+           parameter "ignore_narratives" of type "boolean" (@range [0,1]),
+           parameter "include_metadata" of type "boolean" (@range [0,1]),
+           parameter "limit" of Long, parameter "types" of list of String
         :returns: instance of type "ListDataResult" (objects - list of
-           objects returned by this function type_counts - mapping of type ->
-           count in this function call. If simple_types was 1, these types
-           are all the "simple" format (Genome vs KBaseGenomes.Genome)
-           workspace_display - handy thing for quickly displaying Narrative
-           info.) -> structure: parameter "objects" of list of type
-           "DataObjectView" (upa - the UPA for the most recent version of the
-           object (wsid/objid/ver format) name - the string name for the
-           object narr_name - the name of the Narrative that the object came
-           from type - the type of object this is (if simple_types was used,
-           then this will be the simple type) savedate - the timestamp this
-           object was saved saved_by - the user id who saved this object) ->
-           structure: parameter "upa" of String, parameter "name" of String,
-           parameter "narr_name" of String, parameter "type" of String,
-           parameter "savedate" of Long, parameter "saved_by" of String,
-           parameter "type_counts" of mapping from String to Long, parameter
-           "workspace_display" of mapping from Long to type "WorkspaceStats"
-           (display - the display name for the workspace (typically the
-           Narrative name) count - the number of objects found in the
-           workspace (excluding Narratives, if requested)) -> structure:
-           parameter "display" of String, parameter "count" of Long
+           objects returned by this function limit_reached - 1 if there are
+           more data objects than given by the limit in params, 0 otherwise
+           type_counts - mapping of type -> count in this function call. If
+           simple_types was 1, these types are all the "simple" format
+           (Genome vs KBaseGenomes.Genome) workspace_display - handy thing
+           for quickly displaying Narrative info.) -> structure: parameter
+           "objects" of list of type "DataObjectView" (upa - the UPA for the
+           most recent version of the object (wsid/objid/ver format) name -
+           the string name for the object narr_name - the name of the
+           Narrative that the object came from type - the type of object this
+           is (if simple_types was used, then this will be the simple type)
+           savedate - the timestamp this object was saved saved_by - the user
+           id who saved this object) -> structure: parameter "upa" of String,
+           parameter "name" of String, parameter "narr_name" of String,
+           parameter "type" of String, parameter "savedate" of Long,
+           parameter "saved_by" of String, parameter "limit_reached" of type
+           "boolean" (@range [0,1]), parameter "type_counts" of mapping from
+           String to Long, parameter "workspace_display" of mapping from Long
+           to type "WorkspaceStats" (display - the display name for the
+           workspace (typically the Narrative name) count - the number of
+           objects found in the workspace (excluding Narratives, if
+           requested)) -> structure: parameter "display" of String, parameter
+           "count" of Long
         """
         # ctx is the context object
         # return variables are: result
@@ -766,6 +809,39 @@ class NarrativeService:
         # At some point might do deeper type checking...
         if not isinstance(result, dict):
             raise ValueError('Method list_workspace_data return value ' +
+                             'result is not type dict as required.')
+        # return the results
+        return [result]
+
+    def rename_narrative(self, ctx, params):
+        """
+        This function renames a Narrative without the need to go through the Narrative application.
+        It does so by the following steps:
+        1. Ensure that the rename is just a string. Anything besides a string will fail.
+        2. Test to see if the authenticated user has admin permissions (as this modifies the workspace
+            metadata, only a workspace admin can do a rename).
+        3. Rename the narrative first in the workspace metadata, then create a new Narrative object with
+            the new name.
+        If all this goes off well, the new narrative UPA is returned.
+        :param params: instance of type "RenameNarrativeParams"
+           (narrative_ref - either a Narrative reference (ws_id/obj_id) or
+           UPA (ws_id/obj_id/ver). Should probably be a ref string to avoid
+           overwriting changes. new_name - the new name for the narrative.
+           Note that this isn't the object name, but the narrative's readable
+           name.) -> structure: parameter "narrative_ref" of String,
+           parameter "new_name" of String
+        :returns: instance of type "RenameNarrativeResult" (narrative_upa -
+           UPA of the updated and saved narrative object.) -> structure:
+           parameter "narrative_upa" of String
+        """
+        # ctx is the context object
+        # return variables are: result
+        #BEGIN rename_narrative
+        #END rename_narrative
+
+        # At some point might do deeper type checking...
+        if not isinstance(result, dict):
+            raise ValueError('Method rename_narrative return value ' +
                              'result is not type dict as required.')
         # return the results
         return [result]

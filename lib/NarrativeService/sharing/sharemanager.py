@@ -41,20 +41,11 @@ class ShareRequester(object):
         ret_value = {
             "ok": 1
         }
-        # Check if request has been made
-
-        # existing = find_existing_share_request(self.ws_id, self.user, self.level)
-        # if existing is not None:
-        #     ret_value = {
-        #         "ok": 0,
-        #         "error": "A request has already been made"
-        #     }
-        #     return ret_value
 
         # Make the request by firing a notification
         try:
             requestees = ws.get_ws_admins(self.ws_id, self.config['workspace-url'], ws_token)
-        except ServerError as err:
+        except ServerError:
             return {
                 "ok": 0,
                 "error": "Unable to request share - couldn't get Narrative owners!"
@@ -76,7 +67,7 @@ class ShareRequester(object):
             "users": [{"id": u, "type": "user"} for u in requestees + [self.user]]
         }
 
-        note_id = feeds.make_notification(note, self.config['feeds-url'], service_token)
+        feeds.make_notification(note, self.config['feeds-url'], service_token)
 
         # Store that we made the request, uh, somewhere
         # save_share_request(self.ws_id, self.user, self.level, note_id)

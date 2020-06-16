@@ -582,4 +582,34 @@ module NarrativeService {
         If there's a limit, this will return objects from the most recently modified Workspace(s).
     */
     funcdef list_workspace_data(ListWorkspaceDataParams params) returns (ListDataResult result) authentication required;
+
+    /*
+        narrative_ref - either a Narrative reference (ws_id/obj_id) or UPA (ws_id/obj_id/ver).
+            Should probably be a ref string to avoid overwriting changes.
+        new_name - the new name for the narrative. Note that this isn't the object name, but the
+            narrative's readable name.
+    */
+    typedef structure {
+        string narrative_ref;
+        string new_name;
+    } RenameNarrativeParams;
+
+    /*
+        narrative_upa - UPA of the updated and saved narrative object.
+    */
+    typedef structure {
+        string narrative_upa;
+    } RenameNarrativeResult;
+
+    /*
+        This function renames a Narrative without the need to go through the Narrative application.
+        It does so by the following steps:
+        1. Ensure that the rename is just a string. Anything besides a string will fail.
+        2. Test to see if the authenticated user has admin permissions (as this modifies the workspace
+            metadata, only a workspace admin can do a rename).
+        3. Rename the narrative first in the workspace metadata, then create a new Narrative object with
+            the new name.
+        If all this goes off well, the new narrative UPA is returned.
+    */
+    funcdef rename_narrative(RenameNarrativeParams params) returns (RenameNarrativeResult result) authentication required;
 };
