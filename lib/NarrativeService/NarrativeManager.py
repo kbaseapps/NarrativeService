@@ -3,9 +3,7 @@ import time
 import uuid
 
 from NarrativeService.ServiceUtils import ServiceUtils
-from NarrativeService.WorkspaceListObjectsIterator import WorkspaceListObjectsIterator
 from installed_clients.NarrativeMethodStoreClient import NarrativeMethodStore
-from installed_clients.WorkspaceClient import Workspace
 
 
 class NarrativeManager:
