@@ -5,6 +5,9 @@ import uuid
 from NarrativeService.ServiceUtils import ServiceUtils
 from installed_clients.NarrativeMethodStoreClient import NarrativeMethodStore
 
+MAX_WS_METADATA_VALUE_SIZE = 900
+NARRATIVE_TYPE = "KBaseNarrative.Narrative"
+
 
 class NarrativeManager:
 
@@ -16,8 +19,6 @@ class NarrativeManager:
     KB_ERROR_CELL = 'kb_error'
     KB_CODE_CELL = 'kb_code'
     KB_STATE = 'widget_state'
-
-    DEBUG = False
 
     def __init__(self, config, user_id, set_api_client, data_palette_client, workspace_client):
         self.narrativeMethodStoreURL = config["narrative-method-store"]
@@ -371,3 +372,71 @@ class NarrativeManager:
         obj_info = ServiceUtils.object_info_to_object(obj_info_tuple)
         return {'info': obj_info}
 
+    def rename_narrative(self, narrative_ref: str, new_name: str, service_version: str) -> str:
+        """
+        Renames a Narrative.
+        If the current user (as set by the auth token in self.ws) has admin permission on the workspace,
+        then this does the following steps.
+        1. Fetch the Narrative object and save it with the name change in the metadata.
+        2. Update the workspace metadata so that it has the new name as the narrative nice name.
+        3. Flips the workspace metadata so the the narrative is no longer temporary, if it was.
+
+        :param narrative_ref: string, format = "###/###" or "###/###/###" (though the latter is very not recommended)
+        :param new_name: string, new name for the narrative
+        :param service_version: NarrativeService version so the provenance can be tracked properly.
+        """
+        # 1. Validate inputs.
+        if not new_name or not isinstance(new_name, str):
+            raise ValueError("new_name should be a non-empty string")
+
+        if len(new_name.encode("utf-8")) > MAX_WS_METADATA_VALUE_SIZE:
+            raise ValueError(f"new_name must be less than {MAX_WS_METADATA_VALUE_SIZE} bytes")
+
+        if not narrative_ref or not isinstance(narrative_ref, str):
+            raise ValueError("narrative_ref must be a string of format ###/###")
+
+        ref = ServiceUtils.numerical_ref_to_dict(narrative_ref)
+        ws_id = ref.get("ws_id")
+        if not ws_id or not ref["obj_id"]:
+            raise ValueError("narrative_ref must be a string of format ###/###")
+
+        # 2. Check permissions
+        perm = ServiceUtils.get_user_workspace_permissions(self.user_id, ws_id, self.ws)
+        if perm != "a":
+            raise ValueError(f"User {self.user_id} must have admin rights to change the name of the narrative in workspace {ws_id}")
+
+        # 3. Get narrative object
+        narr_obj = self.ws.get_objects2({"objects": [{"ref": narrative_ref}]})["data"][0]
+
+        # 3a. Rename the right fields there.
+        if narr_obj["data"]["metadata"]["name"] == new_name:
+            # no-op, return the current UPA.
+            return f"{narr_obj['info'][6]}/{narr_obj['info'][1]}/{narr_obj['info'][4]}"
+        narr_obj["data"]["metadata"]["name"] = new_name
+        narr_obj["info"][10]["name"] = new_name
+
+        # 4. Update workspace metadata
+        updated_metadata = {
+            "is_temporary": "false",
+            "narrative_nice_name": new_name,
+            "searchtags": "narrative"
+        }
+        self.ws.alter_workspace_metadata({"wsi": {"id": ws_id}, "new": updated_metadata})
+
+        # 5. Save the Narrative object. Keep all the things intact, with new provenance saying we renamed with the NarrativeService.
+        ws_save_obj = {
+            "type": NARRATIVE_TYPE,
+            "data": narr_obj["data"],
+            "objid": ref["obj_id"],
+            "meta": narr_obj["info"][10],
+            "provenance": [{
+                "service": "NarrativeService",
+                "description": "Renamed by Narrative Service",
+                "service_ver": service_version
+            }]
+        }
+        obj_info = self.ws.save_objects({
+            "id": ws_id,
+            "objects": [ws_save_obj]
+        })[0]
+        return f"{obj_info[6]}/{obj_info[0]}/{obj_info[4]}"
