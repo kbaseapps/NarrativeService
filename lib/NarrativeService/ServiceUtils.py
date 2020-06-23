@@ -68,5 +68,5 @@ class ServiceUtils:
         # a little complex shortcut.
         # get_permissions_mass returns {"perms": [{ws 1 perms}, {ws 2 perms}, ...]}
         # we just need the first.
-        perms = ws_client.get_permissions_mass({"workspaces": [{"ref": ws_id}]}).get("perms", [{}])[0]
+        perms = ws_client.get_permissions_mass({"workspaces": [{"id": ws_id}]}).get("perms", [{}])[0]
         return perms.get(user_id, "n")

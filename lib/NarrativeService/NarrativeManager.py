@@ -20,8 +20,6 @@ class NarrativeManager:
     KB_CODE_CELL = 'kb_code'
     KB_STATE = 'widget_state'
 
-    DEBUG = False
-
     def __init__(self, config, user_id, set_api_client, data_palette_client, workspace_client):
         self.narrativeMethodStoreURL = config["narrative-method-store"]
         self.set_api_client = set_api_client                     # DynamicServiceCache type
@@ -382,6 +380,10 @@ class NarrativeManager:
         1. Fetch the Narrative object and save it with the name change in the metadata.
         2. Update the workspace metadata so that it has the new name as the narrative nice name.
         3. Flips the workspace metadata so the the narrative is no longer temporary, if it was.
+
+        :param narrative_ref: string, format = "###/###" or "###/###/###" (though the latter is very not recommended)
+        :param new_name: string, new name for the narrative
+        :param service_version: NarrativeService version so the provenance can be tracked properly.
         """
         # 1. Validate inputs.
         if not new_name or not isinstance(new_name, str):
@@ -411,7 +413,7 @@ class NarrativeManager:
             # no-op, return the current UPA.
             return f"{narr_obj['info'][6]}/{narr_obj['info'][1]}/{narr_obj['info'][4]}"
         narr_obj["data"]["metadata"]["name"] = new_name
-        narr_obj["info"][8]["name"] = new_name
+        narr_obj["info"][10]["name"] = new_name
 
         # 4. Update workspace metadata
         updated_metadata = {
@@ -424,9 +426,9 @@ class NarrativeManager:
         # 5. Save the Narrative object. Keep all the things intact, with new provenance saying we renamed with the NarrativeService.
         ws_save_obj = {
             "type": NARRATIVE_TYPE,
-            "data": narr_obj,
+            "data": narr_obj["data"],
             "objid": ref["obj_id"],
-            "meta": narr_obj["info"][8],
+            "meta": narr_obj["info"][10],
             "provenance": [{
                 "service": "NarrativeService",
                 "description": "Renamed by Narrative Service",

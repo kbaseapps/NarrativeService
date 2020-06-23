@@ -77,7 +77,6 @@ class NarrativeServiceTest(unittest.TestCase):
                              "include second user credentials ('test_token2' key)")
         token2 = test_cfg_dict['test_token2']
         user2 = auth_client.get_user(token2)
-        print(("Test user2: " + user2))
         cls.ctx2 = MethodContext(None)
         cls.ctx2.update({'token': token2,
                          'user_id': user2,
@@ -116,7 +115,7 @@ class NarrativeServiceTest(unittest.TestCase):
                 try:
                     cls.wsClients[user_pos].delete_workspace({'workspace': wsName})
                     print(("Test workspace was deleted for user" + str(user_pos + 1)))
-                except:
+                except Exception:
                     print(("Error deleting test workspace for user" + str(user_pos + 1)))
 
 
@@ -232,6 +231,23 @@ class NarrativeServiceTest(unittest.TestCase):
                 info = item.get("object_info", [])
                 self.assertIsNotNone(info[10])
 
+    def test_rename_narrative_ok_integration(self):
+        narr_info = self.getImpl().create_new_narrative(self.getContext(), {})[0]
+        ws_id = narr_info['workspaceInfo']['id']
+        narr_id = narr_info['narrativeInfo']['id']
+        ws = self.getWsClient()
+        narr_ref = f"{ws_id}/{narr_id}"
+        new_name = "A New Narrative"
+        self.getImpl().rename_narrative(self.getContext(), {
+            "narrative_ref": narr_ref,
+            "new_name": new_name
+        })
+        narr_obj = ws.get_objects2({"objects": [{"ref": narr_ref}]})["data"][0]
+        self.assertEqual(narr_obj["data"]["metadata"]["name"], new_name)
+        self.assertEqual(narr_obj["info"][10]["name"], new_name)
+        ws_info = ws.get_workspace_info({"id": ws_id})
+        self.assertEqual(ws_info[8]["narrative_nice_name"], new_name)
+
     def test_copy_narrative(self):
         ws = self.getWsClient()
         # Add a Narrative to the workspace
@@ -295,7 +311,6 @@ class NarrativeServiceTest(unittest.TestCase):
 
             # The list of objects should just be 2 - the copied narrative and copied Reads
             self.assertEqual(len(ret), 2)
-            print(ret)
             for item in ret:
                 obj_info = item["object_info"]
                 self.assertEqual(copy_ws_id, obj_info[6])
@@ -857,25 +872,19 @@ class NarrativeServiceTest(unittest.TestCase):
 
     # @unittest.skip
     def test_bulk_list(self):
-        try:
-            ids = []
-            for ws_info in self.getWsClient().list_workspace_info({'perm': 'r', 'excludeGlobal': 1}):
-                #ws_name_parts = ws_info[1].split(':')
-                #if len(ws_name_parts) == 2 and ws_name_parts[1].isdigit():
-                #    continue
-                if ws_info[4] < 1000:
-                    ids.append(str(ws_info[0]))
-                    if len(ids) >= 100:
-                        break
-            print(("Workspaces selected for bulk list_objects_with_sets: " + str(len(ids))))
-            if len(ids) > 0:
-                self.getImpl().list_objects_with_sets(self.getContext(), {'workspaces': [ids[0]]})
-            NarrativeManager.DEBUG = False  #True
-            t1 = time.time()
-            ret = self.getImpl().list_objects_with_sets(self.getContext(), {'workspaces': ids})[0]["data"]
-            print(("Objects found: " + str(len(ret)) + ", time=" + str(time.time() - t1)))
-        finally:
-            NarrativeManager.DEBUG = False
+        ids = []
+        for ws_info in self.getWsClient().list_workspace_info({'perm': 'r', 'excludeGlobal': 1}):
+            #ws_name_parts = ws_info[1].split(':')
+            #if len(ws_name_parts) == 2 and ws_name_parts[1].isdigit():
+            #    continue
+            if ws_info[4] < 1000:
+                ids.append(str(ws_info[0]))
+                if len(ids) >= 100:
+                    break
+        if len(ids) > 0:
+            self.getImpl().list_objects_with_sets(self.getContext(), {'workspaces': [ids[0]]})
+        t1 = time.time()
+        ret = self.getImpl().list_objects_with_sets(self.getContext(), {'workspaces': ids})[0]["data"]
 
     # @unittest.skip
     def test_narratorials(self):
