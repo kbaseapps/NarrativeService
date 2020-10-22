@@ -27,9 +27,9 @@ class NarrativeService:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.2.5"
-    GIT_URL = "https://github.com/briehl/NarrativeService"
-    GIT_COMMIT_HASH = "77ec2a9d6260b7944411ac43f572f06dbaf8cd10"
+    VERSION = "0.3.0"
+    GIT_URL = "git@github.com:kbaseapps/NarrativeService.git"
+    GIT_COMMIT_HASH = "0b2723aad293475b97d5ce3979e375f726e5f299"
 
     #BEGIN_CLASS_HEADER
     def _nm(self, ctx):
@@ -71,6 +71,7 @@ class NarrativeService:
         self.narListUtils = NarrativeListUtils(config['narrative-list-cache-size'])
         #END_CONSTRUCTOR
         pass
+
 
     def list_objects_with_sets(self, ctx, params):
         """

@@ -12,7 +12,7 @@ class NarrativeManagerTestCase(unittest.TestCase):
     def setUpClass(cls):
         cls.config = {
             "narrative-method-store": "",
-            "intro-markdown-file": ""
+            "intro-cell-file": ""
         }
         cls.user_id = "some_user"
         cls.set_api_client = mock.MagicMock()

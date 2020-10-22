@@ -63,7 +63,7 @@ class NarrativeServiceTest(unittest.TestCase):
         cls.serviceImpl = NarrativeService(cls.cfg)
         cls.SetAPI_version = cls.cfg['setapi-version']
         cls.DataPalette_version = cls.cfg['datapaletteservice-version']
-        cls.intro_text_file = cls.cfg['intro-markdown-file']
+        cls.intro_cell_file = cls.cfg['intro-cell-file']
         # Second user
         test_cfg_file = '/kb/module/work/test.cfg'
         test_cfg_text = "[test]\n"
@@ -591,15 +591,19 @@ class NarrativeServiceTest(unittest.TestCase):
     def test_new_narrative_welcome(self):
         ws = self.getWsClient()
         narr_info = self.getImpl().create_new_narrative(self.getContext(), {'includeIntroCell': 1})[0]
-        with open(self.intro_text_file) as f:
-            intro_text = f.read()
+        with open(self.intro_cell_file) as f:
+            intro_cell = json.load(f)
 
         try:
             self.assertTrue('narrativeInfo' in narr_info)
             narr_obj = ws.get_objects([{'ref': narr_info['narrativeInfo']['ref']}])[0]
             cells = narr_obj['data']['cells']
             self.assertTrue(len(cells) > 0)
-            self.assertEqual(str(cells[0]['source']), str(intro_text))
+            self.assertEqual(str(cells[0]['source']), str(intro_cell['source']))
+            self.assertEqual(
+                str(cells[0]['outputs'][0]['data']['text/html']),
+                str(intro_cell['outputs'][0]['data']['text/html'])
+            )
             ws_info = ws.get_workspace_info({'id': narr_obj['info'][6]})
             self.assertEqual(ws_info[8]['searchtags'], 'narrative')
             self.assertEqual(ws_info[8]['narrative'], str(narr_obj['info'][0]))

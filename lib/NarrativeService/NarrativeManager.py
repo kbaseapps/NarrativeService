@@ -26,7 +26,7 @@ class NarrativeManager:
         self.data_palette_client = data_palette_client          # DynamicServiceCache type
         self.user_id = user_id
         self.ws = workspace_client
-        self.intro_md_file = config["intro-markdown-file"]
+        self.intro_cell_file = config["intro-cell-file"]
 
     def copy_narrative(self, newName, workspaceRef, workspaceId):
         time_ms = int(round(time.time() * 1000))
@@ -135,14 +135,12 @@ class NarrativeManager:
             pass
         return narr_info
 
-    def _get_intro_markdown(self):
+    def _get_intro_cell(self):
         """
-        Creates and returns a cell with the introductory text included.
+        Loads intro cell JSON from file
         """
-        # Load introductory markdown text
-        with open(self.intro_md_file) as intro_file:
-            intro_md = intro_file.read()
-        return intro_md
+        with open(self.intro_cell_file) as intro_cell:
+            return json.load(intro_cell)
 
     def _create_temp_narrative(self, cells, parameters, importData, includeIntroCell, title):
         # Migration to python of JavaScript class from https://github.com/kbase/kbase-ui/blob/4d31151d13de0278765a69b2b09f3bcf0e832409/src/client/modules/plugins/narrativemanager/modules/narrativeManager.js#L414
@@ -233,11 +231,9 @@ class NarrativeManager:
     def _gatherCellData(self, cells, specMapping, parameters, includeIntroCell):
         cell_data = []
         if includeIntroCell == 1:
-            cell_data.append({
-                'cell_type': 'markdown',
-                'source': self._get_intro_markdown(),
-                'metadata': {}
-            })
+            cell_data.append(
+                self._get_intro_cell()
+            )
         for cell_pos, cell in enumerate(cells):
             if 'app' in cell:
                 cell_data.append(self._buildAppCell(len(cell_data),
