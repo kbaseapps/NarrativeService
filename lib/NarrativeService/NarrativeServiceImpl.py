@@ -27,9 +27,9 @@ class NarrativeService:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.3.0"
+    VERSION = "0.3.1"
     GIT_URL = "git@github.com:kbaseapps/NarrativeService.git"
-    GIT_COMMIT_HASH = "0b2723aad293475b97d5ce3979e375f726e5f299"
+    GIT_COMMIT_HASH = "b86f4c617a2a11bd61873a3bff05096c543987f4"
 
     #BEGIN_CLASS_HEADER
     def _nm(self, ctx):
