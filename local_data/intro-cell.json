@@ -1,0 +1,26 @@
+{
+  "cell_type": "code",
+  "execution_count": 1,
+  "metadata": {
+    "kbase": {
+      "codeCell": {
+        "userSettings": {
+          "showCodeInputArea": false
+        }
+      },
+      "type": "code"
+    }
+  },
+  "outputs": [
+    {
+      "data": {
+        "text/html": "\n <iframe\n width=\"100%\"\n height=\"500vh\"\n src=\"https://www.kbase.us/narrative-welcome-cell/\"\n frameborder=\"0\"\n allowfullscreen\n ></iframe>\n ",
+        "text/plain": "<IPython.lib.display.IFrame at 0x7f0a8e153828>"
+      },
+      "execution_count": 1,
+      "metadata": {},
+      "output_type": "execute_result"
+    }
+  ],
+  "source": "# Welcome to the Narrative\nfrom IPython.display import IFrame\nIFrame(\"https://www.kbase.us/narrative-welcome-cell/\", width=\"100%\", height=\"500vh\")"
+}
