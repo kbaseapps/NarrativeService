@@ -1,3 +1,6 @@
+## v0.3.2
+* Adjust intro cell height
+
 ## v0.3.1
 * Switch welcome/intro cell from markdown to a prerendered code cell with an embedded IFrame
 
