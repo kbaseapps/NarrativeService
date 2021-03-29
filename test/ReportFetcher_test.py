@@ -79,7 +79,6 @@ class ReportFetcherTestCase(unittest.TestCase):
                 "ref": ref_obj,
                 "description": "dummy reads lib"
             }],
-            "direct_html_link_index": 0,
             "report_object_name": "NarrativeServiceTest_report_" + str(int(time.time() * 1000)),
             "workspace_name": ws_name
         }
