@@ -1,6 +1,3 @@
-## v0.3.3
-* Fixed unittests and added GHA
-
 ## v0.3.2
 * Adjust intro cell height
 
