@@ -622,13 +622,11 @@ module NarrativeService {
 
     /*
         desc - a brief description of the narrative cell.
-        cell_type - the type of cell.
-        count - the number of instances this cell appears within a given narrative.
+        cell_type - the type of cell. Can be of type 'markdown', 'widget', 'data', 'kbase_app', 'code_cell', or '' if type is not determined.
     */
     typedef structure {
         string desc;
         string cell_type;
-        int count;
     } DocCell;
 
     /*
@@ -646,13 +644,13 @@ module NarrativeService {
         access_group - A numeric ID which corresponds to the ownership group.
         cells - A list of each cell's metadata within a given narrative.
         copied - Indicates whether this narrative is a copy.
-        creation_date - The date this narrative was created.
+        creation_date - The date this narrative was created (ISO 8601).
         creator - The username of the creator of a given narrative.
         data_objects - A list of each data object used in a given narrative.
         is_narratorial - Whether or not the doc item is narratorial.
         is_public - Whether or not a given narrative is publicly shared.
         is_temporary - Whether or not a given narrative exists permanently.
-        modified_at - The date a given narrative was last updated according to the version provided in the UPA param.
+        modified_at - The date a given narrative was last updated according to the version provided in the UPA param (ms since epoch).
         narrative_title - The title of a given narrative.
         obj_id - The id of a given narrative
         obj_name - The name of a given narrative
@@ -692,7 +690,7 @@ module NarrativeService {
     /*
         Intended to return data of previous versions of a given narrative in the same format returned from Search.
         Formats a call to workspace service to fit the appropriate schema that is intended for use in UI displays
-        in the narrative navigator.
+        in the narrative navigator. Raises error is "narrative_upa" param is not in specified <workspace_id/obj_id/version> format.
     */
     funcdef get_narrative_doc(SearchDocNarrativeParams params) returns (SearchDocResult result) authentication required;
 };
