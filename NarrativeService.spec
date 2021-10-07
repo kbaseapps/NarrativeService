@@ -612,4 +612,87 @@ module NarrativeService {
         If all this goes off well, the new narrative UPA is returned.
     */
     funcdef rename_narrative(RenameNarrativeParams params) returns (RenameNarrativeResult result) authentication required;
+
+    /*
+        narrative_upa - UPA of the narrative to be requested in search doc format.
+    */
+    typedef structure {
+        string narrative_upa;
+    } SearchDocNarrativeParams;
+
+    /*
+        desc - a brief description of the narrative cell.
+        cell_type - the type of cell.
+        count - the number of instances this cell appears within a given narrative.
+    */
+    typedef structure {
+        string desc;
+        string cell_type;
+        int count;
+    } DocCell;
+
+    /*
+        name - The name of the data object.
+        obj_type - The type of data object.
+        readableType - The data object type in a human readable format for displays.
+    */
+    typedef structure {
+        string name;
+        string obj_type;
+        string readableType;
+    } DocDataObject;
+
+    /*
+        access_group - A numeric ID which corresponds to the ownership group.
+        cells - A list of each cell's metadata within a given narrative.
+        copied - Indicates whether this narrative is a copy.
+        creation_date - The date this narrative was created.
+        creator - The username of the creator of a given narrative.
+        data_objects - A list of each data object used in a given narrative.
+        is_narratorial - Whether or not the doc item is narratorial.
+        is_public - Whether or not a given narrative is publicly shared.
+        is_temporary - Whether or not a given narrative exists permanently.
+        modified_at - The date a given narrative was last updated according to the version provided in the UPA param.
+        narrative_title - The title of a given narrative.
+        obj_id - The id of a given narrative
+        obj_name - The name of a given narrative
+        obj_type_module - 
+        obj_type_version - 
+        owner - The username of the current owner of a given narrative.
+        shared_users - A list of users who are allowed access to a given narrative.
+        tags - A list of all tagged versions of a given narrative ???
+        timestamp - The time that a given narrative was last saved, regardless of version.
+        total_cells - The total number of cells in a given narrative.
+        version - The version of the narrative requested
+    */
+    typedef structure {
+        int access_group;
+        list<DocCell> cells;
+        boolean copied;
+        string creation_date;
+        string creator;
+        list<DocDataObject> data_objects;
+        boolean is_narratorial;
+        boolean is_public;
+        boolean is_temporary;
+        int modified_at;
+        string narrative_title;
+        int obj_id;
+        string obj_name;
+        string obj_type_module;
+        string obj_type_version;
+        string owner;
+        list<string> shared_users;
+        list<string> tags;
+        int timestamp;
+        int total_cells;
+        int version;
+    } SearchDocResult;
+
+    /*
+        Intended to return data of previous versions of a given narrative in the same format returned from Search.
+        Formats a call to workspace service to fit the appropriate schema that is intended for use in UI displays
+        in the narrative navigator.
+    */
+    funcdef get_narrative_doc(SearchDocNarrativeParams params) returns (SearchDocResult result) authentication required;
 };

@@ -28,6 +28,79 @@ class NarrativeManager:
         self.ws = workspace_client
         self.intro_cell_file = config["intro-cell-file"]
 
+    def get_narrative_doc(self, ws_id, narrative_upa):
+        # data = self.ws.get_objects2({'objects': [{'ref': narrative_upa}]})['data'][0]
+        obj_data = self.ws.get_objects2({'objects': [{'ref': narrative_upa}]})
+        data_objects = self.ws.list_objects({'ids': [ws_id]})
+
+        permissions = self.ws.get_permissions_mass({'workspaces': [{'id': ws_id}]})['perms']
+        shared_users, is_public = self._fmt_doc_permissions(permissions)
+
+        doc = {
+            'access_group': obj_data['orig_wsid'],
+            'cells': [self._get_doc_cell(c) for c in obj_data['data'][0]['data']['cells']],
+            'total_cells': len(obj_data['data'][0]['data']['cells']),
+            'data_objects': [{'name': o[1], 'obj_type': o[2]} for o in data_objects],
+            'creator': obj_data['creator'],
+            'shared_users': shared_users,
+            'is_public': is_public,
+            'timestamp': obj_data['epoch'],
+            'creation_date': obj_data['created']
+        }
+
+        return doc
+
+    def _fmt_doc_permissions(self, permissions):
+        # get list of users and whether a narrative is public
+        is_public = False
+        shared_users = []
+        for permission in permissions:
+            k, v = permission.popitem()
+            if k == '*':
+                is_public = (v != 'n')
+            elif v != 'n':
+                shared_users.append(k)
+        return shared_users, is_public
+
+    def _get_doc_cell(self, cell):
+        # get the appropriate cell format for search result doc
+        meta = cell['metadata']['kbase']
+        if cell['cell_type'] == 'markdown':
+            # type markdown
+            return {
+                'cell_type': 'markdown',
+                'desc': meta['attributes']['title']
+            }
+        elif meta['type'] == 'output':
+            # type widget
+            return {
+                'cell_type': 'widget',
+                'desc': meta['outputCell']['widget']['name']
+            }
+        elif meta['type'] == 'data':
+            # type data
+            return {
+                'cell_type': 'data',
+                'desc': meta['dataCell']['objectInfo']['name']
+            }
+        elif meta['type'] == 'app':
+            # type kbase_app
+            return {
+                'cell_type': 'kbase_app',
+                'desc': meta['appCell']['app']['spec']['info']['name']
+            }
+        elif meta['type'] == 'code':
+            # type code_cell
+            return {
+                'cell_type': 'code_cell',
+                'desc': cell['source']
+            }
+        else:
+            return {
+                'cell_type': '',
+                'desc': ''
+            }
+
     def copy_narrative(self, newName, workspaceRef, workspaceId):
         time_ms = int(round(time.time() * 1000))
         newWsName = self.user_id + ':narrative_' + str(time_ms)
