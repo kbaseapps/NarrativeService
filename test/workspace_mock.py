@@ -189,6 +189,11 @@ class WorkspaceMock:
             if ws_id in self.internal_db and obj_id in self.internal_db[ws_id]["objects"]:
                 return_data["data"].append(self.internal_db[ws_id]["objects"][obj_id])
                 return_data["paths"].append(ref)
+        # for testing get_narrative_doc
+        return_data['epoch'] = 0
+        return_data['created'] = '1970-01-01T00:00:00+0000'
+        return_data['orig_wsid'] = ws_id
+        return_data['creator'] = 'some_user'
         return return_data
 
     def get_permissions_mass(self, params):
