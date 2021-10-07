@@ -63,36 +63,45 @@ class NarrativeManager:
 
     def _get_doc_cell(self, cell):
         # get the appropriate cell format for search result doc
-        meta = cell['metadata']['kbase']
+        meta = cell.get('metadata', {}).get('kbase', {})
         if cell['cell_type'] == 'markdown':
             # type markdown
             return {
                 'cell_type': 'markdown',
-                'desc': meta['attributes']['title']
+                'desc': meta.get('attributes', {})
+                            .get('title', 'Markdown Cell')
             }
         elif meta['type'] == 'output':
             # type widget
             return {
                 'cell_type': 'widget',
-                'desc': meta['outputCell']['widget']['name']
+                'desc': meta.get('outputCell', {})
+                            .get('widget', {})
+                            .get('name', 'Widget')
             }
         elif meta['type'] == 'data':
             # type data
             return {
                 'cell_type': 'data',
-                'desc': meta['dataCell']['objectInfo']['name']
+                'desc': meta.get('dataCell', {})
+                            .get('objectInfo', {})
+                            .get('name', 'Data Cell')
             }
         elif meta['type'] == 'app':
             # type kbase_app
             return {
                 'cell_type': 'kbase_app',
-                'desc': meta['appCell']['app']['spec']['info']['name']
+                'desc': meta.get('appCell')
+                            .get('app', {})
+                            .get('spec', {})
+                            .get('info', {})
+                            .get('name', 'KBase App')
             }
         elif meta['type'] == 'code':
             # type code_cell
             return {
                 'cell_type': 'code_cell',
-                'desc': cell['source']
+                'desc': cell.get('source', 'Code Cell')
             }
         else:
             return {
