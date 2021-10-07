@@ -29,7 +29,6 @@ class NarrativeManager:
         self.intro_cell_file = config["intro-cell-file"]
 
     def get_narrative_doc(self, ws_id, narrative_upa):
-        # data = self.ws.get_objects2({'objects': [{'ref': narrative_upa}]})['data'][0]
         obj_data = self.ws.get_objects2({'objects': [{'ref': narrative_upa}]})
         data_objects = self.ws.list_objects({'ids': [ws_id]})
 
