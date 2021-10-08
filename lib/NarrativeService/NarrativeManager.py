@@ -4,6 +4,7 @@ import uuid
 
 from NarrativeService.ServiceUtils import ServiceUtils
 from installed_clients.NarrativeMethodStoreClient import NarrativeMethodStore
+from jsonrpcbase import ServerError
 
 MAX_WS_METADATA_VALUE_SIZE = 900
 NARRATIVE_TYPE = "KBaseNarrative.Narrative"
@@ -28,10 +29,18 @@ class NarrativeManager:
         self.ws = workspace_client
         self.intro_cell_file = config["intro-cell-file"]
 
-    def get_narrative_doc(self, ws_id, narrative_upa):
-        obj_data = self.ws.get_objects2({'objects': [{'ref': narrative_upa}]})
-        data_objects = self.ws.list_objects({'ids': [ws_id]})
+    # def get_narrative_doc(self, ws_id, narrative_upa):
+    def get_narrative_doc(self, narrative_upa):
+        try:
+            # ensure correct upa format and get numerical ws_id
+            ws_id, _, _, = [int(i) for i in narrative_upa.split('/')]
+            obj_data = self.ws.get_objects2({'objects': [{'ref': narrative_upa}]})
+        except ValueError as e:
+            raise ValueError('Incorrect upa format: required format is <workspace_id>/<object_id>/<version>')
+        except ServerError as e:
+            raise ValueError('Item with upa "%s" not found in workspace database.' % narrative_upa)
 
+        data_objects = self.ws.list_objects({'ids': [ws_id]})
         permissions = self.ws.get_permissions_mass({'workspaces': [{'id': ws_id}]})['perms']
         shared_users, is_public = self._fmt_doc_permissions(permissions)
 

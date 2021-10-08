@@ -1,3 +1,5 @@
+from jsonrpcbase import ServerError
+
 class EmptyWorkspaceMock:
     def __init__(self, *args, **kwargs):
         self.user = "some_user"
@@ -189,6 +191,9 @@ class WorkspaceMock:
             if ws_id in self.internal_db and obj_id in self.internal_db[ws_id]["objects"]:
                 return_data["data"].append(self.internal_db[ws_id]["objects"][obj_id])
                 return_data["paths"].append(ref)
+            else:
+                # mock error from missing workspace or object
+                raise ServerError('JSONRPCError: -32500')
         # for testing get_narrative_doc
         return_data['epoch'] = 0
         return_data['created'] = '1970-01-01T00:00:00+0000'

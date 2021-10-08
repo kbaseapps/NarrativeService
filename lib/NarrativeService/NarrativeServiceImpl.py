@@ -898,11 +898,7 @@ class NarrativeService:
         # ctx is the context object
         # return variables are: result
         #BEGIN get_narrative_doc
-        try:
-            ws_id = int(params['narrative_upa'].split('/')[0])
-        except ValueError as e:
-            raise ValueError('Incorrect upa format: required format is <workspace_id>/<object_id>/<version>')
-        result = self._nm(ctx).get_narrative_doc(ws_id, params['narrative_upa'])
+        result = self._nm(ctx).get_narrative_doc(params['narrative_upa'])
         #END get_narrative_doc
 
         # At some point might do deeper type checking...

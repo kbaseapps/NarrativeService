@@ -49,7 +49,7 @@ class NarrativeManagerTestCase(unittest.TestCase):
         # add version number
         full_upa = narrative_ref + '/1'
 
-        doc = nm.get_narrative_doc(ws_id, full_upa)
+        doc = nm.get_narrative_doc(full_upa)
 
         self.assertEqual(doc['access_group'], ws_id)
         self.assertEqual(doc['cells'], [])
@@ -62,4 +62,14 @@ class NarrativeManagerTestCase(unittest.TestCase):
 
         self.assertEqual(doc['timestamp'], 0)
         self.assertEqual(doc['creation_date'], '1970-01-01T00:00:00+0000')
+
+        # test that poorly formatted upa is handled correctly
+        with self.assertRaises(ValueError) as err:
+            nm.get_narrative_doc(narrative_ref)
+        self.assertIn('Incorrect upa format: required format is <workspace_id>/<object_id>/<version>', str(err.exception))
+
+        # ensure that proper not found message is raised
+        with self.assertRaises(ValueError) as err:
+            nm.get_narrative_doc('2000/2000/2000')
+        self.assertIn('Item with upa "2000/2000/2000" not found in workspace database.', str(err.exception))
 
