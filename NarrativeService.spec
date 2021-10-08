@@ -643,22 +643,14 @@ module NarrativeService {
     /*
         access_group - A numeric ID which corresponds to the ownership group.
         cells - A list of each cell's metadata within a given narrative.
-        copied - Indicates whether this narrative is a copy.
         creation_date - The date this narrative was created (ISO 8601).
         creator - The username of the creator of a given narrative.
         data_objects - A list of each data object used in a given narrative.
-        is_narratorial - Whether or not the doc item is narratorial.
         is_public - Whether or not a given narrative is publicly shared.
-        is_temporary - Whether or not a given narrative exists permanently.
         modified_at - The date a given narrative was last updated according to the version provided in the UPA param (ms since epoch).
         narrative_title - The title of a given narrative.
         obj_id - The id of a given narrative
-        obj_name - The name of a given narrative
-        obj_type_module - 
-        obj_type_version - 
-        owner - The username of the current owner of a given narrative.
         shared_users - A list of users who are allowed access to a given narrative.
-        tags - A list of all tagged versions of a given narrative ???
         timestamp - The time that a given narrative was last saved, regardless of version.
         total_cells - The total number of cells in a given narrative.
         version - The version of the narrative requested
@@ -666,22 +658,15 @@ module NarrativeService {
     typedef structure {
         int access_group;
         list<DocCell> cells;
-        boolean copied;
         string creation_date;
         string creator;
         list<DocDataObject> data_objects;
-        boolean is_narratorial;
         boolean is_public;
-        boolean is_temporary;
         int modified_at;
         string narrative_title;
         int obj_id;
-        string obj_name;
-        string obj_type_module;
-        string obj_type_version;
         string owner;
         list<string> shared_users;
-        list<string> tags;
         int timestamp;
         int total_cells;
         int version;
@@ -690,7 +675,10 @@ module NarrativeService {
     /*
         Intended to return data of previous versions of a given narrative in the same format returned from Search.
         Formats a call to workspace service to fit the appropriate schema that is intended for use in UI displays
-        in the narrative navigator. Raises error is "narrative_upa" param is not in specified <workspace_id/obj_id/version> format.
+        in the narrative navigator. Raises error is "narrative_upa" param is not in specified <workspace_id/obj_id/version> format. 
+        Note that this method is currently to support the UI only, and does not return the full result of a search call,
+        and the following fields are omitted: boolean copied, boolean is_narratorial, boolean is_temporary, string obj_name, string obj_type_module,
+        string obj_type_version, list<string> tags.
     */
     funcdef get_narrative_doc(SearchDocNarrativeParams params) returns (SearchDocResult result) authentication required;
 };

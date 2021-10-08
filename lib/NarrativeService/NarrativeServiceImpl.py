@@ -27,9 +27,9 @@ class NarrativeService:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.3.3"
+    VERSION = "0.4.0"
     GIT_URL = "git@github.com:charleshtrenholm/NarrativeService.git"
-    GIT_COMMIT_HASH = "c41e7d2f4a4be8b28742c743b5c512f7fb122cd5"
+    GIT_COMMIT_HASH = "ddadb2660e5c164703b2ec7b8f17a6a9ea3bef4c"
 
     #BEGIN_CLASS_HEADER
     def _nm(self, ctx):
@@ -855,52 +855,45 @@ class NarrativeService:
         """
         Intended to return data of previous versions of a given narrative in the same format returned from Search.
         Formats a call to workspace service to fit the appropriate schema that is intended for use in UI displays
-        in the narrative navigator.
+        in the narrative navigator. Raises error is "narrative_upa" param is not in specified <workspace_id/obj_id/version> format. 
+        Note that this method is currently to support the UI only, and does not return the full result of a search call,
+        and the following fields are omitted: boolean copied, boolean is_narratorial, boolean is_temporary, string obj_name, string obj_type_module,
+        string obj_type_version, list<string> tags.
         :param params: instance of type "SearchDocNarrativeParams"
            (narrative_upa - UPA of the narrative to be requested in search
            doc format.) -> structure: parameter "narrative_upa" of String
         :returns: instance of type "SearchDocResult" (access_group - A
            numeric ID which corresponds to the ownership group. cells - A
-           list of each cell's metadata within a given narrative. copied -
-           Indicates whether this narrative is a copy. creation_date - The
-           date this narrative was created. creator - The username of the
-           creator of a given narrative. data_objects - A list of each data
-           object used in a given narrative. is_narratorial - Whether or not
-           the doc item is narratorial. is_public - Whether or not a given
-           narrative is publicly shared. is_temporary - Whether or not a
-           given narrative exists permanently. modified_at - The date a given
-           narrative was last updated according to the version provided in
-           the UPA param. narrative_title - The title of a given narrative.
-           obj_id - The id of a given narrative obj_name - The name of a
-           given narrative obj_type_module - obj_type_version - owner - The
-           username of the current owner of a given narrative. shared_users -
-           A list of users who are allowed access to a given narrative. tags
-           - A list of all tagged versions of a given narrative ??? timestamp
-           - The time that a given narrative was last saved, regardless of
-           version. total_cells - The total number of cells in a given
-           narrative. version - The version of the narrative requested) ->
-           structure: parameter "access_group" of Long, parameter "cells" of
-           list of type "DocCell" (desc - a brief description of the
-           narrative cell. cell_type - the type of cell. count - the number
-           of instances this cell appears within a given narrative.) ->
-           structure: parameter "desc" of String, parameter "cell_type" of
-           String, parameter "count" of Long, parameter "copied" of type
-           "boolean" (@range [0,1]), parameter "creation_date" of String,
+           list of each cell's metadata within a given narrative.
+           creation_date - The date this narrative was created (ISO 8601).
+           creator - The username of the creator of a given narrative.
+           data_objects - A list of each data object used in a given
+           narrative. is_public - Whether or not a given narrative is
+           publicly shared. modified_at - The date a given narrative was last
+           updated according to the version provided in the UPA param (ms
+           since epoch). narrative_title - The title of a given narrative.
+           obj_id - The id of a given narrative shared_users - A list of
+           users who are allowed access to a given narrative. timestamp - The
+           time that a given narrative was last saved, regardless of version.
+           total_cells - The total number of cells in a given narrative.
+           version - The version of the narrative requested) -> structure:
+           parameter "access_group" of Long, parameter "cells" of list of
+           type "DocCell" (desc - a brief description of the narrative cell.
+           cell_type - the type of cell. Can be of type 'markdown', 'widget',
+           'data', 'kbase_app', 'code_cell', or '' if type is not
+           determined.) -> structure: parameter "desc" of String, parameter
+           "cell_type" of String, parameter "creation_date" of String,
            parameter "creator" of String, parameter "data_objects" of list of
            type "DocDataObject" (name - The name of the data object. obj_type
            - The type of data object. readableType - The data object type in
            a human readable format for displays.) -> structure: parameter
            "name" of String, parameter "obj_type" of String, parameter
-           "readableType" of String, parameter "is_narratorial" of type
-           "boolean" (@range [0,1]), parameter "is_public" of type "boolean"
-           (@range [0,1]), parameter "is_temporary" of type "boolean" (@range
-           [0,1]), parameter "modified_at" of Long, parameter
+           "readableType" of String, parameter "is_public" of type "boolean"
+           (@range [0,1]), parameter "modified_at" of Long, parameter
            "narrative_title" of String, parameter "obj_id" of Long, parameter
-           "obj_name" of String, parameter "obj_type_module" of String,
-           parameter "obj_type_version" of String, parameter "owner" of
-           String, parameter "shared_users" of list of String, parameter
-           "tags" of list of String, parameter "timestamp" of Long, parameter
-           "total_cells" of Long, parameter "version" of Long
+           "owner" of String, parameter "shared_users" of list of String,
+           parameter "timestamp" of Long, parameter "total_cells" of Long,
+           parameter "version" of Long
         """
         # ctx is the context object
         # return variables are: result
