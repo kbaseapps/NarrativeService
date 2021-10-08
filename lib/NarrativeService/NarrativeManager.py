@@ -49,10 +49,10 @@ class NarrativeManager:
             'cells': [self._get_doc_cell(c) for c in obj_data['data'][0]['data']['cells']],
             'total_cells': len(obj_data['data'][0]['data']['cells']),
             'data_objects': [{'name': o[1], 'obj_type': o[2]} for o in data_objects],
-            'creator': obj_data['creator'],
+            'creator': obj_data['data'][0]['data']['metadata'].get('kbase', {}).get('creator', ''),
             'shared_users': shared_users,
             'is_public': is_public,
-            'timestamp': obj_data['epoch'],
+            'timestamp': obj_data.get('epoch', 0),
             'creation_date': obj_data['created'],
             'narrative_title': obj_data['data'][0]['data']['metadata'].get('name', ''),
             'version': obj_data['data'][0]['info'][4]
