@@ -46,7 +46,7 @@ class NarrativeManager:
 
         doc = {
             'access_group': obj_data.get('orig_wsid', ws_id),
-            'cells': [self._get_doc_cell(c) for c in obj_data['data'][0]['data']['cells']],
+            'cells': [self._get_doc_cell(c) for c in obj_data['data']['cells']],
             'total_cells': len(obj_data['data']['cells']),
             'data_objects': [{'name': o[1], 'obj_type': o[2]} for o in data_objects],
             'creator': obj_data['data']['metadata'].get('kbase', {}).get('creator', ''),
