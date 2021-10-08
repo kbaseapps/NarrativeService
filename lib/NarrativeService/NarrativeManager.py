@@ -45,7 +45,7 @@ class NarrativeManager:
         shared_users, is_public = self._fmt_doc_permissions(permissions)
 
         doc = {
-            'access_group': obj_data['orig_wsid'],
+            'access_group': obj_data.get('orig_wsid', ws_id),
             'cells': [self._get_doc_cell(c) for c in obj_data['data'][0]['data']['cells']],
             'total_cells': len(obj_data['data'][0]['data']['cells']),
             'data_objects': [{'name': o[1], 'obj_type': o[2]} for o in data_objects],
