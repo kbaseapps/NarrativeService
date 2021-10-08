@@ -402,6 +402,10 @@ class Application(object):
                              name='NarrativeService.rename_narrative',
                              types=[dict])
         self.method_authentication['NarrativeService.rename_narrative'] = 'required'  # noqa
+        self.rpc_service.add(impl_NarrativeService.get_narrative_doc,
+                             name='NarrativeService.get_narrative_doc',
+                             types=[dict])
+        self.method_authentication['NarrativeService.get_narrative_doc'] = 'required'  # noqa
         self.rpc_service.add(impl_NarrativeService.status,
                              name='NarrativeService.status',
                              types=[dict])

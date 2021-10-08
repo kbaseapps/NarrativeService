@@ -27,9 +27,9 @@ class NarrativeService:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.3.2"
-    GIT_URL = "git@github.com:kbaseapps/NarrativeService.git"
-    GIT_COMMIT_HASH = "8d3dee255ebcac308a221a0a3cb1a2e9cfde18bd"
+    VERSION = "0.4.0"
+    GIT_URL = "git@github.com:charleshtrenholm/NarrativeService.git"
+    GIT_COMMIT_HASH = "ddadb2660e5c164703b2ec7b8f17a6a9ea3bef4c"
 
     #BEGIN_CLASS_HEADER
     def _nm(self, ctx):
@@ -847,6 +847,63 @@ class NarrativeService:
         # At some point might do deeper type checking...
         if not isinstance(result, dict):
             raise ValueError('Method rename_narrative return value ' +
+                             'result is not type dict as required.')
+        # return the results
+        return [result]
+
+    def get_narrative_doc(self, ctx, params):
+        """
+        Intended to return data of previous versions of a given narrative in the same format returned from Search.
+        Formats a call to workspace service to fit the appropriate schema that is intended for use in UI displays
+        in the narrative navigator. Raises error is "narrative_upa" param is not in specified <workspace_id/obj_id/version> format. 
+        Note that this method is currently to support the UI only, and does not return the full result of a search call,
+        and the following fields are omitted: boolean copied, boolean is_narratorial, boolean is_temporary, string obj_name, string obj_type_module,
+        string obj_type_version, list<string> tags.
+        :param params: instance of type "SearchDocNarrativeParams"
+           (narrative_upa - UPA of the narrative to be requested in search
+           doc format.) -> structure: parameter "narrative_upa" of String
+        :returns: instance of type "SearchDocResult" (access_group - A
+           numeric ID which corresponds to the ownership group. cells - A
+           list of each cell's metadata within a given narrative.
+           creation_date - The date this narrative was created (ISO 8601).
+           creator - The username of the creator of a given narrative.
+           data_objects - A list of each data object used in a given
+           narrative. is_public - Whether or not a given narrative is
+           publicly shared. modified_at - The date a given narrative was last
+           updated according to the version provided in the UPA param (ms
+           since epoch). narrative_title - The title of a given narrative.
+           obj_id - The id of a given narrative shared_users - A list of
+           users who are allowed access to a given narrative. timestamp - The
+           time that a given narrative was last saved, regardless of version.
+           total_cells - The total number of cells in a given narrative.
+           version - The version of the narrative requested) -> structure:
+           parameter "access_group" of Long, parameter "cells" of list of
+           type "DocCell" (desc - a brief description of the narrative cell.
+           cell_type - the type of cell. Can be of type 'markdown', 'widget',
+           'data', 'kbase_app', 'code_cell', or '' if type is not
+           determined.) -> structure: parameter "desc" of String, parameter
+           "cell_type" of String, parameter "creation_date" of String,
+           parameter "creator" of String, parameter "data_objects" of list of
+           type "DocDataObject" (name - The name of the data object. obj_type
+           - The type of data object. readableType - The data object type in
+           a human readable format for displays.) -> structure: parameter
+           "name" of String, parameter "obj_type" of String, parameter
+           "readableType" of String, parameter "is_public" of type "boolean"
+           (@range [0,1]), parameter "modified_at" of Long, parameter
+           "narrative_title" of String, parameter "obj_id" of Long, parameter
+           "owner" of String, parameter "shared_users" of list of String,
+           parameter "timestamp" of Long, parameter "total_cells" of Long,
+           parameter "version" of Long
+        """
+        # ctx is the context object
+        # return variables are: result
+        #BEGIN get_narrative_doc
+        result = self._nm(ctx).get_narrative_doc(params['narrative_upa'])
+        #END get_narrative_doc
+
+        # At some point might do deeper type checking...
+        if not isinstance(result, dict):
+            raise ValueError('Method get_narrative_doc return value ' +
                              'result is not type dict as required.')
         # return the results
         return [result]

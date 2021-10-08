@@ -4,6 +4,7 @@ import uuid
 
 from NarrativeService.ServiceUtils import ServiceUtils
 from installed_clients.NarrativeMethodStoreClient import NarrativeMethodStore
+from jsonrpcbase import ServerError
 
 MAX_WS_METADATA_VALUE_SIZE = 900
 NARRATIVE_TYPE = "KBaseNarrative.Narrative"
@@ -27,6 +28,97 @@ class NarrativeManager:
         self.user_id = user_id
         self.ws = workspace_client
         self.intro_cell_file = config["intro-cell-file"]
+
+    # def get_narrative_doc(self, ws_id, narrative_upa):
+    def get_narrative_doc(self, narrative_upa):
+        try:
+            # ensure correct upa format and get numerical ws_id
+            ws_id, _, _, = [int(i) for i in narrative_upa.split('/')]
+            obj_data = self.ws.get_objects2({'objects': [{'ref': narrative_upa}]})
+        except ValueError as e:
+            raise ValueError('Incorrect upa format: required format is <workspace_id>/<object_id>/<version>')
+        except ServerError as e:
+            raise ValueError('Item with upa "%s" not found in workspace database.' % narrative_upa)
+
+        data_objects = self.ws.list_objects({'ids': [ws_id]})
+        permissions = self.ws.get_permissions_mass({'workspaces': [{'id': ws_id}]})['perms']
+        shared_users, is_public = self._fmt_doc_permissions(permissions)
+
+        doc = {
+            'access_group': obj_data['orig_wsid'],
+            'cells': [self._get_doc_cell(c) for c in obj_data['data'][0]['data']['cells']],
+            'total_cells': len(obj_data['data'][0]['data']['cells']),
+            'data_objects': [{'name': o[1], 'obj_type': o[2]} for o in data_objects],
+            'creator': obj_data['creator'],
+            'shared_users': shared_users,
+            'is_public': is_public,
+            'timestamp': obj_data['epoch'],
+            'creation_date': obj_data['created'],
+            'narrative_title': obj_data['data'][0]['data']['metadata'].get('name', ''),
+            'version': obj_data['data'][0]['info'][4]
+        }
+
+        return doc
+
+    def _fmt_doc_permissions(self, permissions):
+        # get list of users and whether a narrative is public
+        is_public = False
+        shared_users = []
+        for permission in permissions:
+            k, v = permission.popitem()
+            if k == '*':
+                is_public = (v != 'n')
+            elif v != 'n':
+                shared_users.append(k)
+        return shared_users, is_public
+
+    def _get_doc_cell(self, cell):
+        # get the appropriate cell format for search result doc
+        meta = cell.get('metadata', {}).get('kbase', {})
+        if cell['cell_type'] == 'markdown':
+            # type markdown
+            return {
+                'cell_type': 'markdown',
+                'desc': meta.get('attributes', {})
+                            .get('title', 'Markdown Cell')
+            }
+        elif meta['type'] == 'output':
+            # type widget
+            return {
+                'cell_type': 'widget',
+                'desc': meta.get('outputCell', {})
+                            .get('widget', {})
+                            .get('name', 'Widget')
+            }
+        elif meta['type'] == 'data':
+            # type data
+            return {
+                'cell_type': 'data',
+                'desc': meta.get('dataCell', {})
+                            .get('objectInfo', {})
+                            .get('name', 'Data Cell')
+            }
+        elif meta['type'] == 'app':
+            # type kbase_app
+            return {
+                'cell_type': 'kbase_app',
+                'desc': meta.get('appCell')
+                            .get('app', {})
+                            .get('spec', {})
+                            .get('info', {})
+                            .get('name', 'KBase App')
+            }
+        elif meta['type'] == 'code':
+            # type code_cell
+            return {
+                'cell_type': 'code_cell',
+                'desc': cell.get('source', 'Code Cell')
+            }
+        else:
+            return {
+                'cell_type': '',
+                'desc': ''
+            }
 
     def copy_narrative(self, newName, workspaceRef, workspaceId):
         time_ms = int(round(time.time() * 1000))

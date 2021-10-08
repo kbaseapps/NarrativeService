@@ -1,3 +1,6 @@
+
+## v0.3.4
+* Add `get_narrative_doc` method that returns narrative data in the same format as the Search API results
 ## v0.3.3
 * Fixed unittests and added GHA
 

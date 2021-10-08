@@ -37,3 +37,39 @@ class NarrativeManagerTestCase(unittest.TestCase):
         nm.rename_narrative(narrative_ref, new_name, version)
 
         self.assertEqual(self.workspace_client.get_objects2({"objects": [{"ref": narrative_ref}]})["data"][0]["data"]["metadata"]["name"], new_name)
+
+
+    def test_get_narrative_doc(self):
+        # set up narrative
+        narrative_ref = self.workspace_client.make_fake_narrative("Doc Format Test", self.user_id)
+        nm = NarrativeManager(self.config, self.user_id, self.set_api_client, self.data_palette_client, self.workspace_client)
+
+        # get ws_id
+        ws_id = int(narrative_ref.split('/')[0])
+        # add version number
+        full_upa = narrative_ref + '/1'
+
+        doc = nm.get_narrative_doc(full_upa)
+
+        self.assertEqual(doc['access_group'], ws_id)
+        self.assertEqual(doc['cells'], [])
+        self.assertEqual(doc['total_cells'], 0)
+        self.assertFalse(doc['is_public'])
+
+        # test data object format
+        self.assertEqual(len(doc['data_objects']), 10)
+        self.assertEqual(doc['data_objects'][0], {'name': 'Object_1-1', 'obj_type': 'KBaseNarrative.Narrative-4.0'})
+
+        self.assertEqual(doc['timestamp'], 0)
+        self.assertEqual(doc['creation_date'], '1970-01-01T00:00:00+0000')
+
+        # test that poorly formatted upa is handled correctly
+        with self.assertRaises(ValueError) as err:
+            nm.get_narrative_doc(narrative_ref)
+        self.assertIn('Incorrect upa format: required format is <workspace_id>/<object_id>/<version>', str(err.exception))
+
+        # ensure that proper not found message is raised
+        with self.assertRaises(ValueError) as err:
+            nm.get_narrative_doc('2000/2000/2000')
+        self.assertIn('Item with upa "2000/2000/2000" not found in workspace database.', str(err.exception))
+
