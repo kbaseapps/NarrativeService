@@ -44,7 +44,9 @@ class NarrativeManager:
             'shared_users': shared_users,
             'is_public': is_public,
             'timestamp': obj_data['epoch'],
-            'creation_date': obj_data['created']
+            'creation_date': obj_data['created'],
+            'narrative_title': obj_data['data'][0]['data']['metadata'].get('name', ''),
+            'version': obj_data['data'][0]['info'][4]
         }
 
         return doc
