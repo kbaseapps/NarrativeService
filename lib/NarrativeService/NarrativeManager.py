@@ -34,7 +34,7 @@ class NarrativeManager:
         try:
             # ensure correct upa format and get numerical ws_id
             ws_id, _, _, = [int(i) for i in narrative_upa.split('/')]
-            obj_data = self.ws.get_objects2({'objects': [{'ref': narrative_upa}]})
+            obj_data = self.ws.get_objects2({'objects': [{'ref': narrative_upa}]})['data'][0]
         except ValueError as e:
             raise ValueError('Incorrect upa format: required format is <workspace_id>/<object_id>/<version>')
         except ServerError as e:
@@ -46,16 +46,16 @@ class NarrativeManager:
 
         doc = {
             'access_group': obj_data.get('orig_wsid', ws_id),
-            'cells': [self._get_doc_cell(c) for c in obj_data['data'][0]['data']['cells']],
-            'total_cells': len(obj_data['data'][0]['data']['cells']),
+            'cells': [self._get_doc_cell(c) for c in obj_data['data']['cells']],
+            'total_cells': len(obj_data['data']['cells']),
             'data_objects': [{'name': o[1], 'obj_type': o[2]} for o in data_objects],
-            'creator': obj_data['creator'],
+            'creator': obj_data['data']['metadata'].get('kbase', {}).get('creator', ''),
             'shared_users': shared_users,
             'is_public': is_public,
-            'timestamp': obj_data['epoch'],
-            'creation_date': obj_data['created'],
-            'narrative_title': obj_data['data'][0]['data']['metadata'].get('name', ''),
-            'version': obj_data['data'][0]['info'][4]
+            'timestamp': obj_data.get('epoch', 0),
+            'creation_date': obj_data.get('created', ''),
+            'narrative_title': obj_data['data']['metadata'].get('name', ''),
+            'version': obj_data['info'][4]
         }
 
         return doc
