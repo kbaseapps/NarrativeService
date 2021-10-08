@@ -53,7 +53,7 @@ class NarrativeManager:
             'shared_users': shared_users,
             'is_public': is_public,
             'timestamp': obj_data.get('epoch', 0),
-            'creation_date': obj_data['created'],
+            'creation_date': obj_data.get('created', ''),
             'narrative_title': obj_data['data'][0]['data']['metadata'].get('name', ''),
             'version': obj_data['data'][0]['info'][4]
         }
