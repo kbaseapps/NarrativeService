@@ -21,15 +21,15 @@ class NarrativeManager:
     KB_CODE_CELL = 'kb_code'
     KB_STATE = 'widget_state'
 
-    def __init__(self, config, user_id, set_api_client, data_palette_client, workspace_client):
+    def __init__(self, config, user_id, set_api_client, data_palette_client, workspace_client, search_service_client):
         self.narrativeMethodStoreURL = config["narrative-method-store"]
         self.set_api_client = set_api_client                     # DynamicServiceCache type
         self.data_palette_client = data_palette_client          # DynamicServiceCache type
         self.user_id = user_id
         self.ws = workspace_client
+        self.search_client = search_service_client
         self.intro_cell_file = config["intro-cell-file"]
 
-    # def get_narrative_doc(self, ws_id, narrative_upa):
     def get_narrative_doc(self, narrative_upa):
         try:
             # ensure correct upa format and get numerical ws_id
@@ -119,6 +119,38 @@ class NarrativeManager:
                 'cell_type': '',
                 'desc': ''
             }
+
+    def revert_narrative_object(obj):
+         # get most recent version number
+         current_version = self.ws.get_object_history({
+             'wsid': obj['wsid'],
+             'objid': obj['objid']
+         })[-1][4]
+
+        # call to revert object
+        revert_result = self.ws.revert_object(obj)
+
+        # call to update metadata
+        self.ws.alter_workspace_metadata({
+            'wsi': {
+                'id': obj['wsid']
+            },
+            'new': {
+                'narrative_nice_name': revert_result[10]['name']
+            }
+        })
+
+        # wait until new version number is indexed in search so that UI can load new result
+        self._check_new_version_indexed(obj, revert_result[4])
+
+        return revert_result
+
+    def _check_new_version_indexed(self, obj, new_version):
+        data = self.search_client.search_workspace_by_id(obj['wsid'], obj['objid'], version=new_version)
+        if data is None:
+            return self._check_new_version_indexed(obj, new_version)
+
+        return data
 
     def copy_narrative(self, newName, workspaceRef, workspaceId):
         time_ms = int(round(time.time() * 1000))

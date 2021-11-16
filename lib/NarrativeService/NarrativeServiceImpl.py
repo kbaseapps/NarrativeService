@@ -7,6 +7,7 @@ from NarrativeService.ReportFetcher import ReportFetcher
 from NarrativeService.sharing.sharemanager import ShareRequester
 from NarrativeService.apps.appinfo import get_all_app_info, get_ignore_categories
 from NarrativeService.data.fetcher import DataFetcher
+from NarrativeService.SearchServiceClient import SearchServiceClient
 from NarrativeService.data.objectswithsets import ObjectsWithSets
 from installed_clients.WorkspaceClient import Workspace
 #END_HEADER
@@ -27,9 +28,9 @@ class NarrativeService:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.4.0"
+    VERSION = "0.4.1"
     GIT_URL = "git@github.com:charleshtrenholm/NarrativeService.git"
-    GIT_COMMIT_HASH = "ddadb2660e5c164703b2ec7b8f17a6a9ea3bef4c"
+    GIT_COMMIT_HASH = "e46b93c7fba3e7630e4965cf55ab27b8288c5cbe"
 
     #BEGIN_CLASS_HEADER
     def _nm(self, ctx):
@@ -40,7 +41,8 @@ class NarrativeService:
                                 ctx["user_id"],
                                 self._get_set_api_client(ctx["token"]),
                                 self._get_data_palette_client(ctx["token"]),
-                                self._get_workspace_client(ctx["token"]))
+                                self._get_workspace_client(ctx["token"]),
+                                self._get_search_client(ctx["token"]))
 
     def _get_data_palette_client(self, token):
         return DynamicServiceClient(self.serviceWizardURL,
@@ -57,6 +59,9 @@ class NarrativeService:
     def _get_workspace_client(self, token):
         return Workspace(self.workspaceURL, token=token)
 
+    def _get_search_client(self, token):
+        return SearchServiceClient(self.searchServiceURL, token=token)
+
     #END_CLASS_HEADER
 
     # config contains contents of config file in a hash or None if it couldn't
@@ -66,6 +71,7 @@ class NarrativeService:
         self.config = config
         self.workspaceURL = config['workspace-url']
         self.serviceWizardURL = config['service-wizard']
+        self.searchServiceURL = config['search-service-url']
         self.narrativeMethodStoreURL = config['narrative-method-store']
         self.catalogURL = config['catalog-url']
         self.narListUtils = NarrativeListUtils(config['narrative-list-cache-size'])
@@ -907,6 +913,60 @@ class NarrativeService:
                              'result is not type dict as required.')
         # return the results
         return [result]
+
+    def revert_narrative_object(self, ctx, object):
+        """
+        One stop shop method for running all workspace methods related to reverting an object. sequentially runs
+        Workspace.revert_object, followed by Workspace.alter_workspace_metadata to change "narrative_nice_name" to
+        a possible previous version name, then waits for the new version to be successfully indexed in search before
+        returning the object_info tuple received from the call to Workspace.revert_object. This method is intended for
+        UI, providing a seamless loading experience where the new version is actually indexed in search before finishing.
+        As search takes some time to index, this method takes that time into account and won't return until completed.
+        :param object: instance of type "ObjectIdentity" (An object
+           identifier. Select an object by either: One, and only one, of the
+           numerical id or name of the workspace. int wsid - the numerical ID
+           of the workspace. string workspace - the name of the workspace.
+           AND One, and only one, of the numerical id or name of the object.
+           int objid- the numerical ID of the object. string name - name of
+           the object. OPTIONALLY int ver - the version of the object. OR an
+           object reference string: string ref - an object reference string.)
+           -> structure: parameter "workspace" of String, parameter "wsid" of
+           Long, parameter "name" of String, parameter "objid" of Long,
+           parameter "ver" of Long, parameter "ref" of String
+        :returns: instance of type "object_info" (Information about an
+           object, including user provided metadata. obj_id objid - the
+           numerical id of the object. obj_name name - the name of the
+           object. type_string type - the type of the object. timestamp
+           save_date - the save date of the object. obj_ver ver - the version
+           of the object. username saved_by - the user that saved or copied
+           the object. ws_id wsid - the workspace containing the object.
+           ws_name workspace - the workspace containing the object. string
+           chsum - the md5 checksum of the object. int size - the size of the
+           object in bytes. usermeta meta - arbitrary user-supplied metadata
+           about the object.) -> tuple of size 11: parameter "objid" of Long,
+           parameter "name" of String, parameter "type" of String, parameter
+           "save_date" of type "timestamp" (A time in the format
+           YYYY-MM-DDThh:mm:ssZ, where Z is either the character Z
+           (representing the UTC timezone) or the difference in time to UTC
+           in the format +/-HHMM, eg: 2012-12-17T23:24:06-0500 (EST time)
+           2013-04-03T08:56:32+0000 (UTC time) 2013-04-03T08:56:32Z (UTC
+           time)), parameter "version" of Long, parameter "saved_by" of
+           String, parameter "wsid" of Long, parameter "workspace" of String,
+           parameter "chsum" of String, parameter "size" of Long, parameter
+           "meta" of mapping from String to String
+        """
+        # ctx is the context object
+        # return variables are: reverted
+        #BEGIN revert_narrative_object
+        reverted = self._nm(ctx).revert_narrative_object(object)
+        #END revert_narrative_object
+
+        # At some point might do deeper type checking...
+        if not isinstance(reverted, list):
+            raise ValueError('Method revert_narrative_object return value ' +
+                             'reverted is not type list as required.')
+        # return the results
+        return [reverted]
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': "OK",
