@@ -65,7 +65,7 @@ class WorkspaceMock:
     def _ws_name(self, ws_id):
         return "TestWs_{}".format(ws_id)
 
-    def make_fake_narrative(self, name: str, owner: str) -> str:
+    def make_fake_narrative(self, name: str, owner: str, make_object_history=False) -> str:
         """
         Only in the Mocked object!
         This creates a fake narrative and adds it to the internal "database"
@@ -93,12 +93,22 @@ class WorkspaceMock:
             "nbformat": 4,
             "nbformat_minor": 0
         }
-        obj_id = self.make_fake_object(ws_id, fake_narr, "SomeNarrative", "KBaseNarrative.Narrative", owner, {
-            "narrative_nice_name": name,
-            "is_temporary": False,
-            "searchtags": "narrative"
-        })
-        return f"{ws_id}/{obj_id}"
+        if make_object_history:
+            # creates a list of objects with different versions for get_object_history
+            obj_id, ver = self.make_fake_object_history(ws_id, fake_narr, "SomeNarrative", "KBaseNarrative.Narrative", owner, {
+                'narrative_nice_name': name,
+                'name': name,
+                'is_temporary': False,
+                "searchtags": "narrative"
+            })
+            return f"{ws_id}/{obj_id}/{ver}"
+        else:
+            obj_id = self.make_fake_object(ws_id, fake_narr, "SomeNarrative", "KBaseNarrative.Narrative", owner, {
+                "narrative_nice_name": name,
+                "is_temporary": False,
+                "searchtags": "narrative"
+            })
+            return f"{ws_id}/{obj_id}"
 
     def make_fake_object(self, ws_id: int, obj: dict, name: str, obj_type: str, user_id: str, meta: dict, obj_id: int=None) -> str:
         if ws_id not in self.internal_db:
@@ -115,6 +125,43 @@ class WorkspaceMock:
         }
         self.internal_db[ws_id]["objects"][obj_id] = obj_data
         return obj_id
+
+    def make_fake_object_history(self, ws_id: int, obj: dict, name: str, obj_type: str, user_id: str, meta: dict, obj_id: int=1) -> str:
+        """
+            exactly like make_fake_object, but instead creates a list of objects instead of only
+            one to mock different versions for get_object_history method. currently only used to test
+            NarrativeManager's revert_narrative_object method.
+        """
+        self.internal_db[ws_id]["objects"][obj_id] = []
+        for i in range(5):
+            if ws_id not in self.internal_db:
+                raise ValueError("invalid fake workspace")
+            # add a new fake "cell" for each new version
+            obj['cells'].append({})
+            # add version "tags" to narrative_nice_name meta field to check if that is being changed
+            if i == 0:
+                meta['name'] = meta['name'] + '-0'
+            else:
+                meta['name'] = meta['name'][:-2] + '-' + str(i)
+            ver = i + 1
+            obj_data = {
+                "data": obj,
+                "info": [
+                    obj_id,
+                    name,
+                    obj_type,
+                    "",
+                    ver,
+                    user_id,
+                    ws_id,
+                    self.internal_db[ws_id]['info']['name'],
+                    "",
+                    0,
+                    meta
+                ]
+            }
+            self.internal_db[ws_id]["objects"][obj_id].append(obj_data)
+        return obj_id, ver
 
     def make_fake_workspace(self, owner: str) -> int:
         ws_id = self.ws_db_counter
@@ -217,3 +264,42 @@ class WorkspaceMock:
             raise ValueError(f"Workspace {ws_id} not found")
         meta = params["new"]
         self.internal_db[ws_id]["meta"].update(meta)
+
+    def get_object_history(self, obj):
+        # currently only works 'wsid' or 'objid' fields, not workspace/object names
+        ws_id = obj['wsid']
+        obj_id = obj['objid']
+        if ws_id not in self.internal_db:
+            raise ValueError(f"Workspace with id {ws_id} not found")
+
+        objects = self.internal_db[ws_id]['objects'][obj_id]
+        if not type(objects) is list:
+            raise ValueError(
+                f"Workspace with id {ws_id} and object id {obj_id} has not saved multiple versions; \
+                 make sure you have set make_object_history=True in make_fake_narrative method"
+            )
+        return [o['info'] for o in objects]
+
+    def revert_object(self, obj):
+        ws_id = obj['wsid']
+        obj_id = obj['objid']
+        if ws_id not in self.internal_db:
+            raise ValueError(f"Workspace with id {ws_id} not found")
+
+        objects = self.internal_db[ws_id]['objects'][obj_id]
+
+        if not type(objects) is list:
+            raise ValueError(
+                f"Workspace with id {ws_id} and object id {obj_id} has not saved multiple versions; \
+                 make sure you have set make_object_history=True in make_fake_narrative method"
+            )
+
+        select_version = None
+        for saved_object in objects:
+            if saved_object['info'][4] == obj['ver']:
+                select_version = saved_object.copy()
+
+        select_version['info'][4] = len(objects) + 1
+        objects.append(select_version)
+
+        return select_version['info']

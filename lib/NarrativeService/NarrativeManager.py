@@ -120,12 +120,29 @@ class NarrativeManager:
                 'desc': ''
             }
 
-    def revert_narrative_object(obj):
-         # get most recent version number
-         current_version = self.ws.get_object_history({
-             'wsid': obj['wsid'],
-             'objid': obj['objid']
-         })[-1][4]
+    def revert_narrative_object(self, obj):
+        # check that there is exactly one workspace specifier
+        if (bool('wsid' in obj) == bool('workspace' in obj)):
+            raise ValueError(
+                'Please choose exactly 1 workspace specifier; cannot select workspace based on selection criteria: %s' % ','.join(obj.keys())
+            )
+
+        # check that there is exactly one object identifier
+        if (bool('objid' in obj) == bool('name' in obj)):
+            raise ValueError(
+                'Please choose exactly 1 object identifier; cannot select workspace based on criteria: %s' % ','.join(obj.keys())
+            )
+
+        # ensure version is specified
+        if 'ver' not in obj:
+            raise ValueError(f"Cannot revert object {obj['wsid']}/{obj['objid']} without specifying a version to revert to")
+
+        # get most recent version number
+        current_version = self.ws.get_object_history(obj)[-1][4]
+
+        # make sure we're not reverting into the future
+        if current_version < obj['ver']:
+            raise ValueError("Cannot revert object at version %s to version %s" % (current_version, obj['ver']))
 
         # call to revert object
         revert_result = self.ws.revert_object(obj)
