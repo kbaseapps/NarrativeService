@@ -121,16 +121,11 @@ class NarrativeManager:
             }
 
     def revert_narrative_object(self, obj):
-        # check that there is exactly one workspace specifier
-        if (bool('wsid' in obj) == bool('workspace' in obj)):
+        # check that there is a proper workspace id and object id
+        if (not 'wsid' in obj or not 'objid' in obj):
             raise ValueError(
-                'Please choose exactly 1 workspace specifier; cannot select workspace based on selection criteria: %s' % ','.join(obj.keys())
-            )
-
-        # check that there is exactly one object identifier
-        if (bool('objid' in obj) == bool('name' in obj)):
-            raise ValueError(
-                'Please choose exactly 1 object identifier; cannot select workspace based on criteria: %s' % ','.join(obj.keys())
+                'Please choose exactly 1 object identifier and 1 workspace identifier; ' +
+                'cannot select workspace based on criteria: %s' % ','.join(obj.keys())
             )
 
         # ensure version is specified

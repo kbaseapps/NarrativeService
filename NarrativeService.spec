@@ -683,29 +683,16 @@ module NarrativeService {
     funcdef get_narrative_doc(SearchDocNarrativeParams params) returns (SearchDocResult result) authentication required;
 
     /*
-        An object identifier.
-
-        Select an object by either:
-            One, and only one, of the numerical id or name of the workspace.
-                int wsid - the numerical ID of the workspace.
-                string workspace - the name of the workspace.
-        AND
-            One, and only one, of the numerical id or name of the object.
-                int objid- the numerical ID of the object.
-                string name - name of the object.
-        OPTIONALLY
+        An object identifier. All fields are required
+        int wsid - the numerical ID of the workspace.
+        int objid - the numerical ID of the object.
         int ver - the version of the object.
-        OR an object reference string:
-        string ref - an object reference string.
     */
 
     typedef structure {
-        string workspace;
         int wsid;
-        string name;
         int objid;
         int ver;
-        string ref;
     } ObjectIdentity;
 
     /*
@@ -714,7 +701,9 @@ module NarrativeService {
         a possible previous version name, then waits for the new version to be successfully indexed in search before
         returning the object_info tuple received from the call to Workspace.revert_object. This method is intended for
         UI, providing a seamless loading experience where the new version is actually indexed in search before finishing.
-        As search takes some time to index, this method takes that time into account and won't return until completed.
+        As search takes some time to index, this method takes that time into account and won't return until completed. ObjectIdentity
+        version is required to specify which version of an object to revert to; wsid and objid fields must be integers
+        representing the workspace id and object id.
     */
     funcdef revert_narrative_object(ObjectIdentity object) returns(object_info reverted) authentication required;
 };

@@ -119,16 +119,7 @@ class NarrativeManagerTestCase(unittest.TestCase):
                 'bad_field_2': 20,
                 'objid': int(obj)
             })
-        self.assertIn('Please choose exactly 1 workspace specifier;', str(err.exception))
-
-        # test that you can't have more than one specifier in ObjectIdentity
-        with self.assertRaises(ValueError) as err:
-            nm.revert_narrative_object({
-                'wsid': int(ws_id),
-                'objid': int(obj),
-                'name': 'This_Field_Should_Fail'
-            })
-        self.assertIn('Please choose exactly 1 object identifier;', str(err.exception))
+        self.assertIn('Please choose exactly 1 object identifier and 1 workspace identifier;', str(err.exception))
 
         # make sure that you can't revert an object with a version greater than current version
         with self.assertRaises(ValueError) as err:
