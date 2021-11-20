@@ -158,10 +158,16 @@ class NarrativeManager:
         return revert_result
 
     def _check_new_version_indexed(self, obj, new_version):
-        data = self.search_client.search_workspace_by_id(obj['wsid'], obj['objid'], version=new_version)
-        if data is None:
-            return self._check_new_version_indexed(obj, new_version)
+        tries = 0
+        data = None
+        while tries < 60 and data is None:
+            data = self.search_client.search_workspace_by_id(obj['wsid'], obj['objid'], version=new_version)
+            tries += 1
+            time.sleep(1)
 
+        if data is None:
+            raise TimeoutError('Max tries for workspace %s/%s/%s exceeded; ' +
+                               'please try searching for new version later' % (obj['wsid'], obj['objid'], new_version))
         return data
 
     def copy_narrative(self, newName, workspaceRef, workspaceId):
