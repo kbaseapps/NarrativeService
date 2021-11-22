@@ -43,8 +43,16 @@ class SearchServiceClient:
             "params": params
         }
     
-        data = requests.post(self.url, data=json.dumps(body), headers=headers).json()
-
+        ret = requests.post(self.url, data=json.dumps(body), headers=headers)
+        if not ret.ok:
+            try:
+                error = ret.json()
+            except:
+                ret.raise_for_status()
+            raise ValueError('Error connecting to search service: {} {}\n{}'
+                             .format(ret.status_code, ret.reason,
+                                     err['error']['message']))
+        data = ret.json()
         return data['result']['hits'][0] if data['result']['count'] > 0 else None
 
         
