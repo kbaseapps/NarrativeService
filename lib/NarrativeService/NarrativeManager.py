@@ -162,12 +162,12 @@ class NarrativeManager:
         data = None
         while tries < 60 and data is None:
             try:
+                tries += 1
+                time.sleep(1)
                 data = self.search_client.search_workspace_by_id(obj['wsid'], obj['objid'], version=new_version)
             except Exception as e:
-                raise ValueError('Object was successfully updated but connection to search client failed; please search for new object in a few minutes.')
-                break
-            tries += 1
-            time.sleep(1)
+                # try again, the connection may be faulty
+                continue
 
         if data is None:
             raise TimeoutError('Max tries for workspace %s/%s/%s exceeded; ' +
