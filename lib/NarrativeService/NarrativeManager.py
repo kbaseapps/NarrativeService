@@ -170,8 +170,8 @@ class NarrativeManager:
                 continue
 
         if data is None:
-            raise TimeoutError('Max tries for workspace %s/%s/%s exceeded; ' +
-                               'please try searching for new version later' % (obj['wsid'], obj['objid'], new_version))
+            raise TimeoutError(f"Max tries for workspace {obj['wsid']}/{obj['objid']}/{new_version} exceeded; " +
+                               "please try searching for new version later")
         return data
 
     def copy_narrative(self, newName, workspaceRef, workspaceId):
