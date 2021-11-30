@@ -18,6 +18,7 @@ class NarrativeManagerTestCase(unittest.TestCase):
         cls.set_api_client = mock.MagicMock()
         cls.data_palette_client = mock.MagicMock()
         cls.workspace_client = WorkspaceMock()
+        cls.search_client = mock.MagicMock()
 
     def test_rename_narrative_ok_unit(self):
         # set up narrative with old name
@@ -26,7 +27,7 @@ class NarrativeManagerTestCase(unittest.TestCase):
         version = "0.4.1"
         narrative_ref = self.workspace_client.make_fake_narrative(old_name, self.user_id)
 
-        nm = NarrativeManager(self.config, self.user_id, self.set_api_client, self.data_palette_client, self.workspace_client)
+        nm = NarrativeManager(self.config, self.user_id, self.set_api_client, self.data_palette_client, self.workspace_client, self.search_client)
 
         narr_obj = self.workspace_client.get_objects2({"objects": [{"ref": narrative_ref}]})
         # verify that we get it with the mock client
@@ -42,7 +43,7 @@ class NarrativeManagerTestCase(unittest.TestCase):
     def test_get_narrative_doc(self):
         # set up narrative
         narrative_ref = self.workspace_client.make_fake_narrative("Doc Format Test", self.user_id)
-        nm = NarrativeManager(self.config, self.user_id, self.set_api_client, self.data_palette_client, self.workspace_client)
+        nm = NarrativeManager(self.config, self.user_id, self.set_api_client, self.data_palette_client, self.workspace_client, self.search_client)
 
         # get ws_id
         ws_id = int(narrative_ref.split('/')[0])
@@ -72,4 +73,60 @@ class NarrativeManagerTestCase(unittest.TestCase):
         with self.assertRaises(ValueError) as err:
             nm.get_narrative_doc('2000/2000/2000')
         self.assertIn('Item with upa "2000/2000/2000" not found in workspace database.', str(err.exception))
+
+    def test_revert_narrative_object(self):
+        # set up narrative
+        narrative_ref = self.workspace_client.make_fake_narrative("SomeNiceName", self.user_id, make_object_history=True)
+
+        ws_id, obj, ver = narrative_ref.split('/')
+
+        nm = NarrativeManager(self.config,
+                              self.user_id,
+                              self.set_api_client,
+                              self.data_palette_client,
+                              self.workspace_client,
+                              self.search_client)
+
+        # simulate reverting fake narrative to version #2 (make_object_history=True automatically makes 5 versions)
+        revert_result = nm.revert_narrative_object({
+            'wsid': int(ws_id),
+            'objid': int(obj),
+            'ver': 2
+        })
+
+        history = self.workspace_client.get_object_history({'wsid': int(ws_id), 'objid': int(obj)})
+
+        # check to make sure new item was added
+        self.assertEqual(len(history), 6)
+        self.assertEqual(revert_result[4], 6)
+        self.assertEqual(history[-1], revert_result)
+        # check that workspace meta was properly updated
+        self.assertEqual(self.workspace_client.internal_db[int(ws_id)]['meta']['narrative_nice_name'], revert_result[10]['name'])
+
+        # test that ObjectIdentities without specified versions will throw an error
+        with self.assertRaises(ValueError) as err:
+            nm.revert_narrative_object({
+                'wsid': int(ws_id),
+                'objid': int(obj)
+            })
+        self.assertIn("Cannot revert object %s/%s without specifying a version to revert to" % (ws_id, obj),
+                      str(err.exception))
+
+        # test that method won't accept malformed ObjectIdentities (missing wsid or objid)
+        with self.assertRaises(ValueError) as err:
+            nm.revert_narrative_object({
+                'bad_field_1': 1000,
+                'bad_field_2': 20,
+                'objid': int(obj)
+            })
+        self.assertIn('Please choose exactly 1 object identifier and 1 workspace identifier;', str(err.exception))
+
+        # make sure that you can't revert an object with a version greater than current version
+        with self.assertRaises(ValueError) as err:
+            nm.revert_narrative_object({
+                'wsid': int(ws_id),
+                'objid': int(obj),
+                'ver': 5000
+            })
+        self.assertIn('Cannot revert object at version 6 to version 5000', str(err.exception))
 
