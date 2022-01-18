@@ -58,8 +58,15 @@ class NarrativeManagerTestCase(unittest.TestCase):
         self.assertFalse(doc['is_public'])
 
         # test data object format
-        self.assertEqual(len(doc['data_objects']), 10)
-        self.assertEqual(doc['data_objects'][0], {'name': 'Object_1-1', 'obj_type': 'KBaseNarrative.Narrative-4.0'})
+        self.assertEqual(len(doc['data_objects']), 9)
+        self.assertEqual(doc['data_objects'][0], {
+            'name': 'Object_1-2',
+            'obj_type': 'KBaseModule.SomeType-1.0'
+        })
+
+        # ensure that there are no kbase narrative instances in data objects
+        for data_obj in doc['data_objects']:
+            self.assertNotIn('KBaseNarrative.Narrative', data_obj['obj_type'])
 
         self.assertEqual(doc['timestamp'], 0)
         self.assertEqual(doc['creation_date'], '1970-01-01T00:00:00+0000')
@@ -67,12 +74,14 @@ class NarrativeManagerTestCase(unittest.TestCase):
         # test that poorly formatted upa is handled correctly
         with self.assertRaises(ValueError) as err:
             nm.get_narrative_doc(narrative_ref)
-        self.assertIn('Incorrect upa format: required format is <workspace_id>/<object_id>/<version>', str(err.exception))
+        self.assertIn('required format is <workspace_id>/<object_id>/<version>',
+                      str(err.exception))
 
         # ensure that proper not found message is raised
         with self.assertRaises(ValueError) as err:
             nm.get_narrative_doc('2000/2000/2000')
-        self.assertIn('Item with upa "2000/2000/2000" not found in workspace database.', str(err.exception))
+        self.assertIn('Item with upa "2000/2000/2000" not found in workspace database.',
+                      str(err.exception))
 
     def test_revert_narrative_object(self):
         # set up narrative
