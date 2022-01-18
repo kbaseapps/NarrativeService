@@ -242,10 +242,9 @@ class WorkspaceMock:
                 # mock error from missing workspace or object
                 raise ServerError('JSONRPCError: -32500')
         # for testing get_narrative_doc
-        return_data['epoch'] = 0
-        return_data['created'] = '1970-01-01T00:00:00+0000'
-        return_data['orig_wsid'] = ws_id
-        return_data['creator'] = 'some_user'
+        return_data['data'][0]['epoch'] = 0
+        return_data['data'][0]['created'] = '1970-01-01T00:00:00+0000'
+        return_data['data'][0]['orig_wsid'] = ws_id
         return return_data
 
     def get_permissions_mass(self, params):
