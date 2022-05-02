@@ -1,5 +1,5 @@
 
-## v0.3.5
+## v0.5.2
 * Fix `get_narrative_doc` method for fetching legacy narratives with `worksheets` as a key
 
 ## v0.3.4
