@@ -45,8 +45,8 @@ class NarrativeManager:
         shared_users, is_public = self._fmt_doc_permissions(permissions)
 
         # get cells (checking for older narratives)
-        if 'worksheets' in obj_data:
-            cells = obj_data['worksheets'][0]['cells']
+        if 'worksheets' in obj_data['data']:
+            cells = obj_data['data']['worksheets'][0]['cells']
         else:
             cells = obj_data['data']['cells']
 
