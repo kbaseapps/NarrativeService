@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/rsutormin/NarrativeService.svg?branch=master)](https://travis-ci.org/rsutormin/NarrativeService)
+[![Build Status](https://travis-ci.org/rsutormin/NarrativeService.svg?branch=main)](https://travis-ci.org/rsutormin/NarrativeService)
 
 # NarrativeService
 ---
