@@ -1,0 +1,8 @@
+jinja2
+pylru
+python-dateutil
+jsonrpcbase
+coverage
+pytest-cov
+pytest
+requests-mock

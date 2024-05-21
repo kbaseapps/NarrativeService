@@ -1,26 +1,33 @@
-FROM kbase/sdkbase2:python
-MAINTAINER KBase Developer
+FROM python:3.10-slim
+# FROM ghcr.io/kbase/sdkpython:0.0.1
+# kbase/sdkbase2:python
+LABEL MAINTAINER KBase Developer
 # -----------------------------------------
+COPY ./ /kb/module
+RUN mkdir -p /kb/module/work
+WORKDIR /kb/module
+# RUN chmod -R a+rw /kb/module
 
 # Insert apt-get instructions here to install
 # any required dependencies for your module.
 
-RUN pip install coverage
+RUN apt-get update && apt-get install -y make
+
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+
+# RUN pip install coverage
 
 # -----------------------------------------
 
-RUN pip install pylru &&\
-    pip install python-dateutil
+# RUN pip install pylru &&\
+#     pip install python-dateutil
 
-COPY ./ /kb/module
-RUN mkdir -p /kb/module/work
-RUN chmod -R a+rw /kb/module
+ENV PYTHONPATH="/kb/module/lib:$PYTHONPATH"
 
-WORKDIR /kb/module
+# RUN make all
 
-RUN make all
-
-EXPOSE 5000
+# EXPOSE 5000
 
 ENTRYPOINT [ "./scripts/entrypoint.sh" ]
 
