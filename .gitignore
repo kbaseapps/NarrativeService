@@ -2,3 +2,4 @@ test_local
 sdk.cfg
 .DS_Store
 .vscode
+.env
