@@ -1,73 +1,72 @@
-import os
-import unittest
-from configparser import ConfigParser
 from unittest import mock
 
-import requests
-from NarrativeService.sharing import sharemanager
+import pytest
+from installed_clients.baseclient import ServerError
+from NarrativeService.sharing.sharemanager import ShareRequester
 
+NARRATIVE_TYPE = "KBaseNarrative.Narrative-4.0"
+FAKE_ADMINS = ["some_user"]
+def test_valid_params(config):
+    params = {
+        "user": "foo",
+        "ws_id": 123,
+        "share_level": "a"
+    }
+    requester = ShareRequester(params, config)
+    assert isinstance(requester, ShareRequester)
+    assert requester.ws_id == params["ws_id"]
 
-class WsMock:
-    def __init__(self, *args, **kwargs):
-        pass
+invalid_combos = [
+    ({"user": "foo", "share_level": "a"}, "ws_id"),
+    ({"ws_id": 123, "share_level": "a"}, "user"),
+    ({"user": "foo", "ws_id": 123}, "share_level"),
+]
+@pytest.mark.parametrize("params,missing", invalid_combos)
+def test_invalid_params(params, missing, config):
+    with pytest.raises(ValueError, match=f'Missing required parameter "{missing}"'):
+        ShareRequester(params, config)
 
-    def administer(self, *args, **kwargs):
-        return {"perms": [{"foo": "a", "bar": "w"}]}
+def test_invalid_share_level(config):
+    params = {
+        "user": "foo",
+        "share_level": "lol",
+        "ws_id": 123
+    }
+    with pytest.raises(ValueError, match=f"Invalid share level: {params['share_level']}. Should be one of a, n, r."):
+        ShareRequester(params, config)
 
-def mock_feed_post(*args, **kwargs):
-    class MockResponse:
-        def __init__(self, json_data, status_code):
-            self.json_data = json_data
-            self.status_code = status_code
+@mock.patch("NarrativeService.sharing.sharemanager.feeds")
+@mock.patch("NarrativeService.sharing.sharemanager.ws.get_ws_admins", return_value=FAKE_ADMINS)
+def test_make_notification_ok(mock_ws, mock_post, config):
+    config["service-token"] = "fake-service-token"
+    config["ws-admin-token"] = "fake-admin-token"
+    req = ShareRequester({"user": "kbasetest", "ws_id": 123, "share_level": "r"}, config)
+    res = req.request_share()
+    assert "ok" in res
+    assert res["ok"] == 1
 
-        def json(self):
-            return self.json_data
+token_allowance = [
+    ("service-token", "missing permission to find Narrative owners."),
+    ("ws-admin-token", "missing authorization to make request.")
+]
+@pytest.mark.parametrize("token_name,expected_error", token_allowance)
+def test_make_notification_token_fail(token_name, expected_error, config):
+    config[token_name] = "fake-token"
+    req = ShareRequester({"user": "kbasetest", "ws_id": 123, "share_level": "r"}, config)
+    res = req.request_share()
+    assert "ok" in res
+    assert res["ok"] == 0
+    assert "error" in res
+    assert res["error"] == f"Unable to request share - NarrativeService is {expected_error}"
 
-        def raise_for_status(self):
-            if self.status_code != 200:
-                raise requests.HTTPError()
-    return MockResponse({"id": "foo"}, 200)
-
-class ShareRequesterTestCase(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        config_file = os.environ.get("KB_DEPLOYMENT_CONFIG", None)
-        cls.NARRATIVE_TYPE = "KBaseNarrative.Narrative-4.0"
-        cls.config = {}
-        config = ConfigParser()
-        config.read(config_file)
-        for nameval in config.items("NarrativeService"):
-            cls.config[nameval[0]] = nameval[1]
-
-    def test_valid_params(self):
-        p = {
-            "user": "foo",
-            "ws_id": 123,
-            "share_level": "a"
-        }
-        sharemanager.ShareRequester(p, self.config)
-
-    def test_invalid_params(self):
-        with self.assertRaises(ValueError) as e:
-            sharemanager.ShareRequester({"user": "foo", "share_level": "a"}, self.config)
-        self.assertIn('Missing required parameter "ws_id"', str(e.exception))
-
-        with self.assertRaises(ValueError) as e:
-            sharemanager.ShareRequester({"ws_id": 123, "share_level": "a"}, self.config)
-        self.assertIn('Missing required parameter "user"', str(e.exception))
-
-        with self.assertRaises(ValueError) as e:
-            sharemanager.ShareRequester({"user": "foo", "ws_id": 123}, self.config)
-        self.assertIn('Missing required parameter "share_level"', str(e.exception))
-
-        with self.assertRaises(ValueError) as e:
-            sharemanager.ShareRequester({"user": "foo", "share_level": "x", "ws_id": 123}, self.config)
-        self.assertIn("Invalid share level: x. Should be one of a, n, r.", str(e.exception))
-
-    @mock.patch("NarrativeService.sharing.sharemanager.feeds.requests.post", side_effect=mock_feed_post)
-    @mock.patch("NarrativeService.sharing.sharemanager.ws.Workspace", side_effect=WsMock)
-    def test_make_notification(self, mock_ws, mock_post):
-        req = sharemanager.ShareRequester({"user": "kbasetest", "ws_id": 123, "share_level": "r"}, self.config)
-        res = req.request_share()
-        self.assertIn("ok", res)
-        self.assertEqual(res["ok"], 1)
+@mock.patch("NarrativeService.sharing.sharemanager.ws.get_ws_admins")
+def test_make_notification_fail(mock_ws, config):
+    mock_ws.side_effect = ServerError("error", 500, "not working")
+    config["service-token"] = "fake-token"
+    config["ws-admin-token"] = "fake-ws-token"
+    req = ShareRequester({"user": "kbasetest", "ws_id": 123, "share_level": "r"}, config)
+    res = req.request_share()
+    assert res == {
+        "ok": 0,
+        "error": "Unable to request share - couldn't get Narrative owners!"
+    }
