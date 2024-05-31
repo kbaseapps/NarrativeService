@@ -1,33 +1,33 @@
-# -*- coding: utf-8 -*-
 #BEGIN_HEADER
+from installed_clients.WorkspaceClient import Workspace
+from NarrativeService.apps.appinfo import get_all_app_info, get_ignore_categories
+from NarrativeService.data.fetcher import DataFetcher
+from NarrativeService.data.objectswithsets import ObjectsWithSets
 from NarrativeService.DynamicServiceCache import DynamicServiceClient
 from NarrativeService.NarrativeListUtils import NarrativeListUtils, NarratorialUtils
 from NarrativeService.NarrativeManager import NarrativeManager
 from NarrativeService.ReportFetcher import ReportFetcher
-from NarrativeService.sharing.sharemanager import ShareRequester
-from NarrativeService.apps.appinfo import get_all_app_info, get_ignore_categories
-from NarrativeService.data.fetcher import DataFetcher
 from NarrativeService.SearchServiceClient import SearchServiceClient
-from NarrativeService.data.objectswithsets import ObjectsWithSets
-from installed_clients.WorkspaceClient import Workspace
+from NarrativeService.sharing.sharemanager import ShareRequester
+
 #END_HEADER
 
 
 class NarrativeService:
-    '''
+    """
     Module Name:
     NarrativeService
 
     Module Description:
     A KBase module: NarrativeService
-    '''
+    """
 
-    ######## WARNING FOR GEVENT USERS ####### noqa
+    ######## WARNING FOR GEVENT USERS ######
     # Since asynchronous IO can lead to methods - even the same method -
     # interrupting each other, you must be *very* careful when using global
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
-    ######################################### noqa
+    ########################################
     VERSION = "0.4.1"
     GIT_URL = "git@github.com:charleshtrenholm/NarrativeService.git"
     GIT_COMMIT_HASH = "e46b93c7fba3e7630e4965cf55ab27b8288c5cbe"
@@ -69,14 +69,13 @@ class NarrativeService:
     def __init__(self, config):
         #BEGIN_CONSTRUCTOR
         self.config = config
-        self.workspaceURL = config['workspace-url']
-        self.serviceWizardURL = config['service-wizard']
-        self.searchServiceURL = config['search-service-url']
-        self.narrativeMethodStoreURL = config['narrative-method-store']
-        self.catalogURL = config['catalog-url']
-        self.narListUtils = NarrativeListUtils(config['narrative-list-cache-size'])
+        self.workspaceURL = config["workspace-url"]
+        self.serviceWizardURL = config["service-wizard"]
+        self.searchServiceURL = config["search-service-url"]
+        self.narrativeMethodStoreURL = config["narrative-method-store"]
+        self.catalogURL = config["catalog-url"]
+        self.narListUtils = NarrativeListUtils(config["narrative-list-cache-size"])
         #END_CONSTRUCTOR
-        pass
 
 
     def list_objects_with_sets(self, ctx, params):
@@ -173,8 +172,8 @@ class NarrativeService:
 
         # At some point might do deeper type checking...
         if not isinstance(returnVal, dict):
-            raise ValueError('Method list_objects_with_sets return value ' +
-                             'returnVal is not type dict as required.')
+            raise ValueError("Method list_objects_with_sets return value " +
+                             "returnVal is not type dict as required.")
         # return the results
         return [returnVal]
 
@@ -191,16 +190,16 @@ class NarrativeService:
         # ctx is the context object
         # return variables are: returnVal
         #BEGIN copy_narrative
-        newName = params['newName']
-        workspaceRef = params['workspaceRef']
-        workspaceId = params.get('workspaceId', None)
+        newName = params["newName"]
+        workspaceRef = params["workspaceRef"]
+        workspaceId = params.get("workspaceId", None)
         returnVal = self._nm(ctx).copy_narrative(newName, workspaceRef, workspaceId)
         #END copy_narrative
 
         # At some point might do deeper type checking...
         if not isinstance(returnVal, dict):
-            raise ValueError('Method copy_narrative return value ' +
-                             'returnVal is not type dict as required.')
+            raise ValueError("Method copy_narrative return value " +
+                             "returnVal is not type dict as required.")
         # return the results
         return [returnVal]
 
@@ -274,15 +273,15 @@ class NarrativeService:
         # ctx is the context object
         # return variables are: returnVal
         #BEGIN create_new_narrative
-        app = params.get('app')
-        method = params.get('method')
-        appparam = params.get('appparam')
-        appData = params.get('appData')
-        markdown = params.get('markdown')
-        copydata = params.get('copydata')
-        importData = params.get('importData')
-        includeIntroCell = params.get('includeIntroCell', 0)
-        title = params.get('title', None)
+        app = params.get("app")
+        method = params.get("method")
+        appparam = params.get("appparam")
+        appData = params.get("appData")
+        markdown = params.get("markdown")
+        copydata = params.get("copydata")
+        importData = params.get("importData")
+        includeIntroCell = params.get("includeIntroCell", 0)
+        title = params.get("title", None)
         returnVal = self._nm(ctx).create_new_narrative(
             app, method, appparam, appData, markdown, copydata, importData,
             includeIntroCell, title
@@ -291,8 +290,8 @@ class NarrativeService:
 
         # At some point might do deeper type checking...
         if not isinstance(returnVal, dict):
-            raise ValueError('Method create_new_narrative return value ' +
-                             'returnVal is not type dict as required.')
+            raise ValueError("Method create_new_narrative return value " +
+                             "returnVal is not type dict as required.")
         # return the results
         return [returnVal]
 
@@ -329,17 +328,17 @@ class NarrativeService:
         # ctx is the context object
         # return variables are: returnVal
         #BEGIN copy_object
-        ref = params['ref']
-        target_ws_id = params.get('target_ws_id')
-        target_ws_name = params.get('target_ws_name')
-        target_name = params.get('target_name')
+        ref = params["ref"]
+        target_ws_id = params.get("target_ws_id")
+        target_ws_name = params.get("target_ws_name")
+        target_name = params.get("target_name")
         returnVal = self._nm(ctx).copy_object(ref, target_ws_id, target_ws_name, target_name, None)
         #END copy_object
 
         # At some point might do deeper type checking...
         if not isinstance(returnVal, dict):
-            raise ValueError('Method copy_object return value ' +
-                             'returnVal is not type dict as required.')
+            raise ValueError("Method copy_object return value " +
+                             "returnVal is not type dict as required.")
         # return the results
         return [returnVal]
 
@@ -365,8 +364,8 @@ class NarrativeService:
 
         # At some point might do deeper type checking...
         if not isinstance(returnVal, dict):
-            raise ValueError('Method list_available_types return value ' +
-                             'returnVal is not type dict as required.')
+            raise ValueError("Method list_available_types return value " +
+                             "returnVal is not type dict as required.")
         # return the results
         return [returnVal]
 
@@ -421,13 +420,13 @@ class NarrativeService:
         # return variables are: returnVal
         #BEGIN list_narratorials
         ws = self._get_workspace_client(ctx["token"])
-        returnVal = {'narratorials': self.narListUtils.list_narratorials(ws)}
+        returnVal = {"narratorials": self.narListUtils.list_narratorials(ws)}
         #END list_narratorials
 
         # At some point might do deeper type checking...
         if not isinstance(returnVal, dict):
-            raise ValueError('Method list_narratorials return value ' +
-                             'returnVal is not type dict as required.')
+            raise ValueError("Method list_narratorials return value " +
+                             "returnVal is not type dict as required.")
         # return the results
         return [returnVal]
 
@@ -482,26 +481,26 @@ class NarrativeService:
         # return variables are: returnVal
         #BEGIN list_narratives
         ws = self._get_workspace_client(ctx["token"])
-        nar_type = 'mine'
-        valid_types = ['mine', 'shared', 'public']
-        if 'type' in params:
-            nar_type = params['type']
+        nar_type = "mine"
+        valid_types = ["mine", "shared", "public"]
+        if "type" in params:
+            nar_type = params["type"]
 
-        returnVal = {'narratives': []}
-        if nar_type == 'mine':
-            returnVal['narratives'] = self.narListUtils.list_my_narratives(ctx['user_id'], ws)
-        elif nar_type == 'shared':
-            returnVal['narratives'] = self.narListUtils.list_shared_narratives(ctx['user_id'], ws)
-        elif nar_type == 'public':
-            returnVal['narratives'] = self.narListUtils.list_public_narratives(ws)
+        returnVal = {"narratives": []}
+        if nar_type == "mine":
+            returnVal["narratives"] = self.narListUtils.list_my_narratives(ctx["user_id"], ws)
+        elif nar_type == "shared":
+            returnVal["narratives"] = self.narListUtils.list_shared_narratives(ctx["user_id"], ws)
+        elif nar_type == "public":
+            returnVal["narratives"] = self.narListUtils.list_public_narratives(ws)
         else:
             raise ValueError('"type" parameter must be set to one of: ' + str(valid_types))
         #END list_narratives
 
         # At some point might do deeper type checking...
         if not isinstance(returnVal, dict):
-            raise ValueError('Method list_narratives return value ' +
-                             'returnVal is not type dict as required.')
+            raise ValueError("Method list_narratives return value " +
+                             "returnVal is not type dict as required.")
         # return the results
         return [returnVal]
 
@@ -521,20 +520,20 @@ class NarrativeService:
         # ctx is the context object
         # return variables are: returnVal
         #BEGIN set_narratorial
-        if 'ws' not in params:
+        if "ws" not in params:
             raise ValueError('"ws" field indicating WS name or id is required.')
-        if 'description' not in params:
+        if "description" not in params:
             raise ValueError('"description" field indicating WS name or id is required.')
         ws = self._get_workspace_client(ctx["token"])
         nu = NarratorialUtils()
-        nu.set_narratorial(params['ws'], params['description'], ws)
+        nu.set_narratorial(params["ws"], params["description"], ws)
         returnVal = {}
         #END set_narratorial
 
         # At some point might do deeper type checking...
         if not isinstance(returnVal, dict):
-            raise ValueError('Method set_narratorial return value ' +
-                             'returnVal is not type dict as required.')
+            raise ValueError("Method set_narratorial return value " +
+                             "returnVal is not type dict as required.")
         # return the results
         return [returnVal]
 
@@ -547,18 +546,18 @@ class NarrativeService:
         # ctx is the context object
         # return variables are: returnVal
         #BEGIN remove_narratorial
-        if 'ws' not in params:
+        if "ws" not in params:
             raise ValueError('"ws" field indicating WS name or id is required.')
         ws = self._get_workspace_client(ctx["token"])
         nu = NarratorialUtils()
-        nu.remove_narratorial(params['ws'], ws)
+        nu.remove_narratorial(params["ws"], ws)
         returnVal = {}
         #END remove_narratorial
 
         # At some point might do deeper type checking...
         if not isinstance(returnVal, dict):
-            raise ValueError('Method remove_narratorial return value ' +
-                             'returnVal is not type dict as required.')
+            raise ValueError("Method remove_narratorial return value " +
+                             "returnVal is not type dict as required.")
         # return the results
         return [returnVal]
 
@@ -590,13 +589,13 @@ class NarrativeService:
         # return variables are: returnVal
         #BEGIN find_object_report
         report_fetcher = ReportFetcher(self._get_workspace_client(ctx["token"]))
-        returnVal = report_fetcher.find_report_from_object(params['upa'])
+        returnVal = report_fetcher.find_report_from_object(params["upa"])
         #END find_object_report
 
         # At some point might do deeper type checking...
         if not isinstance(returnVal, dict):
-            raise ValueError('Method find_object_report return value ' +
-                             'returnVal is not type dict as required.')
+            raise ValueError("Method find_object_report return value " +
+                             "returnVal is not type dict as required.")
         # return the results
         return [returnVal]
 
@@ -626,8 +625,8 @@ class NarrativeService:
 
         # At some point might do deeper type checking...
         if not isinstance(returnVal, dict):
-            raise ValueError('Method request_narrative_share return value ' +
-                             'returnVal is not type dict as required.')
+            raise ValueError("Method request_narrative_share return value " +
+                             "returnVal is not type dict as required.")
         # return the results
         return [returnVal]
 
@@ -659,14 +658,14 @@ class NarrativeService:
         # ctx is the context object
         # return variables are: output
         #BEGIN get_all_app_info
-        output = get_all_app_info(input['tag'], input['user'],
+        output = get_all_app_info(input["tag"], input["user"],
                                   self.narrativeMethodStoreURL, self.catalogURL)
         #END get_all_app_info
 
         # At some point might do deeper type checking...
         if not isinstance(output, dict):
-            raise ValueError('Method get_all_app_info return value ' +
-                             'output is not type dict as required.')
+            raise ValueError("Method get_all_app_info return value " +
+                             "output is not type dict as required.")
         # return the results
         return [output]
 
@@ -683,8 +682,8 @@ class NarrativeService:
 
         # At some point might do deeper type checking...
         if not isinstance(ignore_categories, dict):
-            raise ValueError('Method get_ignore_categories return value ' +
-                             'ignore_categories is not type dict as required.')
+            raise ValueError("Method get_ignore_categories return value " +
+                             "ignore_categories is not type dict as required.")
         # return the results
         return [ignore_categories]
 
@@ -750,8 +749,8 @@ class NarrativeService:
 
         # At some point might do deeper type checking...
         if not isinstance(result, dict):
-            raise ValueError('Method list_all_data return value ' +
-                             'result is not type dict as required.')
+            raise ValueError("Method list_all_data return value " +
+                             "result is not type dict as required.")
         # return the results
         return [result]
 
@@ -815,8 +814,8 @@ class NarrativeService:
 
         # At some point might do deeper type checking...
         if not isinstance(result, dict):
-            raise ValueError('Method list_workspace_data return value ' +
-                             'result is not type dict as required.')
+            raise ValueError("Method list_workspace_data return value " +
+                             "result is not type dict as required.")
         # return the results
         return [result]
 
@@ -852,8 +851,8 @@ class NarrativeService:
 
         # At some point might do deeper type checking...
         if not isinstance(result, dict):
-            raise ValueError('Method rename_narrative return value ' +
-                             'result is not type dict as required.')
+            raise ValueError("Method rename_narrative return value " +
+                             "result is not type dict as required.")
         # return the results
         return [result]
 
@@ -904,13 +903,13 @@ class NarrativeService:
         # ctx is the context object
         # return variables are: result
         #BEGIN get_narrative_doc
-        result = self._nm(ctx).get_narrative_doc(params['narrative_upa'])
+        result = self._nm(ctx).get_narrative_doc(params["narrative_upa"])
         #END get_narrative_doc
 
         # At some point might do deeper type checking...
         if not isinstance(result, dict):
-            raise ValueError('Method get_narrative_doc return value ' +
-                             'result is not type dict as required.')
+            raise ValueError("Method get_narrative_doc return value " +
+                             "result is not type dict as required.")
         # return the results
         return [result]
 
@@ -963,16 +962,16 @@ class NarrativeService:
 
         # At some point might do deeper type checking...
         if not isinstance(reverted, list):
-            raise ValueError('Method revert_narrative_object return value ' +
-                             'reverted is not type list as required.')
+            raise ValueError("Method revert_narrative_object return value " +
+                             "reverted is not type list as required.")
         # return the results
         return [reverted]
     def status(self, ctx):
         #BEGIN_STATUS
-        returnVal = {'state': "OK",
-                     'message': "",
-                     'version': self.VERSION,
-                     'git_url': self.GIT_URL,
-                     'git_commit_hash': self.GIT_COMMIT_HASH}
+        returnVal = {"state": "OK",
+                     "message": "",
+                     "version": self.VERSION,
+                     "git_url": self.GIT_URL,
+                     "git_commit_hash": self.GIT_COMMIT_HASH}
         #END_STATUS
         return [returnVal]

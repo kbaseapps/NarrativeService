@@ -1,6 +1,8 @@
-import time
-import requests
 import json
+import time
+
+import requests
+
 
 class SearchServiceClient:
 
@@ -11,12 +13,12 @@ class SearchServiceClient:
     def search_workspace_by_id(self, ws_id, obj_id, version=None):
 
         """
-            a method used currently to check on whether a specific version has been successfully indexed 
+            a method used currently to check on whether a specific version has been successfully indexed
             in search_api2. Returns 1 instance of search doc if found, None if no matches were found. workspace
             and object ID are required; version number is optional.
         """
 
-        headers = {'Authorization': self.token}
+        headers = {"Authorization": self.token}
 
         params = {
             "filters": {
@@ -42,17 +44,16 @@ class SearchServiceClient:
             "method": "search_workspace",
             "params": params
         }
-    
+
         ret = requests.post(self.url, data=json.dumps(body), headers=headers)
         if not ret.ok:
             try:
                 error = ret.json()
-            except:
+            except Exception:
                 ret.raise_for_status()
-            raise ValueError('Error connecting to search service: {} {}\n{}'
+            raise ValueError("Error connecting to search service: {} {}\n{}"
                              .format(ret.status_code, ret.reason,
-                                     err['error']['message']))
+                                     error["error"]["message"]))
         data = ret.json()
-        return data['result']['hits'][0] if data['result']['count'] > 0 else None
+        return data["result"]["hits"][0] if data["result"]["count"] > 0 else None
 
-        

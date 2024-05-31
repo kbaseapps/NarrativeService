@@ -8,7 +8,7 @@ def get_ws_admins(ws_id, ws_url, admin_token):
         "params": {
             "workspaces": [{"id": ws_id}]
         }
-    })['perms'][0]
+    })["perms"][0]
 
     admins = list()
     for u in perms:

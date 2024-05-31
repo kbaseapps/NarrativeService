@@ -3,42 +3,42 @@ import time
 import unittest
 from configparser import ConfigParser
 
-from NarrativeService.NarrativeServiceImpl import NarrativeService
-from NarrativeService.NarrativeServiceServer import MethodContext
+from installed_clients.authclient import KBaseAuth as _KBaseAuth
 from installed_clients.FakeObjectsForTestsClient import FakeObjectsForTests
 from installed_clients.KBaseReportClient import KBaseReport
 from installed_clients.WorkspaceClient import Workspace
-from installed_clients.authclient import KBaseAuth as _KBaseAuth
+from NarrativeService.NarrativeServiceImpl import NarrativeService
+from NarrativeService.NarrativeServiceServer import MethodContext
 
 
 class ReportFetcherTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        token = os.environ.get('KB_AUTH_TOKEN', None)
-        config_file = os.environ.get('KB_DEPLOYMENT_CONFIG', None)
+        token = os.environ.get("KB_AUTH_TOKEN", None)
+        config_file = os.environ.get("KB_DEPLOYMENT_CONFIG", None)
         cls.cfg = {}
         config = ConfigParser()
         config.read(config_file)
-        for nameval in config.items('NarrativeService'):
+        for nameval in config.items("NarrativeService"):
             cls.cfg[nameval[0]] = nameval[1]
         authServiceUrl = cls.cfg.get(
-            'auth-service-url',
+            "auth-service-url",
             "https://kbase.us/services/authorization/Sessions/Login")
         auth_client = _KBaseAuth(authServiceUrl)
         user_id = auth_client.get_user(token)
         # WARNING: don't call any logging methods on the context object,
         # it'll result in a NoneType error
         cls.ctx = MethodContext(None)
-        cls.ctx.update({'token': token,
-                        'user_id': user_id,
-                        'provenance': [
-                            {'service': 'NarrativeService',
-                             'method': 'please_never_use_it_in_production',
-                             'method_params': []
+        cls.ctx.update({"token": token,
+                        "user_id": user_id,
+                        "provenance": [
+                            {"service": "NarrativeService",
+                             "method": "please_never_use_it_in_production",
+                             "method_params": []
                              }],
-                        'authenticated': 1})
+                        "authenticated": 1})
         # Set up test Workspace
-        cls.ws_url = cls.cfg['workspace-url']
+        cls.ws_url = cls.cfg["workspace-url"]
         cls.ws_client = Workspace(cls.ws_url, token=token)
         cls.test_ws_info = cls._make_workspace()
         cls.test_ws_name = cls.test_ws_info[1]
@@ -55,7 +55,7 @@ class ReportFetcherTestCase(unittest.TestCase):
     def tearDownClass(cls):
         # delete main test workspace
         # cls.ws_client.delete_workspace({'workspace': cls.test_ws_name})
-        print("deleted test workspace: {} - {}".format(cls.test_ws_info[0], cls.test_ws_name))
+        print(f"deleted test workspace: {cls.test_ws_info[0]} - {cls.test_ws_name}")
 
     @classmethod
     def _make_workspace(cls):
@@ -82,7 +82,7 @@ class ReportFetcherTestCase(unittest.TestCase):
             "report_object_name": "NarrativeServiceTest_report_" + str(int(time.time() * 1000)),
             "workspace_name": ws_name
         }
-        kr = KBaseReport(os.environ['SDK_CALLBACK_URL'])
+        kr = KBaseReport(os.environ["SDK_CALLBACK_URL"])
         report_output = kr.create_extended_report(report_params)
         return report_output["ref"]
 
@@ -92,11 +92,11 @@ class ReportFetcherTestCase(unittest.TestCase):
         Make fake reads in the workspace with the given name.
         Return the UPA for those reads.
         """
-        foft = FakeObjectsForTests(os.environ['SDK_CALLBACK_URL'])
+        foft = FakeObjectsForTests(os.environ["SDK_CALLBACK_URL"])
         info = foft.create_fake_reads({
-            'ws_name': ws_name,
-            'obj_names': [reads_name]})[0]
-        reads_ref = "{}/{}/{}".format(info[6], info[0], info[4])
+            "ws_name": ws_name,
+            "obj_names": [reads_name]})[0]
+        reads_ref = f"{info[6]}/{info[0]}/{info[4]}"
         return reads_ref
 
     def get_ws_client(self):
@@ -120,15 +120,15 @@ class ReportFetcherTestCase(unittest.TestCase):
 
     def test_fetch_report_copy(self):
         copy_info = self.ws_client.copy_object({
-            'from': {
-                'ref': self.fake_reads_upa
+            "from": {
+                "ref": self.fake_reads_upa
             },
-            'to': {
-                'workspace': self.test_ws_name,
-                'name': "FakeReadsCopy"
+            "to": {
+                "workspace": self.test_ws_name,
+                "name": "FakeReadsCopy"
             }
         })
-        upa = "{}/{}/{}".format(copy_info[6], copy_info[0], copy_info[4])
+        upa = f"{copy_info[6]}/{copy_info[0]}/{copy_info[4]}"
         source_upa = self.fake_reads_upa
         ret = self.get_impl().find_object_report(self.get_context(), {"upa": upa})[0]
         self.assertIn("report_upas", ret)
@@ -145,20 +145,20 @@ class ReportFetcherTestCase(unittest.TestCase):
         # Make reads
         new_reads_upa = self.__class__._make_fake_reads(new_ws_info[1], "NewFakeReads")
         # Make report to new reads
-        new_report_upa = self.__class__._make_fake_report(new_reads_upa, new_ws_info[1])
+        self.__class__._make_fake_report(new_reads_upa, new_ws_info[1])
         # Copy new reads to old WS
         copy_info = self.ws_client.copy_object({
-            'from': {
-                'ref': new_reads_upa
+            "from": {
+                "ref": new_reads_upa
             },
-            'to': {
-                'workspace': self.test_ws_name,
-                'name': 'NewFakeReadsCopy'
+            "to": {
+                "workspace": self.test_ws_name,
+                "name": "NewFakeReadsCopy"
             }
         })
-        new_reads_copy_upa = "{}/{}/{}".format(copy_info[6], copy_info[0], copy_info[4])
+        new_reads_copy_upa = f"{copy_info[6]}/{copy_info[0]}/{copy_info[4]}"
         # delete new WS
-        self.ws_client.delete_workspace({'id': new_ws_info[0]})
+        self.ws_client.delete_workspace({"id": new_ws_info[0]})
         # now test for report and find the error
         ret = self.get_impl().find_object_report(self.get_context(), {"upa": new_reads_copy_upa})[0]
         self.assertIn("report_upas", ret)

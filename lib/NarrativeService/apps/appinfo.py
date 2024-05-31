@@ -1,5 +1,5 @@
-from installed_clients.NarrativeMethodStoreClient import NarrativeMethodStore
 from installed_clients.CatalogClient import Catalog
+from installed_clients.NarrativeMethodStoreClient import NarrativeMethodStore
 
 IGNORE_CATEGORIES = {"inactive", "importers", "viewers"}
 
@@ -9,13 +9,13 @@ def get_ignore_categories():
 
 
 def _shorten_types(type_list):
-    '''
+    """
     convert ['KBaseMatrices.AmpliconMatrix'] to ['AmpliconMatrix']
-    '''
+    """
     shorten_types = list()
     for t in type_list:
         try:
-            shorten_types.append(t.split('.')[1])
+            shorten_types.append(t.split(".")[1])
         except IndexError:
             pass
 
@@ -32,11 +32,11 @@ def get_all_app_info(tag, user, nms_url, catalog_url):
     module_versions = {}
     for a in apps:
         # ignore empty apps or apps in IGNORE_CATEGORIES
-        if not a or not set(a.get('categories')).isdisjoint(IGNORE_CATEGORIES):
+        if not a or not set(a.get("categories")).isdisjoint(IGNORE_CATEGORIES):
             continue
         # add short version of input/output types
-        for target_type in ['input_types', 'output_types']:
-            a['short_{}'.format(target_type)] = _shorten_types(a.get(target_type))
+        for target_type in ["input_types", "output_types"]:
+            a[f"short_{target_type}"] = _shorten_types(a.get(target_type))
         app_infos[a["id"].lower()] = {"info": a}
         if "module_name" in a:
             module_versions[a["module_name"].lower()] = a.get("ver")

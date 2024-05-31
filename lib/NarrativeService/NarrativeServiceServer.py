@@ -1,22 +1,25 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import datetime
 import json
 import os
 import random as _random
 import sys
 import traceback
-from getopt import getopt, GetoptError
+from getopt import GetoptError, getopt
 from multiprocessing import Process
 from os import environ
 from wsgiref.simple_server import make_server
 
 import requests as _requests
-from jsonrpcbase import JSONRPCService, InvalidParamsError, KeywordError, \
-    JSONRPCError, InvalidRequestError
-from jsonrpcbase import ServerError as JSONServerError
-
 from biokbase import log
+from jsonrpcbase import (
+    InvalidParamsError,
+    InvalidRequestError,
+    JSONRPCError,
+    JSONRPCService,
+    KeywordError,
+)
+from jsonrpcbase import ServerError as JSONServerError
 from NarrativeService.authclient import KBaseAuth as _KBaseAuth
 
 try:
@@ -24,9 +27,9 @@ try:
 except ImportError:
     from configparser import ConfigParser
 
-DEPLOY = 'KB_DEPLOYMENT_CONFIG'
-SERVICE = 'KB_SERVICE_NAME'
-AUTH = 'auth-service-url'
+DEPLOY = "KB_DEPLOYMENT_CONFIG"
+SERVICE = "KB_SERVICE_NAME"
+AUTH = "auth-service-url"
 
 # Note that the error fields do not match the 2.0 JSONRPC spec
 
@@ -45,7 +48,7 @@ def get_config():
     retconfig = {}
     config = ConfigParser()
     config.read(get_config_file())
-    for nameval in config.items(get_service_name() or 'NarrativeService'):
+    for nameval in config.items(get_service_name() or "NarrativeService"):
         retconfig[nameval[0]] = nameval[1]
     return retconfig
 
@@ -62,7 +65,7 @@ class JSONObjectEncoder(json.JSONEncoder):
             return list(obj)
         if isinstance(obj, frozenset):
             return list(obj)
-        if hasattr(obj, 'toJSONable'):
+        if hasattr(obj, "toJSONable"):
             return obj.toJSONable()
         return json.JSONEncoder.default(self, obj)
 
@@ -85,24 +88,24 @@ class JSONRPCServiceCustom(JSONRPCService):
 
     def _call_method(self, ctx, request):
         """Calls given method with given params and returns it value."""
-        method = self.method_data[request['method']]['method']
-        params = request['params']
+        method = self.method_data[request["method"]]["method"]
+        params = request["params"]
         result = None
         try:
             if isinstance(params, list):
                 # Does it have enough arguments?
                 if len(params) < self._man_args(method) - 1:
-                    raise InvalidParamsError('not enough arguments')
+                    raise InvalidParamsError("not enough arguments")
                 # Does it have too many arguments?
                 if(not self._vargs(method) and len(params) >
                         self._max_args(method) - 1):
-                    raise InvalidParamsError('too many arguments')
+                    raise InvalidParamsError("too many arguments")
 
                 result = method(ctx, *params)
             elif isinstance(params, dict):
                 # Do not accept keyword arguments if the jsonrpc version is
                 # not >=1.1.
-                if request['jsonrpc'] < 11:
+                if request["jsonrpc"] < 11:
                     raise KeywordError
 
                 result = method(ctx, **params)
@@ -180,19 +183,19 @@ class JSONRPCServiceCustom(JSONRPCService):
 
     def _handle_request(self, ctx, request):
         """Handles given request and returns its response."""
-        if 'types' in self.method_data[request['method']]:
-            self._validate_params_types(request['method'], request['params'])
+        if "types" in self.method_data[request["method"]]:
+            self._validate_params_types(request["method"], request["params"])
 
         result = self._call_method(ctx, request)
 
         # Do not respond to notifications.
-        if request['id'] is None:
+        if request["id"] is None:
             return None
 
         respond = {}
-        self._fill_ver(request['jsonrpc'], respond)
-        respond['result'] = result
-        respond['id'] = request['id']
+        self._fill_ver(request["jsonrpc"], respond)
+        respond["result"] = result
+        respond["id"] = request["id"]
 
         return respond
 
@@ -200,16 +203,16 @@ class JSONRPCServiceCustom(JSONRPCService):
 class MethodContext(dict):
 
     def __init__(self, logger):
-        self['client_ip'] = None
-        self['user_id'] = None
-        self['authenticated'] = None
-        self['token'] = None
-        self['module'] = None
-        self['method'] = None
-        self['call_id'] = None
-        self['rpc_context'] = None
-        self['provenance'] = None
-        self._debug_levels = set([7, 8, 9, 'DEBUG', 'DEBUG2', 'DEBUG3'])
+        self["client_ip"] = None
+        self["user_id"] = None
+        self["authenticated"] = None
+        self["token"] = None
+        self["module"] = None
+        self["method"] = None
+        self["call_id"] = None
+        self["rpc_context"] = None
+        self["provenance"] = None
+        self._debug_levels = set([7, 8, 9, "DEBUG", "DEBUG2", "DEBUG3"])
         self._logger = logger
 
     def log_err(self, message):
@@ -238,82 +241,82 @@ class MethodContext(dict):
         self._logger.clear_user_log_level()
 
     def _log(self, level, message):
-        self._logger.log_message(level, message, self['client_ip'],
-                                 self['user_id'], self['module'],
-                                 self['method'], self['call_id'])
+        self._logger.log_message(level, message, self["client_ip"],
+                                 self["user_id"], self["module"],
+                                 self["method"], self["call_id"])
 
     def provenance(self):
-        callbackURL = os.environ.get('SDK_CALLBACK_URL')
+        callbackURL = os.environ.get("SDK_CALLBACK_URL")
         if callbackURL:
             # OK, there's a callback server from which we can get provenance
-            arg_hash = {'method': 'CallbackServer.get_provenance',
-                        'params': [],
-                        'version': '1.1',
-                        'id': str(_random.random())[2:]
+            arg_hash = {"method": "CallbackServer.get_provenance",
+                        "params": [],
+                        "version": "1.1",
+                        "id": str(_random.random())[2:]
                         }
             body = json.dumps(arg_hash)
             response = _requests.post(callbackURL, data=body,
                                       timeout=60)
-            response.encoding = 'utf-8'
+            response.encoding = "utf-8"
             if response.status_code == 500:
-                if ('content-type' in response.headers and
-                        response.headers['content-type'] ==
-                        'application/json'):
+                if ("content-type" in response.headers and
+                        response.headers["content-type"] ==
+                        "application/json"):
                     err = response.json()
-                    if 'error' in err:
-                        raise ServerError(**err['error'])
+                    if "error" in err:
+                        raise ServerError(**err["error"])
                     else:
-                        raise ServerError('Unknown', 0, response.text)
+                        raise ServerError("Unknown", 0, response.text)
                 else:
-                    raise ServerError('Unknown', 0, response.text)
+                    raise ServerError("Unknown", 0, response.text)
             if not response.ok:
                 response.raise_for_status()
             resp = response.json()
-            if 'result' not in resp:
-                raise ServerError('Unknown', 0,
-                                  'An unknown server error occurred')
-            return resp['result'][0]
+            if "result" not in resp:
+                raise ServerError("Unknown", 0,
+                                  "An unknown server error occurred")
+            return resp["result"][0]
         else:
-            return self.get('provenance')
+            return self.get("provenance")
 
 
 class ServerError(Exception):
-    '''
+    """
     The call returned an error. Fields:
     name - the name of the error.
     code - the error code.
     message - a human readable error message.
     data - the server side stacktrace.
-    '''
+    """
 
     def __init__(self, name, code, message, data=None, error=None):
         super(Exception, self).__init__(message)
         self.name = name
         self.code = code
-        self.message = message if message else ''
-        self.data = data or error or ''
+        self.message = message if message else ""
+        self.data = data or error or ""
         # data = JSON RPC 2.0, error = 1.1
 
     def __str__(self):
-        return self.name + ': ' + str(self.code) + '. ' + self.message + \
-            '\n' + self.data
+        return self.name + ": " + str(self.code) + ". " + self.message + \
+            "\n" + self.data
 
 
 def getIPAddress(environ):
-    xFF = environ.get('HTTP_X_FORWARDED_FOR')
-    realIP = environ.get('HTTP_X_REAL_IP')
+    xFF = environ.get("HTTP_X_FORWARDED_FOR")
+    realIP = environ.get("HTTP_X_REAL_IP")
     trustXHeaders = config is None or \
-        config.get('dont_trust_x_ip_headers') != 'true'
+        config.get("dont_trust_x_ip_headers") != "true"
 
     if (trustXHeaders):
         if (xFF):
-            return xFF.split(',')[0].strip()
+            return xFF.split(",")[0].strip()
         if (realIP):
             return realIP.strip()
-    return environ.get('REMOTE_ADDR')
+    return environ.get("REMOTE_ADDR")
 
 
-class Application(object):
+class Application:
     # Wrap the wsgi handler in a class definition so that we can
     # do some initialization and avoid regenerating stuff over
     # and over
@@ -322,12 +325,12 @@ class Application(object):
         self.serverlog.set_log_file(self.userlog.get_log_file())
 
     def log(self, level, context, message):
-        self.serverlog.log_message(level, message, context['client_ip'],
-                                   context['user_id'], context['module'],
-                                   context['method'], context['call_id'])
+        self.serverlog.log_message(level, message, context["client_ip"],
+                                   context["user_id"], context["module"],
+                                   context["method"], context["call_id"])
 
     def __init__(self):
-        submod = get_service_name() or 'NarrativeService'
+        submod = get_service_name() or "NarrativeService"
         self.userlog = log.log(
             submod, ip_address=True, authuser=True, module=True, method=True,
             call_id=True, changecallback=self.logcallback,
@@ -339,79 +342,79 @@ class Application(object):
         self.rpc_service = JSONRPCServiceCustom()
         self.method_authentication = dict()
         self.rpc_service.add(impl_NarrativeService.list_objects_with_sets,
-                             name='NarrativeService.list_objects_with_sets',
+                             name="NarrativeService.list_objects_with_sets",
                              types=[dict])
         self.method_authentication['NarrativeService.list_objects_with_sets'] = 'required'  # noqa
         self.rpc_service.add(impl_NarrativeService.copy_narrative,
-                             name='NarrativeService.copy_narrative',
+                             name="NarrativeService.copy_narrative",
                              types=[dict])
         self.method_authentication['NarrativeService.copy_narrative'] = 'required'  # noqa
         self.rpc_service.add(impl_NarrativeService.create_new_narrative,
-                             name='NarrativeService.create_new_narrative',
+                             name="NarrativeService.create_new_narrative",
                              types=[dict])
         self.method_authentication['NarrativeService.create_new_narrative'] = 'required'  # noqa
         self.rpc_service.add(impl_NarrativeService.copy_object,
-                             name='NarrativeService.copy_object',
+                             name="NarrativeService.copy_object",
                              types=[dict])
         self.method_authentication['NarrativeService.copy_object'] = 'required'  # noqa
         self.rpc_service.add(impl_NarrativeService.list_available_types,
-                             name='NarrativeService.list_available_types',
+                             name="NarrativeService.list_available_types",
                              types=[dict])
         self.method_authentication['NarrativeService.list_available_types'] = 'required'  # noqa
         self.rpc_service.add(impl_NarrativeService.list_narratorials,
-                             name='NarrativeService.list_narratorials',
+                             name="NarrativeService.list_narratorials",
                              types=[dict])
         self.method_authentication['NarrativeService.list_narratorials'] = 'optional'  # noqa
         self.rpc_service.add(impl_NarrativeService.list_narratives,
-                             name='NarrativeService.list_narratives',
+                             name="NarrativeService.list_narratives",
                              types=[dict])
         self.method_authentication['NarrativeService.list_narratives'] = 'optional'  # noqa
         self.rpc_service.add(impl_NarrativeService.set_narratorial,
-                             name='NarrativeService.set_narratorial',
+                             name="NarrativeService.set_narratorial",
                              types=[dict])
         self.method_authentication['NarrativeService.set_narratorial'] = 'required'  # noqa
         self.rpc_service.add(impl_NarrativeService.remove_narratorial,
-                             name='NarrativeService.remove_narratorial',
+                             name="NarrativeService.remove_narratorial",
                              types=[dict])
         self.method_authentication['NarrativeService.remove_narratorial'] = 'required'  # noqa
         self.rpc_service.add(impl_NarrativeService.find_object_report,
-                             name='NarrativeService.find_object_report',
+                             name="NarrativeService.find_object_report",
                              types=[dict])
         self.method_authentication['NarrativeService.find_object_report'] = 'required'  # noqa
         self.rpc_service.add(impl_NarrativeService.request_narrative_share,
-                             name='NarrativeService.request_narrative_share',
+                             name="NarrativeService.request_narrative_share",
                              types=[dict])
         self.method_authentication['NarrativeService.request_narrative_share'] = 'required'  # noqa
         self.rpc_service.add(impl_NarrativeService.get_all_app_info,
-                             name='NarrativeService.get_all_app_info',
+                             name="NarrativeService.get_all_app_info",
                              types=[dict])
         self.method_authentication['NarrativeService.get_all_app_info'] = 'none'  # noqa
         self.rpc_service.add(impl_NarrativeService.get_ignore_categories,
-                             name='NarrativeService.get_ignore_categories',
+                             name="NarrativeService.get_ignore_categories",
                              types=[])
         self.method_authentication['NarrativeService.get_ignore_categories'] = 'none'  # noqa
         self.rpc_service.add(impl_NarrativeService.list_all_data,
-                             name='NarrativeService.list_all_data',
+                             name="NarrativeService.list_all_data",
                              types=[dict])
         self.method_authentication['NarrativeService.list_all_data'] = 'required'  # noqa
         self.rpc_service.add(impl_NarrativeService.list_workspace_data,
-                             name='NarrativeService.list_workspace_data',
+                             name="NarrativeService.list_workspace_data",
                              types=[dict])
         self.method_authentication['NarrativeService.list_workspace_data'] = 'required'  # noqa
         self.rpc_service.add(impl_NarrativeService.rename_narrative,
-                             name='NarrativeService.rename_narrative',
+                             name="NarrativeService.rename_narrative",
                              types=[dict])
         self.method_authentication['NarrativeService.rename_narrative'] = 'required'  # noqa
         self.rpc_service.add(impl_NarrativeService.get_narrative_doc,
-                             name='NarrativeService.get_narrative_doc',
+                             name="NarrativeService.get_narrative_doc",
                              types=[dict])
         self.method_authentication['NarrativeService.get_narrative_doc'] = 'required'  # noqa
         self.rpc_service.add(impl_NarrativeService.revert_narrative_object,
-                             name='NarrativeService.revert_narrative_object',
+                             name="NarrativeService.revert_narrative_object",
                              types=[dict])
         self.method_authentication['NarrativeService.revert_narrative_object'] = 'required'  # noqa
         self.rpc_service.add(impl_NarrativeService.status,
-                             name='NarrativeService.status',
+                             name="NarrativeService.status",
                              types=[dict])
         authurl = config.get(AUTH) if config else None
         self.auth_client = _KBaseAuth(authurl)
@@ -419,90 +422,90 @@ class Application(object):
     def __call__(self, environ, start_response):
         # Context object, equivalent to the perl impl CallContext
         ctx = MethodContext(self.userlog)
-        ctx['client_ip'] = getIPAddress(environ)
-        status = '500 Internal Server Error'
+        ctx["client_ip"] = getIPAddress(environ)
+        status = "500 Internal Server Error"
 
         try:
-            body_size = int(environ.get('CONTENT_LENGTH', 0))
+            body_size = int(environ.get("CONTENT_LENGTH", 0))
         except (ValueError):
             body_size = 0
-        if environ['REQUEST_METHOD'] == 'OPTIONS':
+        if environ["REQUEST_METHOD"] == "OPTIONS":
             # we basically do nothing and just return headers
-            status = '200 OK'
+            status = "200 OK"
             rpc_result = ""
         else:
-            request_body = environ['wsgi.input'].read(body_size)
+            request_body = environ["wsgi.input"].read(body_size)
             try:
                 req = json.loads(request_body)
             except ValueError as ve:
-                err = {'error': {'code': -32700,
-                                 'name': "Parse error",
-                                 'message': str(ve),
+                err = {"error": {"code": -32700,
+                                 "name": "Parse error",
+                                 "message": str(ve),
                                  }
                        }
-                rpc_result = self.process_error(err, ctx, {'version': '1.1'})
+                rpc_result = self.process_error(err, ctx, {"version": "1.1"})
             else:
-                ctx['module'], ctx['method'] = req['method'].split('.')
-                ctx['call_id'] = req['id']
-                ctx['rpc_context'] = {
-                    'call_stack': [{'time': self.now_in_utc(),
-                                    'method': req['method']}
+                ctx["module"], ctx["method"] = req["method"].split(".")
+                ctx["call_id"] = req["id"]
+                ctx["rpc_context"] = {
+                    "call_stack": [{"time": self.now_in_utc(),
+                                    "method": req["method"]}
                                    ]
                 }
-                prov_action = {'service': ctx['module'],
-                               'method': ctx['method'],
-                               'method_params': req['params']
+                prov_action = {"service": ctx["module"],
+                               "method": ctx["method"],
+                               "method_params": req["params"]
                                }
-                ctx['provenance'] = [prov_action]
+                ctx["provenance"] = [prov_action]
                 try:
-                    token = environ.get('HTTP_AUTHORIZATION')
+                    token = environ.get("HTTP_AUTHORIZATION")
                     # parse out the method being requested and check if it
                     # has an authentication requirement
-                    method_name = req['method']
+                    method_name = req["method"]
                     auth_req = self.method_authentication.get(
-                        method_name, 'none')
-                    if auth_req != 'none':
-                        if token is None and auth_req == 'required':
+                        method_name, "none")
+                    if auth_req != "none":
+                        if token is None and auth_req == "required":
                             err = JSONServerError()
                             err.data = (
-                                'Authentication required for ' +
-                                'NarrativeService ' +
-                                'but no authentication header was passed')
+                                "Authentication required for " +
+                                "NarrativeService " +
+                                "but no authentication header was passed")
                             raise err
-                        elif token is None and auth_req == 'optional':
+                        elif token is None and auth_req == "optional":
                             pass
                         else:
                             try:
                                 user = self.auth_client.get_user(token)
-                                ctx['user_id'] = user
-                                ctx['authenticated'] = 1
-                                ctx['token'] = token
+                                ctx["user_id"] = user
+                                ctx["authenticated"] = 1
+                                ctx["token"] = token
                             except Exception as e:
-                                if auth_req == 'required':
+                                if auth_req == "required":
                                     err = JSONServerError()
                                     err.data = \
                                         "Token validation failed: %s" % e
                                     raise err
-                    if (environ.get('HTTP_X_FORWARDED_FOR')):
-                        self.log(log.INFO, ctx, 'X-Forwarded-For: ' +
-                                 environ.get('HTTP_X_FORWARDED_FOR'))
-                    self.log(log.INFO, ctx, 'start method')
+                    if (environ.get("HTTP_X_FORWARDED_FOR")):
+                        self.log(log.INFO, ctx, "X-Forwarded-For: " +
+                                 environ.get("HTTP_X_FORWARDED_FOR"))
+                    self.log(log.INFO, ctx, "start method")
                     rpc_result = self.rpc_service.call(ctx, req)
-                    self.log(log.INFO, ctx, 'end method')
-                    status = '200 OK'
+                    self.log(log.INFO, ctx, "end method")
+                    status = "200 OK"
                 except JSONRPCError as jre:
-                    err = {'error': {'code': jre.code,
-                                     'name': jre.message,
-                                     'message': jre.data
+                    err = {"error": {"code": jre.code,
+                                     "name": jre.message,
+                                     "message": jre.data
                                      }
                            }
-                    trace = jre.trace if hasattr(jre, 'trace') else None
+                    trace = jre.trace if hasattr(jre, "trace") else None
                     rpc_result = self.process_error(err, ctx, req, trace)
                 except Exception:
-                    err = {'error': {'code': 0,
-                                     'name': 'Unexpected Server Error',
-                                     'message': 'An unexpected server error ' +
-                                                'occurred',
+                    err = {"error": {"code": 0,
+                                     "name": "Unexpected Server Error",
+                                     "message": "An unexpected server error " +
+                                                "occurred",
                                      }
                            }
                     rpc_result = self.process_error(err, ctx, req,
@@ -517,37 +520,37 @@ class Application(object):
         if rpc_result:
             response_body = rpc_result
         else:
-            response_body = ''
+            response_body = ""
 
         response_headers = [
-            ('Access-Control-Allow-Origin', '*'),
-            ('Access-Control-Allow-Headers', environ.get(
-                'HTTP_ACCESS_CONTROL_REQUEST_HEADERS', 'authorization')),
-            ('content-type', 'application/json'),
-            ('content-length', str(len(response_body)))]
+            ("Access-Control-Allow-Origin", "*"),
+            ("Access-Control-Allow-Headers", environ.get(
+                "HTTP_ACCESS_CONTROL_REQUEST_HEADERS", "authorization")),
+            ("content-type", "application/json"),
+            ("content-length", str(len(response_body)))]
         start_response(status, response_headers)
-        return [response_body.encode('utf8')]
+        return [response_body.encode("utf8")]
 
     def process_error(self, error, context, request, trace=None):
         if trace:
-            self.log(log.ERR, context, trace.split('\n')[0:-1])
-        if 'id' in request:
-            error['id'] = request['id']
-        if 'version' in request:
-            error['version'] = request['version']
-            e = error['error'].get('error')
+            self.log(log.ERR, context, trace.split("\n")[0:-1])
+        if "id" in request:
+            error["id"] = request["id"]
+        if "version" in request:
+            error["version"] = request["version"]
+            e = error["error"].get("error")
             if not e:
-                error['error']['error'] = trace
-        elif 'jsonrpc' in request:
-            error['jsonrpc'] = request['jsonrpc']
-            error['error']['data'] = trace
+                error["error"]["error"] = trace
+        elif "jsonrpc" in request:
+            error["jsonrpc"] = request["jsonrpc"]
+            error["error"]["data"] = trace
         else:
-            error['version'] = '1.0'
-            error['error']['error'] = trace
+            error["version"] = "1.0"
+            error["error"]["error"] = trace
         return json.dumps(error)
 
     def now_in_utc(self):
-        # noqa Taken from http://stackoverflow.com/questions/3401428/how-to-get-an-isoformat-datetime-string-including-the-default-timezone @IgnorePep8
+        # Taken from http://stackoverflow.com/questions/3401428/how-to-get-an-isoformat-datetime-string-including-the-default-timezone @IgnorePep8
         dtnow = datetime.datetime.now()
         dtutcnow = datetime.datetime.utcnow()
         delta = dtnow - dtutcnow
@@ -577,11 +580,11 @@ try:
 # *ONLY* use this if you are going to wrap the service in
 # a wsgi container that has enabled gevent, such as
 # uwsgi with the --gevent option
-    if config is not None and config.get('gevent_monkeypatch_all', False):
+    if config is not None and config.get("gevent_monkeypatch_all", False):
         print("Monkeypatching std libraries for async")
         from gevent import monkey
         monkey.patch_all()
-    uwsgi.applications = {'': application}
+    uwsgi.applications = {"": application}
 except ImportError:
     # Not available outside of wsgi, ignore
     pass
@@ -589,17 +592,17 @@ except ImportError:
 _proc = None
 
 
-def start_server(host='localhost', port=0, newprocess=False):
-    '''
+def start_server(host="localhost", port=0, newprocess=False):
+    """
     By default, will start the server on localhost on a system assigned port
     in the main thread. Excecution of the main thread will stay in the server
     main loop until interrupted. To run the server in a separate process, and
     thus allow the stop_server method to be called, set newprocess = True. This
-    will also allow returning of the port number.'''
+    will also allow returning of the port number."""
 
     global _proc
     if _proc:
-        raise RuntimeError('server is already running')
+        raise RuntimeError("server is already running")
     httpd = make_server(host, port, application)
     port = httpd.server_address[1]
     print("Listening on port %s" % port)
@@ -622,45 +625,45 @@ def process_async_cli(input_file_path, output_file_path, token):
     exit_code = 0
     with open(input_file_path) as data_file:
         req = json.load(data_file)
-    if 'version' not in req:
-        req['version'] = '1.1'
-    if 'id' not in req:
-        req['id'] = str(_random.random())[2:]
+    if "version" not in req:
+        req["version"] = "1.1"
+    if "id" not in req:
+        req["id"] = str(_random.random())[2:]
     ctx = MethodContext(application.userlog)
     if token:
         user = application.auth_client.get_user(token)
-        ctx['user_id'] = user
-        ctx['authenticated'] = 1
-        ctx['token'] = token
-    if 'context' in req:
-        ctx['rpc_context'] = req['context']
-    ctx['CLI'] = 1
-    ctx['module'], ctx['method'] = req['method'].split('.')
-    prov_action = {'service': ctx['module'], 'method': ctx['method'],
-                   'method_params': req['params']}
-    ctx['provenance'] = [prov_action]
+        ctx["user_id"] = user
+        ctx["authenticated"] = 1
+        ctx["token"] = token
+    if "context" in req:
+        ctx["rpc_context"] = req["context"]
+    ctx["CLI"] = 1
+    ctx["module"], ctx["method"] = req["method"].split(".")
+    prov_action = {"service": ctx["module"], "method": ctx["method"],
+                   "method_params": req["params"]}
+    ctx["provenance"] = [prov_action]
     resp = None
     try:
         resp = application.rpc_service.call_py(ctx, req)
     except JSONRPCError as jre:
-        trace = jre.trace if hasattr(jre, 'trace') else None
-        resp = {'id': req['id'],
-                'version': req['version'],
-                'error': {'code': jre.code,
-                          'name': jre.message,
-                          'message': jre.data,
-                          'error': trace}
+        trace = jre.trace if hasattr(jre, "trace") else None
+        resp = {"id": req["id"],
+                "version": req["version"],
+                "error": {"code": jre.code,
+                          "name": jre.message,
+                          "message": jre.data,
+                          "error": trace}
                 }
     except Exception:
         trace = traceback.format_exc()
-        resp = {'id': req['id'],
-                'version': req['version'],
-                'error': {'code': 0,
-                          'name': 'Unexpected Server Error',
-                          'message': 'An unexpected server error occurred',
-                          'error': trace}
+        resp = {"id": req["id"],
+                "version": req["version"],
+                "error": {"code": 0,
+                          "name": "Unexpected Server Error",
+                          "message": "An unexpected server error occurred",
+                          "error": trace}
                 }
-    if 'error' in resp:
+    if "error" in resp:
         exit_code = 500
     with open(output_file_path, "w") as f:
         f.write(json.dumps(resp, cls=JSONObjectEncoder))
@@ -684,11 +687,11 @@ if __name__ == "__main__":
         print(str(err))  # will print something like "option -a not recognized"
         sys.exit(2)
     port = 9999
-    host = 'localhost'
+    host = "localhost"
     for o, a in opts:
-        if o == '--port':
+        if o == "--port":
             port = int(a)
-        elif o == '--host':
+        elif o == "--host":
             host = a
             print("Host set to %s" % host)
         else:

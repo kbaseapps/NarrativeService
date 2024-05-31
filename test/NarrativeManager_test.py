@@ -1,9 +1,10 @@
 """
 Unit and integration tests for the Narrative Manager
 """
-from NarrativeService.NarrativeManager import NarrativeManager
 import unittest
 from unittest import mock
+
+from NarrativeService.NarrativeManager import NarrativeManager
 from workspace_mock import WorkspaceMock
 
 
@@ -46,40 +47,40 @@ class NarrativeManagerTestCase(unittest.TestCase):
         nm = NarrativeManager(self.config, self.user_id, self.set_api_client, self.data_palette_client, self.workspace_client, self.search_client)
 
         # get ws_id
-        ws_id = int(narrative_ref.split('/')[0])
+        ws_id = int(narrative_ref.split("/")[0])
         # add version number
-        full_upa = narrative_ref + '/1'
+        full_upa = narrative_ref + "/1"
 
         doc = nm.get_narrative_doc(full_upa)
 
-        self.assertEqual(doc['access_group'], ws_id)
-        self.assertEqual(doc['cells'], [])
-        self.assertEqual(doc['total_cells'], 0)
-        self.assertFalse(doc['is_public'])
+        self.assertEqual(doc["access_group"], ws_id)
+        self.assertEqual(doc["cells"], [])
+        self.assertEqual(doc["total_cells"], 0)
+        self.assertFalse(doc["is_public"])
 
         # test data object format
-        self.assertEqual(len(doc['data_objects']), 9)
-        self.assertEqual(doc['data_objects'][0], {
-            'name': 'Object_1-2',
-            'obj_type': 'KBaseModule.SomeType-1.0'
+        self.assertEqual(len(doc["data_objects"]), 9)
+        self.assertEqual(doc["data_objects"][0], {
+            "name": "Object_1-2",
+            "obj_type": "KBaseModule.SomeType-1.0"
         })
 
         # ensure that there are no kbase narrative instances in data objects
-        for data_obj in doc['data_objects']:
-            self.assertNotIn('KBaseNarrative.Narrative', data_obj['obj_type'])
+        for data_obj in doc["data_objects"]:
+            self.assertNotIn("KBaseNarrative.Narrative", data_obj["obj_type"])
 
-        self.assertEqual(doc['timestamp'], 0)
-        self.assertEqual(doc['creation_date'], '1970-01-01T00:00:00+0000')
+        self.assertEqual(doc["timestamp"], 0)
+        self.assertEqual(doc["creation_date"], "1970-01-01T00:00:00+0000")
 
         # test that poorly formatted upa is handled correctly
         with self.assertRaises(ValueError) as err:
             nm.get_narrative_doc(narrative_ref)
-        self.assertIn('required format is <workspace_id>/<object_id>/<version>',
+        self.assertIn("required format is <workspace_id>/<object_id>/<version>",
                       str(err.exception))
 
         # ensure that proper not found message is raised
         with self.assertRaises(ValueError) as err:
-            nm.get_narrative_doc('2000/2000/2000')
+            nm.get_narrative_doc("2000/2000/2000")
         self.assertIn('Item with upa "2000/2000/2000" not found in workspace database.',
                       str(err.exception))
 
@@ -87,7 +88,7 @@ class NarrativeManagerTestCase(unittest.TestCase):
         # set up narrative
         narrative_ref = self.workspace_client.make_fake_narrative("SomeNiceName", self.user_id, make_object_history=True)
 
-        ws_id, obj, ver = narrative_ref.split('/')
+        ws_id, obj, ver = narrative_ref.split("/")
 
         nm = NarrativeManager(self.config,
                               self.user_id,
@@ -98,25 +99,25 @@ class NarrativeManagerTestCase(unittest.TestCase):
 
         # simulate reverting fake narrative to version #2 (make_object_history=True automatically makes 5 versions)
         revert_result = nm.revert_narrative_object({
-            'wsid': int(ws_id),
-            'objid': int(obj),
-            'ver': 2
+            "wsid": int(ws_id),
+            "objid": int(obj),
+            "ver": 2
         })
 
-        history = self.workspace_client.get_object_history({'wsid': int(ws_id), 'objid': int(obj)})
+        history = self.workspace_client.get_object_history({"wsid": int(ws_id), "objid": int(obj)})
 
         # check to make sure new item was added
         self.assertEqual(len(history), 6)
         self.assertEqual(revert_result[4], 6)
         self.assertEqual(history[-1], revert_result)
         # check that workspace meta was properly updated
-        self.assertEqual(self.workspace_client.internal_db[int(ws_id)]['meta']['narrative_nice_name'], revert_result[10]['name'])
+        self.assertEqual(self.workspace_client.internal_db[int(ws_id)]["meta"]["narrative_nice_name"], revert_result[10]["name"])
 
         # test that ObjectIdentities without specified versions will throw an error
         with self.assertRaises(ValueError) as err:
             nm.revert_narrative_object({
-                'wsid': int(ws_id),
-                'objid': int(obj)
+                "wsid": int(ws_id),
+                "objid": int(obj)
             })
         self.assertIn("Cannot revert object %s/%s without specifying a version to revert to" % (ws_id, obj),
                       str(err.exception))
@@ -124,18 +125,18 @@ class NarrativeManagerTestCase(unittest.TestCase):
         # test that method won't accept malformed ObjectIdentities (missing wsid or objid)
         with self.assertRaises(ValueError) as err:
             nm.revert_narrative_object({
-                'bad_field_1': 1000,
-                'bad_field_2': 20,
-                'objid': int(obj)
+                "bad_field_1": 1000,
+                "bad_field_2": 20,
+                "objid": int(obj)
             })
-        self.assertIn('Please choose exactly 1 object identifier and 1 workspace identifier;', str(err.exception))
+        self.assertIn("Please choose exactly 1 object identifier and 1 workspace identifier;", str(err.exception))
 
         # make sure that you can't revert an object with a version greater than current version
         with self.assertRaises(ValueError) as err:
             nm.revert_narrative_object({
-                'wsid': int(ws_id),
-                'objid': int(obj),
-                'ver': 5000
+                "wsid": int(ws_id),
+                "objid": int(obj),
+                "ver": 5000
             })
-        self.assertIn('Cannot revert object at version 6 to version 5000', str(err.exception))
+        self.assertIn("Cannot revert object at version 6 to version 5000", str(err.exception))
 

@@ -1,16 +1,13 @@
-import unittest
-from unittest import mock
-from NarrativeService.data.fetcher import DataFetcher
 import os
+import unittest
 from configparser import ConfigParser
+from unittest import mock
+
 from installed_clients.authclient import KBaseAuth
-from installed_clients.WorkspaceClient import Workspace
-from NarrativeService.NarrativeServiceServer import MethodContext
+from NarrativeService.data.fetcher import DataFetcher
 from NarrativeService.NarrativeServiceImpl import NarrativeService
-from workspace_mock import (
-    WorkspaceMock,
-    EmptyWorkspaceMock
-)
+from NarrativeService.NarrativeServiceServer import MethodContext
+from workspace_mock import EmptyWorkspaceMock, WorkspaceMock
 
 
 class WsMock:
@@ -65,7 +62,7 @@ class DataFetcherTestCase(unittest.TestCase):
         for opt in optional_params:
             with self.assertRaises(ValueError) as err:
                 df.fetch_accessible_data({"data_set": "mine", opt: "wat"})
-            self.assertIn("Parameter '{}' must be 0 or 1, not 'wat'".format(opt), str(err.exception))
+            self.assertIn(f"Parameter '{opt}' must be 0 or 1, not 'wat'", str(err.exception))
 
         with self.assertRaises(ValueError) as err:
             df.fetch_accessible_data({"data_set": "mine", "ignore_workspaces": "wat"})
@@ -107,7 +104,7 @@ class DataFetcherTestCase(unittest.TestCase):
         for opt in optional_params:
             with self.assertRaises(ValueError) as err:
                 df.fetch_specific_workspace_data({"workspace_ids": [1, 2], opt: "wat"})
-            self.assertIn("Parameter '{}' must be 0 or 1, not 'wat'".format(opt), str(err.exception))
+            self.assertIn(f"Parameter '{opt}' must be 0 or 1, not 'wat'", str(err.exception))
 
         bad_limits = [0, -5, "a", "foo", ["foo", "bar"], {"no": "wai"}]
         for bad in bad_limits:

@@ -11,7 +11,7 @@ if __name__ == "__main__":
         print("Properties from <file_with_properties> will be applied to <deploy_cfg_template_file>")
         print("template which will be overwritten with .orig copy saved in the same folder first.")
         sys.exit(1)
-    file = open(sys.argv[1], 'r')
+    file = open(sys.argv[1])
     text = file.read()
     t = Template(text)
     config = ConfigParser()
@@ -36,14 +36,14 @@ if __name__ == "__main__":
                  os.environ.get("AUTH_SERVICE_URL_ALLOW_INSECURE", "false") + "\n"
         config.read_file(io.StringIO(props))
     else:
-        raise ValueError('Neither ' + sys.argv[2] + ' file nor KBASE_ENDPOINT env-variable found')
+        raise ValueError("Neither " + sys.argv[2] + " file nor KBASE_ENDPOINT env-variable found")
     props = dict(config.items("global"))
     for key in os.environ:
-        if key.startswith('KBASE_SECURE_CONFIG_PARAM_'):
-            param_name = key[len('KBASE_SECURE_CONFIG_PARAM_'):]
+        if key.startswith("KBASE_SECURE_CONFIG_PARAM_"):
+            param_name = key[len("KBASE_SECURE_CONFIG_PARAM_"):]
             props[param_name] = os.environ.get(key)
     output = t.render(props)
-    with open(sys.argv[1] + ".orig", 'w') as f:
+    with open(sys.argv[1] + ".orig", "w") as f:
         f.write(text)
-    with open(sys.argv[1], 'w') as f:
+    with open(sys.argv[1], "w") as f:
         f.write(output)

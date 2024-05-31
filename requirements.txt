@@ -1,8 +1,4 @@
-jinja2
-pylru
-python-dateutil
-jsonrpcbase
-coverage
-pytest-cov
-pytest
-requests-mock
+jinja2==3.1.4
+pylru==1.2.1
+python-dateutil==2.9.0
+jsonrpcbase==0.2.0
