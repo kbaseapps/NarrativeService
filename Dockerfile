@@ -1,26 +1,13 @@
-FROM kbase/sdkbase2:python
-MAINTAINER KBase Developer
+FROM python:3.12-slim
+LABEL MAINTAINER="KBase Developer"
 # -----------------------------------------
-
-# Insert apt-get instructions here to install
-# any required dependencies for your module.
-
-RUN pip install coverage
-
-# -----------------------------------------
-
-RUN pip install pylru &&\
-    pip install python-dateutil
-
 COPY ./ /kb/module
 RUN mkdir -p /kb/module/work
-RUN chmod -R a+rw /kb/module
-
 WORKDIR /kb/module
 
-RUN make all
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
-EXPOSE 5000
+ENV PYTHONPATH="/kb/module/lib:$PYTHONPATH"
 
 ENTRYPOINT [ "./scripts/entrypoint.sh" ]
 

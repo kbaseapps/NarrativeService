@@ -1,6 +1,6 @@
 import NarrativeService.feeds as feeds
 import NarrativeService.util.workspace as ws
-from baseclient import ServerError
+from installed_clients.baseclient import ServerError
 # from storage.mongo import (
 #     save_share_request,
 #     find_existing_share_request

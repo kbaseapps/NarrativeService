@@ -1,4 +1,4 @@
-from biokbase.workspace.client import Workspace
+from installed_clients.WorkspaceClient import Workspace
 from ..authclient import KBaseAuth
 from ..WorkspaceListObjectsIterator import WorkspaceListObjectsIterator
 from collections import defaultdict
