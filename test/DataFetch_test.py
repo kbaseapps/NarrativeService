@@ -7,7 +7,7 @@ from installed_clients.authclient import KBaseAuth
 from NarrativeService.data.fetcher import DataFetcher
 from NarrativeService.NarrativeServiceImpl import NarrativeService
 from NarrativeService.NarrativeServiceServer import MethodContext
-from workspace_mock import EmptyWorkspaceMock, WorkspaceMock
+from .workspace_mock import EmptyWorkspaceMock, WorkspaceMock
 
 
 class WsMock:
