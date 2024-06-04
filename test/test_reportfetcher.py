@@ -21,10 +21,10 @@ class ReportFetcherTestCase(unittest.TestCase):
         config.read(config_file)
         for nameval in config.items("NarrativeService"):
             cls.cfg[nameval[0]] = nameval[1]
-        authServiceUrl = cls.cfg.get(
+        auth_service_url = cls.cfg.get(
             "auth-service-url",
             "https://kbase.us/services/authorization/Sessions/Login")
-        auth_client = _KBaseAuth(authServiceUrl)
+        auth_client = _KBaseAuth(auth_service_url)
         user_id = auth_client.get_user(token)
         # WARNING: don't call any logging methods on the context object,
         # it'll result in a NoneType error
@@ -40,36 +40,29 @@ class ReportFetcherTestCase(unittest.TestCase):
         # Set up test Workspace
         cls.ws_url = cls.cfg["workspace-url"]
         cls.ws_client = Workspace(cls.ws_url, token=token)
-        cls.test_ws_info = cls._make_workspace()
+        cls.test_ws_info = cls.make_workspace()
         cls.test_ws_name = cls.test_ws_info[1]
         # Build test data stuff.
         # 1. Make a fake reads object - test for report (should be null)
-        cls.fake_reads_upa = cls._make_fake_reads(cls.test_ws_name, "FakeReads")
+        cls.fake_reads_upa = cls.make_fake_reads(cls.test_ws_name, "FakeReads")
 
         # 2. Make a report, give it that reads object - test for report, should find it
-        cls.fake_report_upa = cls._make_fake_report(cls.fake_reads_upa, cls.test_ws_name)
+        cls.fake_report_upa = cls.make_fake_report(cls.fake_reads_upa, cls.test_ws_name)
 
         cls.service_impl = NarrativeService(cls.cfg)
 
     @classmethod
-    def tearDownClass(cls):
-        # delete main test workspace
-        # cls.ws_client.delete_workspace({'workspace': cls.test_ws_name})
-        print(f"deleted test workspace: {cls.test_ws_info[0]} - {cls.test_ws_name}")
-
-    @classmethod
-    def _make_workspace(cls):
+    def make_workspace(cls):
         """
         make a workspace
         return ws info
         """
         suffix = int(time.time() * 1000)
         ws_name = "test_NarrativeService_" + str(suffix)
-        ws_info = cls.ws_client.create_workspace({"workspace": ws_name})
-        return ws_info
+        return cls.ws_client.create_workspace({"workspace": ws_name})
 
     @classmethod
-    def _make_fake_report(cls, ref_obj, ws_name):
+    def make_fake_report(cls, ref_obj, ws_name):
         """
         Make a dummy report, referring to ref_obj, returns report ref
         """
@@ -87,7 +80,7 @@ class ReportFetcherTestCase(unittest.TestCase):
         return report_output["ref"]
 
     @classmethod
-    def _make_fake_reads(cls, ws_name, reads_name):
+    def make_fake_reads(cls, ws_name, reads_name):
         """
         Make fake reads in the workspace with the given name.
         Return the UPA for those reads.
@@ -96,8 +89,7 @@ class ReportFetcherTestCase(unittest.TestCase):
         info = foft.create_fake_reads({
             "ws_name": ws_name,
             "obj_names": [reads_name]})[0]
-        reads_ref = f"{info[6]}/{info[0]}/{info[4]}"
-        return reads_ref
+        return f"{info[6]}/{info[0]}/{info[4]}"
 
     def get_ws_client(self):
         return self.__class__.ws_client
@@ -141,11 +133,11 @@ class ReportFetcherTestCase(unittest.TestCase):
 
     def test_fetch_report_copy_inaccessible(self):
         # Make a new workspace copy new reads to older WS, delete new WS - test for report, should fail and error.
-        new_ws_info = self.__class__._make_workspace()
+        new_ws_info = self.__class__.make_workspace()
         # Make reads
-        new_reads_upa = self.__class__._make_fake_reads(new_ws_info[1], "NewFakeReads")
+        new_reads_upa = self.__class__.make_fake_reads(new_ws_info[1], "NewFakeReads")
         # Make report to new reads
-        self.__class__._make_fake_report(new_reads_upa, new_ws_info[1])
+        self.__class__.make_fake_report(new_reads_upa, new_ws_info[1])
         # Copy new reads to old WS
         copy_info = self.ws_client.copy_object({
             "from": {
