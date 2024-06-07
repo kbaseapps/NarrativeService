@@ -1,11 +1,13 @@
 from NarrativeService.ServiceUtils import ServiceUtils
 
+from lib.installed_clients.WorkspaceClient import Workspace
+
 REPORT_TYPE: str = "KBaseReport.Report"
 class ReportFetcher:
-    def __init__(self, ws_client):
+    def __init__(self, ws_client: Workspace) -> None:
         self.ws_client = ws_client
 
-    def find_report_from_object(self, upa):
+    def find_report_from_object(self, upa: str) -> dict[str, list|str]:
         # TODO: make sure upa's real.
 
         # first, fetch object references (without data)
@@ -13,16 +15,14 @@ class ReportFetcher:
         # scan it for a report.
         # if we find at least one, return them
         # if we find 0, test if it's a copy, and search upstream.
-        if len(ref_list):
-            report_upas = [
-                ServiceUtils.object_info_to_object(ref_info)["ref"] for ref_info in ref_list if REPORT_TYPE in ref_info[2]
-            ]
-            if len(report_upas):
-                return self.build_output(upa, report_upas)
-            return self.find_report_from_copy_source(upa)
+        report_upas = [
+            ServiceUtils.object_info_to_object(ref_info)["ref"] for ref_info in ref_list if REPORT_TYPE in ref_info[2]
+        ]
+        if len(report_upas):
+            return self.build_output(upa, report_upas)
         return self.find_report_from_copy_source(upa)
 
-    def find_report_from_copy_source(self, upa):
+    def find_report_from_copy_source(self, upa: str) -> dict[str, list|str]:
         """
         Fetch the info about this object. If it's a copy, run find_report_from_object on its source.
         If it's not, return an error state, or just an empty list for the upas.
@@ -35,7 +35,7 @@ class ReportFetcher:
             return self.find_report_from_object(obj_data["copied"])
         return self.build_output(upa, [])
 
-    def build_output(self, upa, report_upas=None, inaccessible=0, error=None):
+    def build_output(self, upa: str, report_upas: list[str] | None=None, inaccessible: int=0, error: str | None=None) -> dict[str, list|str]:
         if report_upas is None:
             report_upas = []
         ret_val = {

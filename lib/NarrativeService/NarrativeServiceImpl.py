@@ -6,7 +6,7 @@ from NarrativeService.data.objectswithsets import ObjectsWithSets
 from NarrativeService.DynamicServiceCache import DynamicServiceClient
 from NarrativeService.NarrativeListUtils import NarrativeListUtils, NarratorialUtils
 from NarrativeService.NarrativeManager import NarrativeManager
-from NarrativeService.ReportFetcher import ReportFetcher
+from NarrativeService.reportfetcher import ReportFetcher
 from NarrativeService.SearchServiceClient import SearchServiceClient
 from NarrativeService.sharing.sharemanager import ShareRequester
 
@@ -860,7 +860,7 @@ class NarrativeService:
         """
         Intended to return data of previous versions of a given narrative in the same format returned from Search.
         Formats a call to workspace service to fit the appropriate schema that is intended for use in UI displays
-        in the narrative navigator. Raises error is "narrative_upa" param is not in specified <workspace_id/obj_id/version> format. 
+        in the narrative navigator. Raises error is "narrative_upa" param is not in specified <workspace_id/obj_id/version> format.
         Note that this method is currently to support the UI only, and does not return the full result of a search call,
         and the following fields are omitted: boolean copied, boolean is_narratorial, boolean is_temporary, string obj_name, string obj_type_module,
         string obj_type_version, list<string> tags.
