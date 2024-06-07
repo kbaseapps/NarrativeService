@@ -1,14 +1,15 @@
 import os
 import time
-from collections.abc import Generator
 
 import pytest
 from installed_clients.FakeObjectsForTestsClient import FakeObjectsForTests
 from installed_clients.KBaseReportClient import KBaseReport
+from installed_clients.WorkspaceClient import Workspace
+from NarrativeService.NarrativeServiceImpl import NarrativeService
 
 
 @pytest.fixture(scope="module")
-def fake_reads(workspace, fake_obj_for_tests_client: FakeObjectsForTests):
+def fake_reads(workspace: list[any], fake_obj_for_tests_client: FakeObjectsForTests):
     """Make a fake reads object and return the UPA for it."""
     reads_name = f"some_fake_reads_{int(time.time()*1000)}"
     info = fake_obj_for_tests_client.create_fake_reads({
@@ -18,7 +19,7 @@ def fake_reads(workspace, fake_obj_for_tests_client: FakeObjectsForTests):
     return f"{info[6]}/{info[0]}/{info[4]}"
 
 @pytest.fixture(scope="module")
-def fake_report(workspace, workspace_client, fake_reads):
+def fake_report(workspace: list[any], fake_reads: str) -> tuple[str, str]:
     """Makes a dummy report and a fake reads object to link to it. Return both the
     report UPA and reads UPA."""
     report_params = {
@@ -32,11 +33,14 @@ def fake_report(workspace, workspace_client, fake_reads):
     }
     kr = KBaseReport(os.environ["SDK_CALLBACK_URL"])
     report_output = kr.create_extended_report(report_params)
-    yield (report_output["ref"], fake_reads)
-    workspace_client.delete_objects([{"ref": report_output["ref"]}])
+    return (report_output["ref"], fake_reads)
 
 
-def test_fetch_report_ok(context, service_impl, fake_report):
+def test_fetch_report_ok(
+    context: dict[str, any],
+    service_impl: NarrativeService,
+    fake_report: str
+) -> None:
     report_upa, reads_upa = fake_report
     ret = service_impl.find_object_report(context, {"upa": reads_upa})[0]
     assert "report_upas" in ret
@@ -48,7 +52,13 @@ def test_fetch_report_ok(context, service_impl, fake_report):
     assert "error" not in ret
 
 
-def test_fetch_report_copy(context, service_impl, fake_report, workspace, workspace_client):
+def test_fetch_report_copy(
+    context: dict[str, any],
+    service_impl: NarrativeService,
+    fake_report: str,
+    workspace: list[any],
+    workspace_client: Workspace
+) -> None:
     report_upa, reads_upa = fake_report
     copy_info = workspace_client.copy_object({
         "from": {
@@ -70,7 +80,13 @@ def test_fetch_report_copy(context, service_impl, fake_report, workspace, worksp
     assert "error" not in ret
 
 
-def test_fetch_report_copy_inaccessible(context, service_impl, workspace, workspace_client, fake_reads):
+def test_fetch_report_copy_inaccessible(
+    context: dict[str, any],
+    service_impl: NarrativeService,
+    workspace: list[any],
+    workspace_client: Workspace,
+    fake_reads: str
+) -> None:
     """Test that the report fetcher fails properly when the object is visible, but the report
     is in an inaccessible workspace.
     Steps to do here:
@@ -123,7 +139,11 @@ def test_fetch_report_copy_inaccessible(context, service_impl, workspace, worksp
     assert reads_copy_upa == ret["object_upa"]
 
 
-def test_fetch_report_none(context, service_impl, fake_report):
+def test_fetch_report_none(
+    context: dict[str, any],
+    service_impl: NarrativeService,
+    fake_report: str
+) -> None:
     upa = fake_report[0]  # just use the report as an upa. it doesn't have a report, right?
     ret = service_impl.find_object_report(context, {"upa": upa})[0]
     assert "report_upas" in ret
