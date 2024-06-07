@@ -33,26 +33,28 @@ def workspace(workspace_client: Workspace) -> Generator[list[any], None, None]:
     workspace_client.delete_workspace({"id": ws_info[0]})
 
 @pytest.fixture(scope="session")
-def workspace_client(config: dict[str, str | int], auth_token: str):
+def workspace_client(
+    config: dict[str, str | int],
+    auth_token: str
+) -> Generator[Workspace, None, None]:
     if auth_token is None:
-        raise RuntimeError("A valid auth token is needed to make a real workspace client for integration tests")
-    client = Workspace(config["workspace-url"], token=auth_token)
-    yield client
+        err = "A valid auth token is needed to make a real workspace client for integration tests"
+        raise RuntimeError(err)
+    yield Workspace(config["workspace-url"], token=auth_token)
 
 @pytest.fixture(scope="session")
-def fake_obj_for_tests_client(auth_token: str):
+def fake_obj_for_tests_client(auth_token: str) -> Generator[FakeObjectsForTests, None, None]:
     if auth_token is None:
-        raise RuntimeError("A valid auth token is needed to make a FOFT client for integration tests")
-    client = FakeObjectsForTests(os.environ["SDK_CALLBACK_URL"], token=auth_token)
-    yield client
+        err = "A valid auth token is needed to make a FOFT client for integration tests"
+        raise RuntimeError(err)
+    yield FakeObjectsForTests(os.environ["SDK_CALLBACK_URL"], token=auth_token)
 
 @pytest.fixture(scope="session")
-def auth_client(config: dict[str, str | int]):
-    client = KBaseAuth(config["auth-service-url"])
-    yield client
+def auth_client(config: dict[str, str | int]) -> Generator[KBaseAuth, None, None]:
+    yield KBaseAuth(config["auth-service-url"])
 
 @pytest.fixture(scope="session")
-def context(auth_token: str, auth_client: KBaseAuth):
+def context(auth_token: str, auth_client: KBaseAuth) -> Generator[dict[str, any], None, None]:
     ctx = MethodContext(None)
     user_id = auth_client.get_user(auth_token)
     ctx.update({
