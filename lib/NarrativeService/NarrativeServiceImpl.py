@@ -1,4 +1,6 @@
 #BEGIN_HEADER
+from installed_clients.CatalogClient import Catalog
+from installed_clients.NarrativeMethodStoreClient import NarrativeMethodStore
 from installed_clients.WorkspaceClient import Workspace
 from NarrativeService.apps.appinfo import get_all_app_info, get_ignore_categories
 from NarrativeService.data.fetcher import DataFetcher
@@ -658,8 +660,9 @@ class NarrativeService:
         # ctx is the context object
         # return variables are: output
         #BEGIN get_all_app_info
-        output = get_all_app_info(input["tag"], input["user"],
-                                  self.narrativeMethodStoreURL, self.catalogURL)
+        catalog = Catalog(self.catalogURL)
+        nms = NarrativeMethodStore(self.narrativeMethodStoreURL)
+        output = get_all_app_info(input["tag"], input["user"], nms, catalog)
         #END get_all_app_info
 
         # At some point might do deeper type checking...
