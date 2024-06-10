@@ -1,6 +1,8 @@
+import json
 import os
 from collections.abc import Generator
 from configparser import ConfigParser
+from pathlib import Path
 from time import time
 
 import pytest
@@ -10,7 +12,6 @@ from NarrativeService.NarrativeServiceServer import MethodContext
 
 from lib.installed_clients.FakeObjectsForTestsClient import FakeObjectsForTests
 from lib.installed_clients.WorkspaceClient import Workspace
-
 
 @pytest.fixture(scope="session")
 def config() -> Generator[dict[str, str | int], None, None]:
@@ -106,3 +107,17 @@ def mock_token():
 @pytest.fixture
 def mock_user():
     return MOCK_USER_ID
+
+@pytest.fixture
+def json_data():
+    """
+    Loads test data relative to the test/data directory.
+    I.e. for loading the "test/data/test_app_data.json" file, use the fixture like this:
+    def test_stuff(json_data):
+        app_data = test_data("test_app_data.json")
+    """
+    data_root = Path(__file__).parent / "data"
+    def load_json_data(file_path: str | Path):
+        with open(data_root / file_path) as infile:
+            return json.load(infile)
+    return load_json_data
