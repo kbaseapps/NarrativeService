@@ -1,7 +1,4 @@
-import pytest
 from NarrativeService.reportfetcher import ReportFetcher
-
-from lib.installed_clients.WorkspaceClient import Workspace
 
 REPORT_OBJ_INFO = [
     2,
