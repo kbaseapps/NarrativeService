@@ -1,32 +1,31 @@
+import contextlib
+
 from installed_clients.CatalogClient import Catalog
 from installed_clients.NarrativeMethodStoreClient import NarrativeMethodStore
 
-IGNORE_CATEGORIES = {"inactive", "importers", "viewers"}
+IGNORE_CATEGORIES: set = {"inactive", "importers", "viewers"}
+APP_TAGS: set = {"release", "beta", "dev"}
 
 
-def get_ignore_categories():
-    return {x: 1 for x in IGNORE_CATEGORIES}
+def get_ignore_categories() -> dict[str, int]:
+    return dict.fromkeys(IGNORE_CATEGORIES, 1)
 
 
-def _shorten_types(type_list):
+def _shorten_types(type_list: list[str]) -> list[str]:
     """
     convert ['KBaseMatrices.AmpliconMatrix'] to ['AmpliconMatrix']
     """
-    shorten_types = list()
+    shorten_types = []
     for t in type_list:
-        try:
+        with contextlib.suppress(IndexError):
             shorten_types.append(t.split(".")[1])
-        except IndexError:
-            pass
 
     return shorten_types
 
 
-def get_all_app_info(tag, user, nms_url, catalog_url):
-    if tag not in ["release", "beta", "dev"]:
+def get_all_app_info(tag: str, user: str, nms: NarrativeMethodStore, catalog: Catalog):
+    if not isinstance(tag, str) or tag not in APP_TAGS:
         raise ValueError("tag must be one of 'release', 'beta', or 'dev'")
-    nms = NarrativeMethodStore(nms_url)
-    catalog = Catalog(catalog_url)
     apps = nms.list_methods({"tag": tag})
     app_infos = {}
     module_versions = {}
