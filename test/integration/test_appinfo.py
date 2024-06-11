@@ -1,10 +1,9 @@
 import pytest
 from installed_clients.CatalogClient import Catalog
 from installed_clients.NarrativeMethodStoreClient import NarrativeMethodStore
-from NarrativeService.apps.appinfo import get_all_app_info
+from NarrativeService.apps.appinfo import IGNORE_CATEGORIES, get_all_app_info
 from NarrativeService.NarrativeServiceImpl import NarrativeService
 
-IGNORE_CATEGORIES = {"inactive", "importers", "viewers"}
 APP_TAGS = ["release", "beta", "dev"]
 USER_ID = "wjriehl"
 
@@ -36,6 +35,7 @@ def validate_app_info(info):
         app = info["app_infos"][a]["info"]
         for str_key in app_str_keys:
             assert str_key in app
+            assert isinstance(app[str_key], str)
         for list_key in app_list_keys:
             assert list_key in app
             assert isinstance(app[list_key], list)
@@ -61,7 +61,7 @@ def test_get_all_app_info_unit_ok(
     validate_app_info(info)
 
 
-@pytest.mark.parametrize("bad_tag", [None, [], {}, "foo", 5, -3])
+@pytest.mark.parametrize("bad_tag", [None, [], {}, "foo", 5, -3, True, ""])
 def test_get_all_app_info_bad_tag(
     bad_tag: str,
     nms_client: NarrativeMethodStore,
@@ -104,5 +104,4 @@ def test_get_ignore_categories_ok(
     service_impl: NarrativeMethodStore
 ) -> None:
     ignore_categories = service_impl.get_ignore_categories(context)[0]
-    expected_keys = {"inactive", "importers", "viewers"}
-    assert expected_keys == set(ignore_categories.keys())
+    assert set(ignore_categories.keys()) == IGNORE_CATEGORIES

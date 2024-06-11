@@ -3,8 +3,8 @@ import contextlib
 from installed_clients.CatalogClient import Catalog
 from installed_clients.NarrativeMethodStoreClient import NarrativeMethodStore
 
-IGNORE_CATEGORIES = {"inactive", "importers", "viewers"}
-APP_TAGS = {"release", "beta", "dev"}
+IGNORE_CATEGORIES: set = {"inactive", "importers", "viewers"}
+APP_TAGS: set = {"release", "beta", "dev"}
 
 
 def get_ignore_categories() -> dict[str, int]:

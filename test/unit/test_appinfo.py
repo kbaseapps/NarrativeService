@@ -3,9 +3,8 @@ from unittest.mock import MagicMock
 import pytest
 from installed_clients.CatalogClient import Catalog
 from installed_clients.NarrativeMethodStoreClient import NarrativeMethodStore
-from NarrativeService.apps.appinfo import get_all_app_info, get_ignore_categories
+from NarrativeService.apps.appinfo import IGNORE_CATEGORIES, get_all_app_info, get_ignore_categories
 
-IGNORE_CATEGORIES = {"inactive", "importers", "viewers"}
 APP_TAGS = ["release", "beta", "dev"]
 USER_ID = "some_user"
 NUM_DATA_APPS = 3
@@ -41,7 +40,7 @@ def test_get_all_app_info_ok(
     assert info["app_infos"][FAVORITE]["favorite"] == FAV_TIME
 
 
-@pytest.mark.parametrize("bad_tag", [None, [], {}, "foo", 5, -3])
+@pytest.mark.parametrize("bad_tag", [None, [], {}, "foo", 5, -3, True, ""])
 def test_get_all_app_info_bad_tag(
     bad_tag: str,
     mock_nms: NarrativeMethodStore,
@@ -53,5 +52,4 @@ def test_get_all_app_info_bad_tag(
 
 def test_get_ignore_categories_ok() -> None:
     ignore_categories = get_ignore_categories()
-    expected = {"inactive", "importers", "viewers"}
-    assert expected == set(ignore_categories.keys())
+    assert set(ignore_categories.keys()) == IGNORE_CATEGORIES
