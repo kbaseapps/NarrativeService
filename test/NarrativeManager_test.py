@@ -5,7 +5,7 @@ import unittest
 from unittest import mock
 
 from NarrativeService.NarrativeManager import NarrativeManager
-from workspace_mock import WorkspaceMock
+from .workspace_mock import WorkspaceMock
 
 
 class NarrativeManagerTestCase(unittest.TestCase):
