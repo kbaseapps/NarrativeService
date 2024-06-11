@@ -22,19 +22,19 @@ def config() -> Generator[dict[str, str | int], None, None]:
     config.read(config_file)
     yield dict(config.items("NarrativeService"))
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def auth_token() -> Generator[str, None, None]:
     token = os.environ.get("KB_AUTH_TOKEN")
     yield token
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def workspace(workspace_client: Workspace) -> Generator[list[any], None, None]:
     ws_name = f"test_NarrativeService_{int(time()*1000)}"
     ws_info = workspace_client.create_workspace({"workspace": ws_name})
     yield ws_info
     workspace_client.delete_workspace({"id": ws_info[0]})
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def workspace_client(
     config: dict[str, str | int],
     auth_token: str
@@ -44,18 +44,18 @@ def workspace_client(
         raise RuntimeError(err)
     yield Workspace(config["workspace-url"], token=auth_token)
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def fake_obj_for_tests_client(auth_token: str) -> Generator[FakeObjectsForTests, None, None]:
     if auth_token is None:
         err = "A valid auth token is needed to make a FOFT client for integration tests"
         raise RuntimeError(err)
     yield FakeObjectsForTests(os.environ["SDK_CALLBACK_URL"], token=auth_token)
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def auth_client(config: dict[str, str | int]) -> Generator[KBaseAuth, None, None]:
     yield KBaseAuth(config["auth-service-url"])
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def context(auth_token: str, auth_client: KBaseAuth) -> Generator[dict[str, any], None, None]:
     ctx = MethodContext(None)
     user_id = auth_client.get_user(auth_token)
@@ -71,7 +71,7 @@ def context(auth_token: str, auth_client: KBaseAuth) -> Generator[dict[str, any]
     })
     yield ctx
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def service_impl(config: dict[str, str | int]) -> Generator[NarrativeService, None, None]:
     impl = NarrativeService(config)
     yield impl
