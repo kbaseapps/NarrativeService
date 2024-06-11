@@ -13,7 +13,8 @@ from NarrativeService.NarrativeServiceServer import MethodContext
 from lib.installed_clients.FakeObjectsForTestsClient import FakeObjectsForTests
 from lib.installed_clients.WorkspaceClient import Workspace
 
-@pytest.fixture(scope="session")
+
+@pytest.fixture(scope="module")
 def config() -> Generator[dict[str, str | int], None, None]:
     """Load and return the test config as a dictionary."""
     config_file = os.environ.get("KB_DEPLOYMENT_CONFIG", None)

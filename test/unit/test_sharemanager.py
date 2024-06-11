@@ -3,10 +3,11 @@ from unittest.mock import MagicMock
 
 import pytest
 from installed_clients.baseclient import ServerError
-from NarrativeService.sharing.sharemanager import ShareRequester
+from NarrativeService.sharing.sharemanager import SERVICE_TOKEN_KEY, WS_TOKEN_KEY, ShareRequester
 
 NARRATIVE_TYPE = "KBaseNarrative.Narrative-4.0"
 FAKE_ADMINS = ["some_user"]
+REQUIRED_TOKEN_KEYS = [SERVICE_TOKEN_KEY, WS_TOKEN_KEY]
 
 
 def test_valid_params(config: dict[str, str]):
@@ -46,8 +47,8 @@ def test_invalid_share_level(config: dict[str, str]):
 @mock.patch("NarrativeService.sharing.sharemanager.feeds")
 @mock.patch("NarrativeService.sharing.sharemanager.ws.get_ws_admins", return_value=FAKE_ADMINS)
 def test_make_notification_ok(mock_ws, mock_post, config: dict[str, str]):  # noqa: ARG001
-    config["service-token"] = "fake-service-token"
-    config["ws-admin-token"] = "fake-admin-token"
+    for key in REQUIRED_TOKEN_KEYS:
+        config[key] = "fake-token"
     req = ShareRequester({"user": "kbasetest", "ws_id": 123, "share_level": "r"}, config)
     res = req.request_share()
     assert "ok" in res
@@ -55,14 +56,17 @@ def test_make_notification_ok(mock_ws, mock_post, config: dict[str, str]):  # no
 
 
 token_allowance = [
-    ("service-token", "missing permission to find Narrative owners."),
-    ("ws-admin-token", "missing authorization to make request.")
+    (SERVICE_TOKEN_KEY, "missing permission to find Narrative owners."),
+    (WS_TOKEN_KEY, "missing authorization to make request.")
 ]
 
 
 @pytest.mark.parametrize("token_name,expected_error", token_allowance)
 def test_make_notification_token_fail(token_name: str, expected_error: str, config: dict[str, str]):
-    config[token_name] = "fake-token"
+    for key in REQUIRED_TOKEN_KEYS:
+        if key in config:
+            del config[key]
+    config[token_name] = "fake_token"
     req = ShareRequester({"user": "kbasetest", "ws_id": 123, "share_level": "r"}, config)
     res = req.request_share()
     assert "ok" in res
@@ -74,8 +78,8 @@ def test_make_notification_token_fail(token_name: str, expected_error: str, conf
 @mock.patch("NarrativeService.sharing.sharemanager.ws.get_ws_admins")
 def test_make_notification_fail(mock_ws: MagicMock, config: dict[str, str]):
     mock_ws.side_effect = ServerError("error", 500, "not working")
-    config["service-token"] = "fake-token"
-    config["ws-admin-token"] = "fake-ws-token"
+    for key in REQUIRED_TOKEN_KEYS:
+        config[key] = "fake-token"
     req = ShareRequester({"user": "kbasetest", "ws_id": 123, "share_level": "r"}, config)
     res = req.request_share()
     assert res == {
