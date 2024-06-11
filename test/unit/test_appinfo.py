@@ -16,14 +16,14 @@ FAV_TIME = 1585695012878
 def mock_catalog(json_data, mocker) -> MagicMock:
     catalog = mocker.MagicMock()
     catalog.list_favorites.return_value = json_data("test_app_favorites.json")
-    yield catalog
+    return catalog
 
 
 @pytest.fixture
 def mock_nms(json_data, mocker) -> MagicMock:
     nms = mocker.MagicMock()
     nms.list_methods.return_value = json_data("test_app_data.json")
-    yield nms
+    return nms
 
 
 @pytest.mark.parametrize("app_tag", APP_TAGS)
