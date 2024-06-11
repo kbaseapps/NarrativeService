@@ -1,18 +1,19 @@
-'''
+"""
 Created on Aug 1, 2016
 
 A very basic KBase auth client for the Python server.
 
 @author: gaprice@lbl.gov
-'''
-import time as _time
-import requests as _requests
-import threading as _threading
+"""
 import hashlib
+import threading as _threading
+import time as _time
+
+import requests as _requests
 
 
-class TokenCache(object):
-    ''' A basic cache for tokens. '''
+class TokenCache:
+    """ A basic cache for tokens. """
 
     _MAX_TIME_SEC = 5 * 60  # 5 min
 
@@ -37,9 +38,9 @@ class TokenCache(object):
 
     def add_valid_token(self, token, user):
         if not token:
-            raise ValueError('Must supply token')
+            raise ValueError("Must supply token")
         if not user:
-            raise ValueError('Must supply user')
+            raise ValueError("Must supply user")
         token = hashlib.sha256(token).hexdigest()
         with self._lock:
             self._cache[token] = [user, _time.time()]
@@ -52,17 +53,17 @@ class TokenCache(object):
                         break
 
 
-class KBaseAuth(object):
-    '''
+class KBaseAuth:
+    """
     A very basic KBase auth client for the Python server.
-    '''
+    """
 
-    _LOGIN_URL = 'https://kbase.us/services/auth/api/legacy/KBase/Sessions/Login'
+    _LOGIN_URL = "https://kbase.us/services/auth/api/legacy/KBase/Sessions/Login"
 
     def __init__(self, auth_url=None):
-        '''
+        """
         Constructor
-        '''
+        """
         self._authurl = auth_url
         if not self._authurl:
             self._authurl = self._LOGIN_URL
@@ -70,22 +71,22 @@ class KBaseAuth(object):
 
     def get_user(self, token):
         if not token:
-            raise ValueError('Must supply token')
+            raise ValueError("Must supply token")
         user = self._cache.get_user(token)
         if user:
             return user
 
-        d = {'token': token, 'fields': 'user_id'}
+        d = {"token": token, "fields": "user_id"}
         ret = _requests.post(self._authurl, data=d)
         if not ret.ok:
             try:
                 err = ret.json()
-            except:
+            except Exception:
                 ret.raise_for_status()
-            raise ValueError('Error connecting to auth service: {} {}\n{}'
+            raise ValueError("Error connecting to auth service: {} {}\n{}"
                              .format(ret.status_code, ret.reason,
-                                     err['error']['message']))
+                                     err["error"]["message"]))
 
-        user = ret.json()['user_id']
+        user = ret.json()["user_id"]
         self._cache.add_valid_token(token, user)
         return user

@@ -1,5 +1,6 @@
 from jsonrpcbase import ServerError
 
+
 class EmptyWorkspaceMock:
     def __init__(self, *args, **kwargs):
         self.user = "some_user"
@@ -50,7 +51,7 @@ class WorkspaceMock:
     def _obj_info(self, user, ws_id, obj_id, obj_type):
         return [
             obj_id,
-            "Object_{}-{}".format(ws_id, obj_id),
+            f"Object_{ws_id}-{obj_id}",
             obj_type,
             "2019-01-01-T22:10:10+0000",
             1,
@@ -63,7 +64,7 @@ class WorkspaceMock:
         ]
 
     def _ws_name(self, ws_id):
-        return "TestWs_{}".format(ws_id)
+        return f"TestWs_{ws_id}"
 
     def make_fake_narrative(self, name: str, owner: str, make_object_history=False) -> str:
         """
@@ -96,9 +97,9 @@ class WorkspaceMock:
         if make_object_history:
             # creates a list of objects with different versions for get_object_history
             obj_id, ver = self.make_fake_object_history(ws_id, fake_narr, "SomeNarrative", "KBaseNarrative.Narrative", owner, {
-                'narrative_nice_name': name,
-                'name': name,
-                'is_temporary': False,
+                "narrative_nice_name": name,
+                "name": name,
+                "is_temporary": False,
                 "searchtags": "narrative"
             })
             return f"{ws_id}/{obj_id}/{ver}"
@@ -137,12 +138,12 @@ class WorkspaceMock:
             if ws_id not in self.internal_db:
                 raise ValueError("invalid fake workspace")
             # add a new fake "cell" for each new version
-            obj['cells'].append({})
+            obj["cells"].append({})
             # add version "tags" to narrative_nice_name meta field to check if that is being changed
             if i == 0:
-                meta['name'] = meta['name'] + '-0'
+                meta["name"] = meta["name"] + "-0"
             else:
-                meta['name'] = meta['name'][:-2] + '-' + str(i)
+                meta["name"] = meta["name"][:-2] + "-" + str(i)
             ver = i + 1
             obj_data = {
                 "data": obj,
@@ -154,7 +155,7 @@ class WorkspaceMock:
                     ver,
                     user_id,
                     ws_id,
-                    self.internal_db[ws_id]['info']['name'],
+                    self.internal_db[ws_id]["info"]["name"],
                     "",
                     0,
                     meta
@@ -212,7 +213,7 @@ class WorkspaceMock:
         The rest are dummy, KBaseModule.SomeType-N.0. where N ranges from 1 - 10 (for each id. so we can test version collapsing.)
         """
         obj_info_list = list()
-        for ws_id in params.get('ids', []):
+        for ws_id in params.get("ids", []):
             obj_info_list.append(self._obj_info(self.user, ws_id, 1, "KBaseNarrative.Narrative-4.0"))
             obj_info_list.extend([self._obj_info(self.user, ws_id, i, f"KBaseModule.SomeType-{i-1}.0") for i in range(2, 11)])
         return obj_info_list
@@ -240,11 +241,11 @@ class WorkspaceMock:
                 return_data["paths"].append(ref)
             else:
                 # mock error from missing workspace or object
-                raise ServerError('JSONRPCError: -32500')
+                raise ServerError("JSONRPCError: -32500")
         # for testing get_narrative_doc
-        return_data['data'][0]['epoch'] = 0
-        return_data['data'][0]['created'] = '1970-01-01T00:00:00+0000'
-        return_data['data'][0]['orig_wsid'] = ws_id
+        return_data["data"][0]["epoch"] = 0
+        return_data["data"][0]["created"] = "1970-01-01T00:00:00+0000"
+        return_data["data"][0]["orig_wsid"] = ws_id
         return return_data
 
     def get_permissions_mass(self, params):
@@ -266,28 +267,28 @@ class WorkspaceMock:
 
     def get_object_history(self, obj):
         # currently only works 'wsid' or 'objid' fields, not workspace/object names
-        ws_id = obj['wsid']
-        obj_id = obj['objid']
+        ws_id = obj["wsid"]
+        obj_id = obj["objid"]
         if ws_id not in self.internal_db:
             raise ValueError(f"Workspace with id {ws_id} not found")
 
-        objects = self.internal_db[ws_id]['objects'][obj_id]
-        if not type(objects) is list:
+        objects = self.internal_db[ws_id]["objects"][obj_id]
+        if not isinstance(objects, list):
             raise ValueError(
                 f"Workspace with id {ws_id} and object id {obj_id} has not saved multiple versions; \
                  make sure you have set make_object_history=True in make_fake_narrative method"
             )
-        return [o['info'] for o in objects]
+        return [o["info"] for o in objects]
 
     def revert_object(self, obj):
-        ws_id = obj['wsid']
-        obj_id = obj['objid']
+        ws_id = obj["wsid"]
+        obj_id = obj["objid"]
         if ws_id not in self.internal_db:
             raise ValueError(f"Workspace with id {ws_id} not found")
 
-        objects = self.internal_db[ws_id]['objects'][obj_id]
+        objects = self.internal_db[ws_id]["objects"][obj_id]
 
-        if not type(objects) is list:
+        if not isinstance(objects, list):
             raise ValueError(
                 f"Workspace with id {ws_id} and object id {obj_id} has not saved multiple versions; \
                  make sure you have set make_object_history=True in make_fake_narrative method"
@@ -295,10 +296,10 @@ class WorkspaceMock:
 
         select_version = None
         for saved_object in objects:
-            if saved_object['info'][4] == obj['ver']:
+            if saved_object["info"][4] == obj["ver"]:
                 select_version = saved_object.copy()
 
-        select_version['info'][4] = len(objects) + 1
+        select_version["info"][4] = len(objects) + 1
         objects.append(select_version)
 
-        return select_version['info']
+        return select_version["info"]

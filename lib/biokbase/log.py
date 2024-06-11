@@ -130,7 +130,7 @@ LOG_LEVEL_MAX = max(_MLOG_LEVEL_TO_TEXT.keys())
 del k, v
 
 
-class log(object):
+class log:
     """
     This class contains the methods necessary for sending log messages.
     """
@@ -223,9 +223,7 @@ class log(object):
                     self._config_log_level = int(cfgitems[MLOG_LOG_LEVEL])
                 except (TypeError, ValueError):
                     _warnings.warn(
-                        "Cannot parse log level {} from file {} to int".format(
-                            cfgitems[MLOG_LOG_LEVEL], self._mlog_config_file
-                        )
+                        f"Cannot parse log level {cfgitems[MLOG_LOG_LEVEL]} from file {self._mlog_config_file} to int"
                         + ". Keeping current log level."
                     )
             if MLOG_API_URL in cfgitems:
@@ -245,9 +243,7 @@ class log(object):
                     code_ = " " + str(e.code)
                 _warnings.warn(
                     "Could not connect to mlog api server at "
-                    + "{}:{} {}. Using default log level {}.".format(
-                        subsystem_api_url, code_, str(e.reason), str(DEFAULT_LOG_LEVEL)
-                    )
+                    + f"{subsystem_api_url}:{code_} {e.reason!s}. Using default log level {DEFAULT_LOG_LEVEL!s}."
                 )
             else:
                 max_matching_level = -1

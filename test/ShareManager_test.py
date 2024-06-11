@@ -3,7 +3,8 @@ import unittest
 from configparser import ConfigParser
 from unittest import mock
 
-import NarrativeService.sharing.sharemanager as sharemanager
+import requests
+from NarrativeService.sharing import sharemanager
 
 
 class WsMock:
@@ -22,23 +23,21 @@ def mock_feed_post(*args, **kwargs):
         def json(self):
             return self.json_data
 
-        def raise_for_status():
-            if status_code != 200:
+        def raise_for_status(self):
+            if self.status_code != 200:
                 raise requests.HTTPError()
     return MockResponse({"id": "foo"}, 200)
 
 class ShareRequesterTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        config_file = os.environ.get('KB_DEPLOYMENT_CONFIG', None)
+        config_file = os.environ.get("KB_DEPLOYMENT_CONFIG", None)
         cls.NARRATIVE_TYPE = "KBaseNarrative.Narrative-4.0"
         cls.config = {}
         config = ConfigParser()
         config.read(config_file)
-        for nameval in config.items('NarrativeService'):
+        for nameval in config.items("NarrativeService"):
             cls.config[nameval[0]] = nameval[1]
-        authServiceUrl = cls.config.get('auth-service-url',
-                "https://kbase.us/services/authorization/Sessions/Login")
 
     def test_valid_params(self):
         p = {
@@ -63,12 +62,12 @@ class ShareRequesterTestCase(unittest.TestCase):
 
         with self.assertRaises(ValueError) as e:
             sharemanager.ShareRequester({"user": "foo", "share_level": "x", "ws_id": 123}, self.config)
-        self.assertIn('Invalid share level: x. Should be one of a, n, r.', str(e.exception))
+        self.assertIn("Invalid share level: x. Should be one of a, n, r.", str(e.exception))
 
-    @mock.patch('NarrativeService.sharing.sharemanager.feeds.requests.post', side_effect=mock_feed_post)
-    @mock.patch('NarrativeService.sharing.sharemanager.ws.Workspace', side_effect=WsMock)
+    @mock.patch("NarrativeService.sharing.sharemanager.feeds.requests.post", side_effect=mock_feed_post)
+    @mock.patch("NarrativeService.sharing.sharemanager.ws.Workspace", side_effect=WsMock)
     def test_make_notification(self, mock_ws, mock_post):
         req = sharemanager.ShareRequester({"user": "kbasetest", "ws_id": 123, "share_level": "r"}, self.config)
         res = req.request_share()
         self.assertIn("ok", res)
-        self.assertEqual(res['ok'], 1)
+        self.assertEqual(res["ok"], 1)

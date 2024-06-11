@@ -60,15 +60,15 @@ class WorkspaceListObjectsIterator:
         if self.min_obj_id < 0 or self.min_obj_id > self.max_obj_count:
             try:
                 block = next(self.block_iter)
-                self.list_objects_params['ids'] = [ws_info[0] for ws_info in block]
+                self.list_objects_params["ids"] = [ws_info[0] for ws_info in block]
             except StopIteration:
                 return None
             last_ws_info = block[len(block) - 1]
             self.min_obj_id = 1
             self.max_obj_count = last_ws_info[4]
         max_obj_id = self.min_obj_id + self.part_size - 1
-        self.list_objects_params['minObjectID'] = self.min_obj_id
-        self.list_objects_params['maxObjectID'] = max_obj_id
+        self.list_objects_params["minObjectID"] = self.min_obj_id
+        self.list_objects_params["maxObjectID"] = max_obj_id
         self.min_obj_id += self.part_size  # For next load cycle
         ret = self.ws.list_objects(self.list_objects_params)
         return ret.__iter__()

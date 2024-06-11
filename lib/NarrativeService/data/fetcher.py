@@ -1,12 +1,14 @@
+from collections import defaultdict
+
 from installed_clients.WorkspaceClient import Workspace
+
 from ..authclient import KBaseAuth
 from ..WorkspaceListObjectsIterator import WorkspaceListObjectsIterator
-from collections import defaultdict
 
 DEFAULT_DATA_LIMIT = 30000
 
 
-class DataFetcher(object):
+class DataFetcher:
     def __init__(self, ws_url, auth_url, token):
         """
         The data fetcher needs a workspace client and auth client.
@@ -57,8 +59,8 @@ class DataFetcher(object):
             type_counts (dict): dict where each type is a key and each value is the number of
                                 instances of that type returned
         """
-        if 'limit' not in params:
-            params['limit'] = DEFAULT_DATA_LIMIT
+        if "limit" not in params:
+            params["limit"] = DEFAULT_DATA_LIMIT
         self._validate_list_all_params(params)
         (ws_info_list, ws_display) = self._get_accessible_workspaces(params)
         # do same stuff as other function
@@ -100,8 +102,8 @@ class DataFetcher(object):
             type_counts (dict): dict where each type is a key and each value is the number of
                                 instances of that type returned
         """
-        if 'limit' not in params:
-            params['limit'] = DEFAULT_DATA_LIMIT
+        if "limit" not in params:
+            params["limit"] = DEFAULT_DATA_LIMIT
         self._validate_list_workspace_params(params)
         (ws_info_list, ws_display) = self._get_workspace_infos(params["workspace_ids"])
         return self._fetch_data(ws_info_list, ws_display, params)
@@ -157,8 +159,8 @@ class DataFetcher(object):
         ignore_narratives = params.get("ignore_narratives", 1) == 1
         include_metadata = params.get("include_metadata", 0) == 1
         type_set = None
-        if 'types' in params:
-            type_set = set(params['types'])
+        if "types" in params:
+            type_set = set(params["types"])
 
         (data_objects, limit_reached) = self._fetch_all_objects(
             ws_info_list, include_metadata=include_metadata, types=type_set, ignore_narratives=ignore_narratives, limit=params["limit"]
@@ -179,7 +181,7 @@ class DataFetcher(object):
                 "timestamp": obj[3]
             })
             ws_display[ws_id]["count"] += 1  # gets initialized back in _get_non_temporary_workspaces
-        return_objects.sort(key=lambda obj: obj['timestamp'], reverse=True)
+        return_objects.sort(key=lambda obj: obj["timestamp"], reverse=True)
         return_val = {
             "workspace_display": ws_display,
             "objects": return_objects,
@@ -208,7 +210,7 @@ class DataFetcher(object):
         if not simple_types:
             return obj_type
         else:
-            return obj_type.split('-')[0].split('.')[1]
+            return obj_type.split("-")[0].split(".")[1]
 
     def _validate_common_params(self, params):
         """
@@ -228,7 +230,7 @@ class DataFetcher(object):
         for p in ["include_type_counts", "simple_types", "ignore_narratives"]:
             self._validate_boolean(params, p)
 
-        limit = params['limit']
+        limit = params["limit"]
         if not isinstance(limit, int) or limit < 1:
             raise ValueError("Parameter 'limit' must be an integer > 0.")
 
@@ -285,7 +287,7 @@ class DataFetcher(object):
             None if all is well, raises a ValueError otherwise.
         """
         if params.get(param_name, 0) not in [0, 1]:
-            raise ValueError("Parameter '{}' must be 0 or 1, not '{}'".format(param_name, params.get(param_name)))
+            raise ValueError(f"Parameter '{param_name}' must be 0 or 1, not '{params.get(param_name)}'")
 
     def _get_accessible_workspaces(self, params):
         """
@@ -353,7 +355,7 @@ class DataFetcher(object):
             else:
                 if ignore_narratives and info[2].startswith("KBaseNarrative"):
                     continue
-                if types and not info[2].split('-')[0] in types:
+                if types and info[2].split("-")[0] not in types:
                     continue
                 items.append(info)
         return (items, limit_reached)
