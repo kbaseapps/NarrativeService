@@ -74,18 +74,19 @@ def test_get_narrative_doc_not_found(config, mock_workspace_client, mock_user):
 
 def test_revert_narrative_object(config, mock_workspace_client, mock_user):
     # set up narrative
+    # simulate reverting fake narrative to version #2
+    # (make_object_history=True automatically makes 5 versions)
     narrative_ref = mock_workspace_client.make_fake_narrative(
         "SomeNiceName",
         mock_user,
         make_object_history=True
     )
 
-    (ws_id, obj, _) = narrative_ref.split("/")
+    (ws_id, obj, ver) = narrative_ref.split("/")
+    assert ver == "5"
 
     nm = NarrativeManager(config, mock_user, mock_workspace_client, mock.MagicMock())
 
-    # simulate reverting fake narrative to version #2
-    # (make_object_history=True automatically makes 5 versions)
     revert_result = nm.revert_narrative_object({
         "wsid": int(ws_id),
         "objid": int(obj),

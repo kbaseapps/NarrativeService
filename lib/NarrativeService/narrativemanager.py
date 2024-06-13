@@ -26,7 +26,7 @@ class NarrativeManager:
     KB_STATE = "widget_state"
 
     def __init__(
-        self,
+        self: "NarrativeManager",
         config: dict[str, Any],
         user_id: str,
         workspace_client: Workspace,
@@ -38,7 +38,7 @@ class NarrativeManager:
         self.search_client = search_service_client
         self.intro_cell_file = config["intro-cell-file"]
 
-    def get_narrative_doc(self, narrative_upa: str) -> dict[str, Any]:
+    def get_narrative_doc(self: "NarrativeManager", narrative_upa: str) -> dict[str, Any]:
         try:
             # ensure correct upa format and get numerical ws_id
             ws_id, _, _, = (int(i) for i in narrative_upa.split("/"))
@@ -77,7 +77,10 @@ class NarrativeManager:
             "version": obj_data["info"][4]
         }
 
-    def _fmt_doc_permissions(self, permissions: dict[str, str]) -> tuple[list[str], bool]:
+    def _fmt_doc_permissions(
+        self: "NarrativeManager",
+        permissions: dict[str, str]
+    ) -> tuple[list[str], bool]:
         # get list of users and whether a narrative is public
         is_public = False
         shared_users = []
@@ -89,7 +92,7 @@ class NarrativeManager:
                 shared_users.append(k)
         return shared_users, is_public
 
-    def _get_doc_cell(self, cell: dict[str, Any]) -> dict[str, Any]:
+    def _get_doc_cell(self: "NarrativeManager", cell: dict[str, Any]) -> dict[str, Any]:
         # get the appropriate cell format for search result doc
         meta = cell.get("metadata", {}).get("kbase", {})
         if cell["cell_type"] == "markdown":
@@ -136,7 +139,7 @@ class NarrativeManager:
             "desc": ""
         }
 
-    def revert_narrative_object(self, obj: dict[str, Any]) -> list[Any]:
+    def revert_narrative_object(self: "NarrativeManager", obj: dict[str, Any]) -> list[Any]:
         # check that there is a proper workspace id and object id
         if ("wsid" not in obj or "objid" not in obj):
             raise ValueError(
@@ -179,7 +182,7 @@ class NarrativeManager:
         return revert_result
 
     def _check_new_version_indexed(
-        self,
+        self: "NarrativeManager",
         obj: dict[str, int | str],
         new_version: int
     ) -> dict[str, Any]:
@@ -205,7 +208,7 @@ class NarrativeManager:
         return data
 
     def copy_narrative(
-        self,
+        self: "NarrativeManager",
         new_name: str,
         workspace_ref: str,
         workspace_id: int
@@ -285,7 +288,7 @@ class NarrativeManager:
             raise
 
     def create_new_narrative(
-        self,
+        self: "NarrativeManager",
         app: str,
         method: str,
         app_param: str,
@@ -326,7 +329,7 @@ class NarrativeManager:
             pass
         return narr_info
 
-    def _get_intro_cell(self) -> dict[str, Any]:
+    def _get_intro_cell(self: "NarrativeManager") -> dict[str, Any]:
         """
         Loads intro cell JSON from file
         """
@@ -334,7 +337,7 @@ class NarrativeManager:
             return json.load(intro_cell)
 
     def _create_temp_narrative(
-        self,
+        self: "NarrativeManager",
         cells: list[dict[str, Any]],
         parameters: list[list[Any]],
         import_data: list[str],
@@ -379,7 +382,7 @@ class NarrativeManager:
         }
 
     def _fetch_narrative_objects(
-        self,
+        self: "NarrativeManager",
         ws_name: str,
         cells: list[dict[str, Any]],
         parameters: list[list[Any]],
@@ -444,7 +447,7 @@ class NarrativeManager:
         return [narrative_object, metadata_external]
 
     def _gather_cell_data(
-        self,
+        self: "NarrativeManager",
         cells: list[dict[str, Any]],
         spec_mapping: dict[str, Any],
         parameters: list[list[Any]],
@@ -474,7 +477,7 @@ class NarrativeManager:
         return cell_data
 
     def _build_app_cell(
-        self,
+        self: "NarrativeManager",
         pos: int,
         spec: dict[str, Any],
         params: list[list[Any]]
@@ -508,7 +511,7 @@ class NarrativeManager:
         return cell
 
     def _build_method_cell(
-        self,
+        self: "NarrativeManager",
         pos: int,
         spec: dict[str, Any],
         params: list[list[Any]]
@@ -535,7 +538,7 @@ class NarrativeManager:
         return cell
 
     def _complete_new_narrative(
-        self,
+        self: "NarrativeManager",
         ws_id: str | int,
         obj_id: str | int,
         import_data: list[str],
@@ -572,13 +575,13 @@ class NarrativeManager:
         return self.ws.get_workspace_info({"id": ws_id})
 
     def _safe_json_stringify(
-        self,
+        self: "NarrativeManager",
         obj: str | list[str] | dict[str, str]
     ) -> str | list[str] | dict[str, str]:
         return json.dumps(self._safe_json_stringify_prepare(obj))
 
     def _safe_json_stringify_prepare(
-        self,
+        self: "NarrativeManager",
         obj: str | list[str] | dict[str, str]
     ) -> str | list[str] | dict[str, str]:
         if isinstance(obj, str):
@@ -595,7 +598,7 @@ class NarrativeManager:
         return obj
 
     def copy_object(
-        self,
+        self: "NarrativeManager",
         ref: str,
         target_ws_id: str | int,
         target_ws_name: str,
@@ -625,7 +628,7 @@ class NarrativeManager:
         return {"info": obj_info}
 
     def rename_narrative(
-        self,
+        self: "NarrativeManager",
         narrative_ref: str,
         new_name: str,
         service_version: str
