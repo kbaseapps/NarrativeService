@@ -7,7 +7,7 @@ from NarrativeService.data.fetcher import DataFetcher
 from NarrativeService.data.objectswithsets import ObjectsWithSets
 from NarrativeService.DynamicServiceCache import DynamicServiceClient
 from NarrativeService.NarrativeListUtils import NarrativeListUtils, NarratorialUtils
-from NarrativeService.NarrativeManager import NarrativeManager
+from NarrativeService.narrativemanager import NarrativeManager
 from NarrativeService.reportfetcher import ReportFetcher
 from NarrativeService.SearchServiceClient import SearchServiceClient
 from NarrativeService.sharing.sharemanager import ShareRequester
@@ -41,8 +41,6 @@ class NarrativeService:
         """
         return NarrativeManager(self.config,
                                 ctx["user_id"],
-                                self._get_set_api_client(ctx["token"]),
-                                self._get_data_palette_client(ctx["token"]),
                                 self._get_workspace_client(ctx["token"]),
                                 self._get_search_client(ctx["token"]))
 
