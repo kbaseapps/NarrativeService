@@ -4,6 +4,7 @@ from collections.abc import Generator
 from configparser import ConfigParser
 from pathlib import Path
 from time import time
+from typing import Any
 
 import pytest
 from installed_clients.authclient import KBaseAuth
@@ -12,6 +13,7 @@ from NarrativeService.NarrativeServiceServer import MethodContext
 
 from lib.installed_clients.FakeObjectsForTestsClient import FakeObjectsForTests
 from lib.installed_clients.WorkspaceClient import Workspace
+from test.workspace_mock import WorkspaceMock
 
 
 @pytest.fixture(scope="module")
@@ -56,7 +58,7 @@ def auth_client(config: dict[str, str | int]) -> Generator[KBaseAuth, None, None
     yield KBaseAuth(config["auth-service-url"])
 
 @pytest.fixture(scope="module")
-def context(auth_token: str, auth_client: KBaseAuth) -> Generator[dict[str, any], None, None]:
+def context(auth_token: str, auth_client: KBaseAuth) -> Generator[dict[str, Any], None, None]:
     ctx = MethodContext(None)
     user_id = auth_client.get_user(auth_token)
     ctx.update({
@@ -108,6 +110,10 @@ def mock_token():
 @pytest.fixture
 def mock_user():
     return MOCK_USER_ID
+
+@pytest.fixture
+def mock_workspace_client():
+    return WorkspaceMock()
 
 @pytest.fixture
 def json_data():
