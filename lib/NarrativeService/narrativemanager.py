@@ -1,9 +1,13 @@
+import contextlib
 import json
 import time
 import uuid
+from typing import Any
 
 from installed_clients.NarrativeMethodStoreClient import NarrativeMethodStore
+from installed_clients.WorkspaceClient import Workspace
 from jsonrpcbase import ServerError
+from NarrativeService.SearchServiceClient import SearchServiceClient
 from NarrativeService.ServiceUtils import ServiceUtils
 
 MAX_WS_METADATA_VALUE_SIZE = 900
@@ -21,24 +25,32 @@ class NarrativeManager:
     KB_CODE_CELL = "kb_code"
     KB_STATE = "widget_state"
 
-    def __init__(self, config, user_id, set_api_client, data_palette_client, workspace_client, search_service_client):
+    def __init__(
+        self,
+        config: dict[str, Any],
+        user_id: str,
+        workspace_client: Workspace,
+        search_service_client: SearchServiceClient
+    ) -> None:
         self.narrativeMethodStoreURL = config["narrative-method-store"]
-        self.set_api_client = set_api_client                     # DynamicServiceCache type
-        self.data_palette_client = data_palette_client          # DynamicServiceCache type
         self.user_id = user_id
         self.ws = workspace_client
         self.search_client = search_service_client
         self.intro_cell_file = config["intro-cell-file"]
 
-    def get_narrative_doc(self, narrative_upa):
+    def get_narrative_doc(self, narrative_upa: str) -> dict[str, Any]:
         try:
             # ensure correct upa format and get numerical ws_id
             ws_id, _, _, = (int(i) for i in narrative_upa.split("/"))
             obj_data = self.ws.get_objects2({"objects": [{"ref": narrative_upa}]})["data"][0]
-        except ValueError:
-            raise ValueError("Incorrect upa format: required format is <workspace_id>/<object_id>/<version>")
-        except ServerError:
-            raise ValueError('Item with upa "%s" not found in workspace database.' % narrative_upa)
+        except ValueError as err:
+            raise ValueError(
+                "Incorrect upa format: required format is <workspace_id>/<object_id>/<version>"
+            ) from err
+        except ServerError as err:
+            raise ValueError(
+                f'Item with upa "{narrative_upa}" not found in workspace database.'
+            ) from err
 
         data_objects = self.ws.list_objects({"ids": [ws_id]})
         permissions = self.ws.get_permissions_mass({"workspaces": [{"id": ws_id}]})["perms"]
@@ -50,7 +62,7 @@ class NarrativeManager:
         else:
             cells = obj_data["data"]["cells"]
 
-        doc = {
+        return {
             "access_group": obj_data.get("orig_wsid", ws_id),
             "cells": [self._get_doc_cell(c) for c in cells],
             "total_cells": len(obj_data["data"]["cells"]),
@@ -65,9 +77,7 @@ class NarrativeManager:
             "version": obj_data["info"][4]
         }
 
-        return doc
-
-    def _fmt_doc_permissions(self, permissions):
+    def _fmt_doc_permissions(self, permissions: dict[str, str]) -> tuple[list[str], bool]:
         # get list of users and whether a narrative is public
         is_public = False
         shared_users = []
@@ -79,7 +89,7 @@ class NarrativeManager:
                 shared_users.append(k)
         return shared_users, is_public
 
-    def _get_doc_cell(self, cell):
+    def _get_doc_cell(self, cell: dict[str, Any]) -> dict[str, Any]:
         # get the appropriate cell format for search result doc
         meta = cell.get("metadata", {}).get("kbase", {})
         if cell["cell_type"] == "markdown":
@@ -89,7 +99,7 @@ class NarrativeManager:
                 "desc": meta.get("attributes", {})
                             .get("title", "Markdown Cell")
             }
-        elif meta["type"] == "output":
+        if meta["type"] == "output":
             # type widget
             return {
                 "cell_type": "widget",
@@ -97,7 +107,7 @@ class NarrativeManager:
                             .get("widget", {})
                             .get("name", "Widget")
             }
-        elif meta["type"] == "data":
+        if meta["type"] == "data":
             # type data
             return {
                 "cell_type": "data",
@@ -105,7 +115,7 @@ class NarrativeManager:
                             .get("objectInfo", {})
                             .get("name", "Data Cell")
             }
-        elif meta["type"] == "app":
+        if meta["type"] == "app":
             # type kbase_app
             return {
                 "cell_type": "kbase_app",
@@ -115,36 +125,40 @@ class NarrativeManager:
                             .get("info", {})
                             .get("name", "KBase App")
             }
-        elif meta["type"] == "code":
+        if meta["type"] == "code":
             # type code_cell
             return {
                 "cell_type": "code_cell",
                 "desc": cell.get("source", "Code Cell")
             }
-        else:
-            return {
-                "cell_type": "",
-                "desc": ""
-            }
+        return {
+            "cell_type": "",
+            "desc": ""
+        }
 
-    def revert_narrative_object(self, obj):
+    def revert_narrative_object(self, obj: dict[str, Any]) -> list[Any]:
         # check that there is a proper workspace id and object id
         if ("wsid" not in obj or "objid" not in obj):
             raise ValueError(
-                "Please choose exactly 1 object identifier and 1 workspace identifier; " +
-                "cannot select workspace based on criteria: %s" % ",".join(obj.keys())
+                "Please choose exactly 1 object identifier and 1 workspace identifier; "
+                f"cannot select workspace based on criteria: {','.join(obj.keys())}"
             )
 
         # ensure version is specified
         if "ver" not in obj:
-            raise ValueError(f"Cannot revert object {obj['wsid']}/{obj['objid']} without specifying a version to revert to")
+            raise ValueError(
+                f"Cannot revert object {obj['wsid']}/{obj['objid']} without specifying "
+                "a version to revert to"
+            )
 
         # get most recent version number
         current_version = self.ws.get_object_history(obj)[-1][4]
 
         # make sure we're not reverting into the future
         if current_version < obj["ver"]:
-            raise ValueError("Cannot revert object at version %s to version %s" % (current_version, obj["ver"]))
+            raise ValueError(
+                f"Cannot revert object at version {current_version} to version {obj['ver']}"
+            )
 
         # call to revert object
         revert_result = self.ws.revert_object(obj)
@@ -164,117 +178,139 @@ class NarrativeManager:
 
         return revert_result
 
-    def _check_new_version_indexed(self, obj, new_version):
+    def _check_new_version_indexed(
+        self,
+        obj: dict[str, int | str],
+        new_version: int
+    ) -> dict[str, Any]:
         tries = 0
+        max_tries: int = 60
         data = None
-        while tries < 60 and data is None:
+        while tries < max_tries and data is None:
             try:
                 tries += 1
                 time.sleep(1)
-                data = self.search_client.search_workspace_by_id(obj["wsid"], obj["objid"], version=new_version)
-            except Exception:
+                data = self.search_client.search_workspace_by_id(
+                    obj["wsid"], obj["objid"], version=new_version
+                )
+            except Exception:  # noqa: S112, BLE001
                 # try again, the connection may be faulty
                 continue
 
         if data is None:
-            raise TimeoutError(f"Max tries for workspace {obj['wsid']}/{obj['objid']}/{new_version} exceeded; " +
-                               "please try searching for new version later")
+            raise TimeoutError(
+                f"Max tries for workspace {obj['wsid']}/{obj['objid']}/{new_version} exceeded; "
+                "please try searching for new version later"
+            )
         return data
 
-    def copy_narrative(self, newName, workspaceRef, workspaceId):
+    def copy_narrative(
+        self,
+        new_name: str,
+        workspace_ref: str,
+        workspace_id: int
+    ) -> dict[str, str]:
         time_ms = int(round(time.time() * 1000))
-        newWsName = self.user_id + ":narrative_" + str(time_ms)
+        new_ws_name = self.user_id + ":narrative_" + str(time_ms)
         # add the 'narrative' field to newWsMeta later.
-        newWsMeta = {
-            "narrative_nice_name": newName,
+        new_ws_meta = {
+            "narrative_nice_name": new_name,
             "searchtags": "narrative"
         }
 
         # start with getting the existing narrative object.
-        currentNarrative = self.ws.get_objects([{"ref": workspaceRef}])[0]
-        if not workspaceId:
-            workspaceId = currentNarrative["info"][6]
+        current_narrative = self.ws.get_objects([{"ref": workspace_ref}])[0]
+        if not workspace_id:
+            workspace_id = current_narrative["info"][6]
         # Let's prepare exceptions for clone the workspace.
         # 1) currentNarrative object:
-        excluded_list = [{"objid": currentNarrative["info"][0]}]
+        excluded_list = [{"objid": current_narrative["info"][0]}]
         # 2) let's exclude objects of types under DataPalette handling:
 
         # clone the workspace EXCEPT for currentNarrative object
-        newWsId = self.ws.clone_workspace({
-            "wsi": {"id": workspaceId},
-            "workspace": newWsName,
-            "meta": newWsMeta,
+        new_ws_id = self.ws.clone_workspace({
+            "wsi": {"id": workspace_id},
+            "workspace": new_ws_name,
+            "meta": new_ws_meta,
             "exclude": excluded_list
         })[0]
         try:
             # update the ref inside the narrative object and the new workspace metadata.
-            newNarMetadata = currentNarrative["info"][10]
-            newNarMetadata["name"] = newName
-            newNarMetadata["ws_name"] = newWsName
-            newNarMetadata["job_info"] = json.dumps({"queue_time": 0, "running": 0,
+            new_nar_metadata = current_narrative["info"][10]
+            new_nar_metadata["name"] = new_name
+            new_nar_metadata["ws_name"] = new_ws_name
+            new_nar_metadata["job_info"] = json.dumps({"queue_time": 0, "running": 0,
                                                      "completed": 0, "run_time": 0, "error": 0})
 
-            is_temporary = newNarMetadata.get("is_temporary", "false")
-            if "is_temporary" not in newNarMetadata:
-                if newNarMetadata["name"] == "Untitled" or newNarMetadata["name"] is None:
+            is_temporary = new_nar_metadata.get("is_temporary", "false")
+            if "is_temporary" not in new_nar_metadata:
+                if new_nar_metadata["name"] == "Untitled" or new_nar_metadata["name"] is None:
                     is_temporary = "true"
-                newNarMetadata["is_temporary"] = is_temporary
+                new_nar_metadata["is_temporary"] = is_temporary
 
-            currentNarrative["data"]["metadata"]["name"] = newName
-            currentNarrative["data"]["metadata"]["ws_name"] = newWsName
-            currentNarrative["data"]["metadata"]["job_ids"] = {"apps": [], "methods": [],
+            current_narrative["data"]["metadata"]["name"] = new_name
+            current_narrative["data"]["metadata"]["ws_name"] = new_ws_name
+            current_narrative["data"]["metadata"]["job_ids"] = {"apps": [], "methods": [],
                                                                "job_usage": {"queue_time": 0,
                                                                              "run_time": 0}}
             # save the shiny new Narrative so it's at version 1
-            newNarInfo = self.ws.save_objects({"id": newWsId, "objects":
-                                               [{"type": currentNarrative["info"][2],
-                                                 "data": currentNarrative["data"],
-                                                 "provenance": currentNarrative["provenance"],
-                                                 "name": currentNarrative["info"][1],
-                                                 "meta": newNarMetadata}]})
+            new_nar_info = self.ws.save_objects({"id": new_ws_id, "objects":
+                                               [{"type": current_narrative["info"][2],
+                                                 "data": current_narrative["data"],
+                                                 "provenance": current_narrative["provenance"],
+                                                 "name": current_narrative["info"][1],
+                                                 "meta": new_nar_metadata}]})
             # now, just update the workspace metadata to point
             # to the new narrative object
 
-            if "worksheets" in currentNarrative["data"]:  # handle legacy.
-                num_cells = len(currentNarrative["data"]["worksheets"][0]["cells"])
+            if "worksheets" in current_narrative["data"]:  # handle legacy.
+                num_cells = len(current_narrative["data"]["worksheets"][0]["cells"])
             else:
-                num_cells = len(currentNarrative["data"]["cells"])
-            newNarId = newNarInfo[0][0]
+                num_cells = len(current_narrative["data"]["cells"])
+            new_nar_id = new_nar_info[0][0]
             self.ws.alter_workspace_metadata({
                 "wsi": {
-                    "id": newWsId
+                    "id": new_ws_id
                 },
                 "new": {
-                    "narrative": str(newNarId),
+                    "narrative": str(new_nar_id),
                     "is_temporary": is_temporary,
                     "cell_count": str(num_cells)
                 }
             })
-            return {"newWsId": newWsId, "newNarId": newNarId}
+            return {"newWsId": new_ws_id, "newNarId": new_nar_id}
         except Exception:
             # let's delete copy of workspace so it's out of the way - it's broken
-            self.ws.delete_workspace({"id": newWsId})
+            self.ws.delete_workspace({"id": new_ws_id})
             raise
 
-    def create_new_narrative(self, app, method, appparam, appData, markdown,
-                             copydata, importData, includeIntroCell, title):
+    def create_new_narrative(
+        self,
+        app: str,
+        method: str,
+        app_param: str,
+        app_data: list[Any],
+        markdown: str,
+        copydata: str,
+        import_data: list[str],
+        include_intro_cell: bool,
+        title: str
+    ):
         if app and method:
             raise ValueError("Must provide no more than one of the app or method params")
 
-        if not importData and copydata:
-            importData = copydata.split(";")
+        if not import_data and copydata:
+            import_data = copydata.split(";")
 
-        if not appData and appparam:
-            appData = []
-            for tmp_item in appparam.split(";"):
+        if not app_data and app_param:
+            app_data = []
+            for tmp_item in app_param.split(";"):
                 tmp_tuple = tmp_item.split(",")
                 step_pos = None
                 if tmp_tuple[0]:
-                    try:
+                    with contextlib.suppress(ValueError):
                         step_pos = int(tmp_tuple[0])
-                    except ValueError:
-                        pass
-                appData.append([step_pos, tmp_tuple[1], tmp_tuple[2]])
+                app_data.append([step_pos, tmp_tuple[1], tmp_tuple[2]])
         cells = None
         if app:
             cells = [{"app": app}]
@@ -282,143 +318,181 @@ class NarrativeManager:
             cells = [{"method": method}]
         elif markdown:
             cells = [{"markdown": markdown}]
-        narr_info = self._create_temp_narrative(cells, appData, importData, includeIntroCell, title)
+        narr_info = self._create_temp_narrative(
+            cells, app_data, import_data, include_intro_cell, title
+        )
         if title is not None:
             # update workspace info so it's not temporary
             pass
         return narr_info
 
-    def _get_intro_cell(self):
+    def _get_intro_cell(self) -> dict[str, Any]:
         """
         Loads intro cell JSON from file
         """
         with open(self.intro_cell_file) as intro_cell:
             return json.load(intro_cell)
 
-    def _create_temp_narrative(self, cells, parameters, importData, includeIntroCell, title):
-        # Migration to python of JavaScript class from https://github.com/kbase/kbase-ui/blob/4d31151d13de0278765a69b2b09f3bcf0e832409/src/client/modules/plugins/narrativemanager/modules/narrativeManager.js#L414
+    def _create_temp_narrative(
+        self,
+        cells: list[dict[str, Any]],
+        parameters: list[list[Any]],
+        import_data: list[str],
+        include_intro_cell: bool,
+        title: str
+    ) -> dict[str, Any]:
         narr_id = int(round(time.time() * 1000))
-        workspaceName = self.user_id + ":narrative_" + str(narr_id)
-        narrativeName = "Narrative." + str(narr_id)
+        ws_name = self.user_id + ":narrative_" + str(narr_id)
+        narrative_name = "Narrative." + str(narr_id)
 
         ws = self.ws
-        ws_info = ws.create_workspace({"workspace": workspaceName, "description": ""})
-        [narrativeObject, metadataExternal] = self._fetchNarrativeObjects(
-            workspaceName, cells, parameters, includeIntroCell, title
+        ws_info = ws.create_workspace({"workspace": ws_name, "description": ""})
+        [narrative_object, metadata_external] = self._fetch_narrative_objects(
+            ws_name, cells, parameters, include_intro_cell, title
         )
         is_temporary = "true"
         if title is not None and title != "Untitled":
             is_temporary = "false"
 
-        metadataExternal["is_temporary"] = is_temporary
-        objectInfo = ws.save_objects({"workspace": workspaceName,
-                                      "objects": [{"type": "KBaseNarrative.Narrative",
-                                                   "data": narrativeObject,
-                                                   "name": narrativeName,
-                                                   "meta": metadataExternal,
-                                                   "provenance": [{"script": "NarrativeManager.py",
-                                                                   "description": "Created new " +
-                                                                   "Workspace/Narrative bundle."}],
-                                                   "hidden": 0}]})[0]
-        objectInfo = ServiceUtils.object_info_to_object(objectInfo)
-        ws_info = self._completeNewNarrative(ws_info[0], objectInfo["id"],
-                                             importData, is_temporary, title,
-                                             len(narrativeObject["cells"]))
+        metadata_external["is_temporary"] = is_temporary
+        object_info = ws.save_objects({
+            "workspace": ws_name,
+            "objects": [{
+                "type": "KBaseNarrative.Narrative",
+                "data": narrative_object,
+                "name": narrative_name,
+                "meta": metadata_external,
+                "provenance": [{
+                    "script": "NarrativeManager.py",
+                    "description": "Created new Workspace/Narrative bundle."
+                }],
+                "hidden": 0
+            }]
+        })[0]
+        object_info = ServiceUtils.object_info_to_object(object_info)
+        ws_info = self._complete_new_narrative(ws_info[0], object_info["id"],
+                                             import_data, is_temporary, title,
+                                             len(narrative_object["cells"]))
         return {
             "workspaceInfo": ServiceUtils.workspace_info_to_object(ws_info),
-            "narrativeInfo": objectInfo
+            "narrativeInfo": object_info
         }
 
-    def _fetchNarrativeObjects(self, workspaceName, cells, parameters, includeIntroCell, title):
+    def _fetch_narrative_objects(
+        self,
+        ws_name: str,
+        cells: list[dict[str, Any]],
+        parameters: list[list[Any]],
+        include_intro_cell: bool,
+        title: str
+    ) -> list[dict[str, Any]]:
         if not cells:
             cells = []
         if not title:
             title = "Untitled"
 
         # fetchSpecs
-        appSpecIds = []
-        methodSpecIds = []
-        specMapping = {"apps": {}, "methods": {}}
+        app_spec_ids = []
+        method_spec_ids = []
+        spec_mapping = {"apps": {}, "methods": {}}
         for cell in cells:
             if "app" in cell:
-                appSpecIds.append(cell["app"])
+                app_spec_ids.append(cell["app"])
             elif "method" in cell:
-                methodSpecIds.append(cell["method"])
+                method_spec_ids.append(cell["method"])
         nms = NarrativeMethodStore(self.narrativeMethodStoreURL)
-        if len(appSpecIds) > 0:
-            appSpecs = nms.get_app_spec({"ids": appSpecIds})
-            for spec in appSpecs:
+        if len(app_spec_ids) > 0:
+            app_specs = nms.get_app_spec({"ids": app_spec_ids})
+            for spec in app_specs:
                 spec_id = spec["info"]["id"]
-                specMapping["apps"][spec_id] = spec
-        if len(methodSpecIds) > 0:
-            methodSpecs = nms.get_method_spec({"ids": methodSpecIds})
-            for spec in methodSpecs:
+                spec_mapping["apps"][spec_id] = spec
+        if len(method_spec_ids) > 0:
+            method_specs = nms.get_method_spec({"ids": method_spec_ids})
+            for spec in method_specs:
                 spec_id = spec["info"]["id"]
-                specMapping["methods"][spec_id] = spec
+                spec_mapping["methods"][spec_id] = spec
         # end of fetchSpecs
 
-        metadata = {"job_ids": {"methods": [],
-                                "apps": [],
-                                "job_usage": {"queue_time": 0, "run_time": 0}},
-                    "format": "ipynb",
-                    "creator": self.user_id,
-                    "ws_name": workspaceName,
-                    "name": title,
-                    "type": "KBaseNarrative.Narrative",
-                    "description": "",
-                    "data_dependencies": []}
-        cellData = self._gatherCellData(cells, specMapping, parameters, includeIntroCell)
-        narrativeObject = {"nbformat_minor": 0,
-                           "cells": cellData,
-                           "metadata": metadata,
-                           "nbformat": 4}
-        metadataExternal = {}
+        metadata = {
+            "job_ids": {
+                "methods": [],
+                "apps": [],
+                "job_usage": {"queue_time": 0, "run_time": 0}
+            },
+            "format": "ipynb",
+            "creator": self.user_id,
+            "ws_name": ws_name,
+            "name": title,
+            "type": "KBaseNarrative.Narrative",
+            "description": "",
+            "data_dependencies": []
+        }
+        cell_data = self._gather_cell_data(cells, spec_mapping, parameters, include_intro_cell)
+        narrative_object = {
+            "nbformat_minor": 0,
+            "cells": cell_data,
+            "metadata": metadata,
+            "nbformat": 4
+        }
+        metadata_external = {}
         for key in metadata:
             value = metadata[key]
             if isinstance(value, str):
-                metadataExternal[key] = value
+                metadata_external[key] = value
             else:
-                metadataExternal[key] = json.dumps(value)
-        return [narrativeObject, metadataExternal]
+                metadata_external[key] = json.dumps(value)
+        return [narrative_object, metadata_external]
 
-    def _gatherCellData(self, cells, specMapping, parameters, includeIntroCell):
+    def _gather_cell_data(
+        self,
+        cells: list[dict[str, Any]],
+        spec_mapping: dict[str, Any],
+        parameters: list[list[Any]],
+        include_intro_cell: bool) -> list[dict[str, Any]]:
         cell_data = []
-        if includeIntroCell == 1:
+        if include_intro_cell == 1:
             cell_data.append(
                 self._get_intro_cell()
             )
         for cell_pos, cell in enumerate(cells):
             if "app" in cell:
-                cell_data.append(self._buildAppCell(len(cell_data),
-                                                    specMapping["apps"][cell["app"]],
+                cell_data.append(self._build_app_cell(len(cell_data),
+                                                    spec_mapping["apps"][cell["app"]],
                                                     parameters))
             elif "method" in cell:
-                cell_data.append(self._buildMethodCell(len(cell_data),
-                                                       specMapping["methods"][cell["method"]],
+                cell_data.append(self._build_method_cell(len(cell_data),
+                                                       spec_mapping["methods"][cell["method"]],
                                                        parameters))
             elif "markdown" in cell:
-                cell_data.append({"cell_type": "markdown", "source": cell["markdown"],
-                                  "metadata": {}})
+                cell_data.append({
+                    "cell_type": "markdown",
+                    "source": cell["markdown"],
+                    "metadata": {}
+                })
             else:
-                raise ValueError("cannot add cell #" + str(cell_pos) +
-                                 ", unrecognized cell content")
+                raise ValueError(f"cannot add cell #{cell_pos}, unrecognized cell content")
         return cell_data
 
-    def _buildAppCell(self, pos, spec, params):
-        cellId = "kb-cell-" + str(pos) + "-" + str(uuid.uuid4())
+    def _build_app_cell(
+        self,
+        pos: int,
+        spec: dict[str, Any],
+        params: list[list[Any]]
+    ) -> dict[str, Any]:
+        cell_id = "kb-cell-" + str(pos) + "-" + str(uuid.uuid4())
         cell = {
             "cell_type": "markdown",
-            "source": "<div id='" + cellId + "'></div>" +
+            "source": "<div id='" + cell_id + "'></div>" +
                       "\n<script>" +
-                      "$('#" + cellId + "').kbaseNarrativeAppCell({'appSpec' : '" +
-                      self._safeJSONStringify(spec) + "', 'cellId' : '" + cellId + "'});" +
+                      "$('#" + cell_id + "').kbaseNarrativeAppCell({'appSpec' : '" +
+                      self._safe_json_stringify(spec) + "', 'cellId' : '" + cell_id + "'});" +
                       "</script>",
             "metadata": {}
         }
-        cellInfo = {}
-        widgetState = []
-        cellInfo[self.KB_TYPE] = self.KB_APP_CELL
-        cellInfo["app"] = spec
+        cell_info = {}
+        widget_state = []
+        cell_info[self.KB_TYPE] = self.KB_APP_CELL
+        cell_info["app"] = spec
         if params:
             steps = {}
             for param in params:
@@ -428,40 +502,53 @@ class NarrativeManager:
                     steps[stepid]["inputState"] = {}
                 steps[stepid]["inputState"][param[1]] = param[2]
             state = {"state": {"step": steps}}
-            widgetState.append(state)
-        cellInfo[self.KB_STATE] = widgetState
-        cell["metadata"][self.KB_CELL] = cellInfo
+            widget_state.append(state)
+        cell_info[self.KB_STATE] = widget_state
+        cell["metadata"][self.KB_CELL] = cell_info
         return cell
 
-    def _buildMethodCell(self, pos, spec, params):
-        cellId = "kb-cell-" + str(pos) + "-" + str(uuid.uuid4())
+    def _build_method_cell(
+        self,
+        pos: int,
+        spec: dict[str, Any],
+        params: list[list[Any]]
+    ) -> dict[str, Any]:
+        cell_id = "kb-cell-" + str(pos) + "-" + str(uuid.uuid4())
         cell = {"cell_type": "markdown",
-                "source": "<div id='" + cellId + "'></div>" +
+                "source": "<div id='" + cell_id + "'></div>" +
                           "\n<script>" +
-                          "$('#" + cellId + "').kbaseNarrativeMethodCell({'method' : '" +
-                          self._safeJSONStringify(spec) + "'});" +
+                          "$('#" + cell_id + "').kbaseNarrativeMethodCell({'method' : '" +
+                          self._safe_json_stringify(spec) + "'});" +
                           "</script>",
                 "metadata": {}}
-        cellInfo = {"method": spec,
+        cell_info = {"method": spec,
                     "widget": spec["widgets"]["input"]}
-        cellInfo[self.KB_TYPE] = self.KB_FUNCTION_CELL
-        widgetState = []
+        cell_info[self.KB_TYPE] = self.KB_FUNCTION_CELL
+        widget_state = []
         if params:
             wparams = {}
             for param in params:
                 wparams[param[1]] = param[2]
-            widgetState.append({"state": wparams})
-        cellInfo[self.KB_STATE] = widgetState
-        cell["metadata"][self.KB_CELL] = cellInfo
+            widget_state.append({"state": wparams})
+        cell_info[self.KB_STATE] = widget_state
+        cell["metadata"][self.KB_CELL] = cell_info
         return cell
 
-    def _completeNewNarrative(self, workspaceId, objectId, importData, is_temporary, title, num_cells):
+    def _complete_new_narrative(
+        self,
+        ws_id: str | int,
+        obj_id: str | int,
+        import_data: list[str],
+        is_temporary: int,
+        title: str,
+        num_cells: int
+    ) -> list[Any]:
         """
         'Completes' the new narrative by updating workspace metadata with the required fields and
         copying in data from the importData list of references.
         """
         new_meta = {
-            "narrative": str(objectId),
+            "narrative": str(obj_id),
             "is_temporary": is_temporary,
             "searchtags": "narrative",
             "cell_count": str(num_cells)
@@ -469,36 +556,52 @@ class NarrativeManager:
         if is_temporary == "false" and title is not None:
             new_meta["narrative_nice_name"] = title
 
-        self.ws.alter_workspace_metadata({"wsi": {"id": workspaceId},
+        self.ws.alter_workspace_metadata({"wsi": {"id": ws_id},
                                           "new": new_meta})
         # copy_to_narrative:
-        if importData:
-            objectsToCopy = [{"ref": x} for x in importData]
-            infoList = self.ws.get_object_info_new({"objects": objectsToCopy, "includeMetadata": 0})
-            for item in infoList:
-                objectInfo = ServiceUtils.object_info_to_object(item)
-                self.copy_object(objectInfo["ref"], workspaceId, None, None, objectInfo)
+        if import_data:
+            objects_to_copy = [{"ref": x} for x in import_data]
+            info_list = self.ws.get_object_info_new({
+                "objects": objects_to_copy,
+                "includeMetadata": 0
+            })
+            for item in info_list:
+                obj_info = ServiceUtils.object_info_to_object(item)
+                self.copy_object(obj_info["ref"], ws_id, None, None, obj_info)
 
-        return self.ws.get_workspace_info({"id": workspaceId})
+        return self.ws.get_workspace_info({"id": ws_id})
 
-    def _safeJSONStringify(self, obj):
-        return json.dumps(self._safeJSONStringifyPrepare(obj))
+    def _safe_json_stringify(
+        self,
+        obj: str | list[str] | dict[str, str]
+    ) -> str | list[str] | dict[str, str]:
+        return json.dumps(self._safe_json_stringify_prepare(obj))
 
-    def _safeJSONStringifyPrepare(self, obj):
+    def _safe_json_stringify_prepare(
+        self,
+        obj: str | list[str] | dict[str, str]
+    ) -> str | list[str] | dict[str, str]:
         if isinstance(obj, str):
             return obj.replace("'", "&apos;").replace('"', "&quot;")
-        elif isinstance(obj, list):
+        if isinstance(obj, list):
             for pos in range(len(obj)):
-                obj[pos] = self._safeJSONStringifyPrepare(obj[pos])
+                obj[pos] = self._safe_json_stringify_prepare(obj[pos])
         elif isinstance(obj, dict):
             obj_keys = list(obj.keys())
             for key in obj_keys:
-                obj[key] = self._safeJSONStringifyPrepare(obj[key])
+                obj[key] = self._safe_json_stringify_prepare(obj[key])
         else:
             pass  # it's boolean/int/float/None
         return obj
 
-    def copy_object(self, ref, target_ws_id, target_ws_name, target_name, src_info):
+    def copy_object(
+        self,
+        ref: str,
+        target_ws_id: str | int,
+        target_ws_name: str,
+        target_name: str,
+        src_info: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Copies an object from one workspace to another.
         """
@@ -521,16 +624,22 @@ class NarrativeManager:
         obj_info = ServiceUtils.object_info_to_object(obj_info_tuple)
         return {"info": obj_info}
 
-    def rename_narrative(self, narrative_ref: str, new_name: str, service_version: str) -> str:
+    def rename_narrative(
+        self,
+        narrative_ref: str,
+        new_name: str,
+        service_version: str
+    ) -> str:
         """
         Renames a Narrative.
-        If the current user (as set by the auth token in self.ws) has admin permission on the workspace,
-        then this does the following steps.
+        If the current user (as set by the auth token in self.ws) has admin permission on the
+        workspace, then this does the following steps.
         1. Fetch the Narrative object and save it with the name change in the metadata.
         2. Update the workspace metadata so that it has the new name as the narrative nice name.
         3. Flips the workspace metadata so the the narrative is no longer temporary, if it was.
 
-        :param narrative_ref: string, format = "###/###" or "###/###/###" (though the latter is very not recommended)
+        :param narrative_ref: string, format = "###/###" or "###/###/###" (though the latter is
+            very not recommended)
         :param new_name: string, new name for the narrative
         :param service_version: NarrativeService version so the provenance can be tracked properly.
         """
@@ -552,7 +661,10 @@ class NarrativeManager:
         # 2. Check permissions
         perm = ServiceUtils.get_user_workspace_permissions(self.user_id, ws_id, self.ws)
         if perm != "a":
-            raise ValueError(f"User {self.user_id} must have admin rights to change the name of the narrative in workspace {ws_id}")
+            raise ValueError(
+                f"User {self.user_id} must have admin rights to change "
+                f"the name of the narrative in workspace {ws_id}"
+            )
 
         # 3. Get narrative object
         narr_obj = self.ws.get_objects2({"objects": [{"ref": narrative_ref}]})["data"][0]
@@ -572,7 +684,8 @@ class NarrativeManager:
         }
         self.ws.alter_workspace_metadata({"wsi": {"id": ws_id}, "new": updated_metadata})
 
-        # 5. Save the Narrative object. Keep all the things intact, with new provenance saying we renamed with the NarrativeService.
+        # 5. Save the Narrative object. Keep all the things intact, with new provenance saying we
+        # renamed with the NarrativeService.
         ws_save_obj = {
             "type": NARRATIVE_TYPE,
             "data": narr_obj["data"],
